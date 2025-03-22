@@ -1,7 +1,7 @@
 
 // Firebase configuration
 export const firebaseConfig = {
-  apiKey: "AIzaSyC9XL5OPYVkxD_LptBlLfiTULFjf2-9Z2A",
+  apiKey: "AIzaSyDJJ-_gQ_XWp8O_xfZfwXCsUCvh2_nLV2g",
   authDomain: "carfix-demo.firebaseapp.com",
   projectId: "carfix-demo",
   storageBucket: "carfix-demo.appspot.com",
