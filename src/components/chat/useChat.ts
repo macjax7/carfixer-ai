@@ -4,6 +4,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useOpenAI, ChatMessage } from '@/utils/openai';
 import { Message } from './types';
 import { useVehicles } from '@/hooks/use-vehicles';
+import { nanoid } from 'nanoid';
 
 export const useChat = () => {
   const [messages, setMessages] = useState<Message[]>([
@@ -20,7 +21,7 @@ export const useChat = () => {
   const [messageHistory, setMessageHistory] = useState<string[]>([]);
   const [hasAskedForVehicle, setHasAskedForVehicle] = useState(false);
   const { toast } = useToast();
-  const { chatWithAI } = useOpenAI();
+  const { chatWithAI, identifyPart } = useOpenAI();
   const { selectedVehicle } = useVehicles();
   
   // Helper function to detect OBD-II codes in a message
@@ -99,22 +100,80 @@ export const useChat = () => {
     }
   };
   
-  const handleImageUpload = () => {
-    // In a real app, this would open a file picker and process the image
-    console.log('Image upload clicked');
+  const handleImageUpload = async (file: File) => {
+    if (isLoading) return;
+    
+    // Create a message for the user indicating they've uploaded an image
+    const userPrompt = input.trim() || "Can you identify this car part?";
+    const userMessage: Message = {
+      id: nanoid(),
+      sender: 'user',
+      text: userPrompt,
+      timestamp: new Date(),
+      image: URL.createObjectURL(file)
+    };
+    
+    setMessages(prevMessages => [...prevMessages, userMessage]);
+    setInput('');
+    setIsLoading(true);
+    
+    try {
+      // Generate a response using the image analysis
+      let prompt = userPrompt;
+      if (!prompt.toLowerCase().includes("identify") && !prompt.toLowerCase().includes("what")) {
+        prompt = `Identify this car part: ${prompt}`;
+      }
+      
+      // Call the OpenAI API to analyze the image
+      const imageUrl = URL.createObjectURL(file);
+      const analysis = await identifyPart(imageUrl, prompt);
+      
+      const aiMessage: Message = {
+        id: nanoid(),
+        sender: 'ai',
+        text: analysis,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Error analyzing image:', error);
+      
+      let errorMessage = "Sorry, I couldn't analyze the image. Please try again.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+      
+      // Add an error message from the AI
+      setMessages(prev => [...prev, {
+        id: nanoid(),
+        sender: 'ai',
+        text: "I couldn't analyze that image. Please try again with a clearer picture of the car part.",
+        timestamp: new Date()
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSuggestedPrompt = (prompt: string) => {
     setInput(prompt);
   };
   
-  // Adding more car-related suggested prompts including OBD code examples
+  // Adding more car-related suggested prompts including OBD code examples and part identification
   const suggestedPrompts = [
     "What could cause a P0300 code?",
     "My check engine light is on with code P0420",
     "My engine is overheating",
     "How do I change brake pads?",
     "What does the check engine light mean?",
+    "Can you help identify a car part from a photo?",
     "Explain code P0171 on a Toyota Camry"
   ];
 

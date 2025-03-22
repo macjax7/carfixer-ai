@@ -7,13 +7,15 @@ export async function handleImageAnalysis(data: any) {
   try {
     const { image, prompt = 'Identify this car part and explain its purpose.', vehicleInfo = null } = data;
     
-    let systemPrompt = 'You are CarFix AI, an automotive part identification specialist. Analyze the provided image and identify the car part shown.';
+    let systemPrompt = 'You are CarFix AI, an automotive part identification specialist with extensive knowledge of OEM and aftermarket parts. Analyze the provided image and identify the car part shown.';
     
     // Add vehicle specificity instructions when vehicle info is provided
     if (vehicleInfo && Object.keys(vehicleInfo).length > 0) {
-      systemPrompt += ` Your analysis should consider the context of a ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}. Explain what the part does in this type of vehicle, potential common failure symptoms, and how difficult it is to replace.`;
+      systemPrompt += ` Your analysis should consider the context of a ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}. Identify the exact part with its OEM part number if possible.`;
+      systemPrompt += ' Provide the following information in your response: 1) Part name and exact OEM part number, 2) Function and purpose of this part, 3) Common symptoms when this part fails, 4) Estimated replacement cost (OEM vs aftermarket), 5) Difficulty level for DIY replacement, and 6) Where to purchase replacement parts.';
     } else {
-      systemPrompt += ' If a specific vehicle is mentioned in the user prompt, provide information relevant to that vehicle. Otherwise, provide general information about the part.';
+      systemPrompt += ' If a specific vehicle is mentioned in the user prompt, provide information relevant to that vehicle including the OEM part number if possible. Otherwise, provide general information about the part.';
+      systemPrompt += ' Structure your response with these sections: 1) Part Identification (name and possible part numbers), 2) Function, 3) Replacement Information, and 4) Purchase Options.';
     }
     
     // For image analysis, we use GPT-4o with vision capabilities
@@ -38,7 +40,7 @@ export async function handleImageAnalysis(data: any) {
             ]
           }
         ],
-        temperature: 0.5,
+        temperature: 0.2, // Lower temperature for more deterministic, factual responses
       }),
     });
 

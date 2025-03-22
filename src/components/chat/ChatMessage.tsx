@@ -8,9 +8,10 @@ interface MessageProps {
   sender: 'user' | 'ai';
   text: string;
   timestamp: Date;
+  image?: string;
 }
 
-const ChatMessage: React.FC<MessageProps> = ({ id, sender, text, timestamp }) => {
+const ChatMessage: React.FC<MessageProps> = ({ id, sender, text, timestamp, image }) => {
   return (
     <div 
       className={cn(
@@ -32,6 +33,17 @@ const ChatMessage: React.FC<MessageProps> = ({ id, sender, text, timestamp }) =>
             <span className="text-xs font-medium text-carfix-500">CarFix AI</span>
           </div>
         )}
+        
+        {image && (
+          <div className="mb-2">
+            <img 
+              src={image} 
+              alt="Uploaded" 
+              className="rounded-lg max-h-48 w-auto object-contain bg-black/10"
+            />
+          </div>
+        )}
+        
         <p className="text-sm md:text-base whitespace-pre-wrap">{text}</p>
         <p className="text-xs opacity-70 mt-1 text-right">
           {timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
