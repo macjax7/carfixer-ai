@@ -16,8 +16,18 @@ import {
 } from "firebase/messaging";
 import { firebaseConfig } from "../config/firebase";
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase - fix the app initialization to prevent duplicate app errors
+let app;
+try {
+  app = initializeApp(firebaseConfig);
+} catch (error: any) {
+  if (error.code !== 'app/duplicate-app') {
+    throw error;
+  }
+  // If we already have an app instance, use the existing one
+  app = initializeApp();
+}
+
 export const auth = getAuth(app);
 
 // Initialize Firebase Cloud Messaging
