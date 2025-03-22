@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  Car, Wrench, PlusCircle, FolderPlus,
+  Car, FolderPlus, PlusCircle,
   MessageSquare, Clock, Search,
-  ChevronDown, ChevronUp, Folder
+  ChevronDown, ChevronRight, Folder
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,20 @@ const ChatSidebar = () => {
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [chatHistoryOpen, setChatHistoryOpen] = useState(true);
   
+  // Individual project states
+  const [projectStates, setProjectStates] = useState({
+    "Honda Civic Issues": false,
+    "Truck Maintenance": false,
+    "DIY Repair Notes": false,
+  });
+  
+  const toggleProject = (project) => {
+    setProjectStates(prev => ({
+      ...prev,
+      [project]: !prev[project]
+    }));
+  };
+
   const primaryNavItems = [
     {
       title: "My Vehicles",
@@ -44,9 +58,18 @@ const ChatSidebar = () => {
   ];
 
   const userProjects = [
-    { title: "Honda Civic Issues", path: "#" },
-    { title: "Truck Maintenance", path: "#" },
-    { title: "DIY Repair Notes", path: "#" },
+    { title: "Honda Civic Issues", path: "#", subItems: [
+      { title: "Engine Check", path: "#" },
+      { title: "Transmission Issues", path: "#" },
+    ]},
+    { title: "Truck Maintenance", path: "#", subItems: [
+      { title: "Oil Change Schedule", path: "#" },
+      { title: "Brake Inspection", path: "#" },
+    ]},
+    { title: "DIY Repair Notes", path: "#", subItems: [
+      { title: "Air Filter Replacement", path: "#" },
+      { title: "Battery Guide", path: "#" },
+    ]},
   ];
 
   const chatHistory = [
@@ -113,7 +136,7 @@ const ChatSidebar = () => {
                   <span className="flex-1 flex items-center">
                     {projectsOpen ? 
                       <ChevronDown className="h-4 w-4 mr-2 text-muted-foreground" /> : 
-                      <ChevronUp className="h-4 w-4 mr-2 text-muted-foreground" />}
+                      <ChevronRight className="h-4 w-4 mr-2 text-muted-foreground" />}
                     Projects
                   </span>
                   <Button variant="ghost" size="icon" className="ml-auto h-7 w-7">
@@ -127,21 +150,36 @@ const ChatSidebar = () => {
               <SidebarGroupContent>
                 <SidebarMenu>
                   {userProjects.map((project) => (
-                    <SidebarMenuItem key={project.title}>
-                      <SidebarMenuButton asChild>
-                        <Link to={project.path} className="flex items-center">
-                          <Folder className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span>{project.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
+                    <div key={project.title}>
+                      <Collapsible 
+                        open={projectStates[project.title]} 
+                        onOpenChange={() => toggleProject(project.title)}
+                      >
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton className="flex items-center justify-between w-full">
+                            <div className="flex items-center">
+                              <Folder className="h-4 w-4 mr-2 text-muted-foreground" />
+                              <span>{project.title}</span>
+                            </div>
+                            {projectStates[project.title] ? 
+                              <ChevronDown className="h-3 w-3 text-muted-foreground ml-1" /> : 
+                              <ChevronRight className="h-3 w-3 text-muted-foreground ml-1" />}
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="pl-6 transition-all duration-200 ease-in-out">
+                          {project.subItems.map((subItem, index) => (
+                            <SidebarMenuItem key={index}>
+                              <SidebarMenuButton asChild className="text-sm">
+                                <Link to={subItem.path}>
+                                  <span>{subItem.title}</span>
+                                </Link>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          ))}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </div>
                   ))}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton className="text-muted-foreground">
-                      <PlusCircle className="h-4 w-4" />
-                      <span>New Project</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </CollapsibleContent>
@@ -159,7 +197,7 @@ const ChatSidebar = () => {
                 <span className="flex-1 flex items-center">
                   {chatHistoryOpen ? 
                     <ChevronDown className="h-4 w-4 mr-2 text-muted-foreground" /> : 
-                    <ChevronUp className="h-4 w-4 mr-2 text-muted-foreground" />}
+                    <ChevronRight className="h-4 w-4 mr-2 text-muted-foreground" />}
                   Chat History
                 </span>
               </button>
