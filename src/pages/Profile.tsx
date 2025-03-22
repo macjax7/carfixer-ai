@@ -1,7 +1,6 @@
 
 import React from 'react';
 import Header from '../components/Header';
-import BottomNav from '../components/BottomNav';
 import { User, Settings, Bell, HelpCircle, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -49,7 +48,7 @@ const Profile: React.FC = () => {
     <div className="min-h-screen bg-background">
       <Header title="Profile" showBackButton={true} />
       
-      <main className="container max-w-md mx-auto px-4 py-6 pb-20">
+      <main className="container max-w-md mx-auto px-4 py-6">
         <div className="flex flex-col items-center mb-8 animate-fade-in">
           <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-4">
             {user?.photoURL ? (
@@ -99,8 +98,6 @@ const Profile: React.FC = () => {
           </button>
         </div>
       </main>
-      
-      <BottomNav />
     </div>
   );
 };

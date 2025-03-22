@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -8,6 +7,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Sidebar,
   SidebarContent,
@@ -28,7 +28,6 @@ const ChatSidebar = () => {
   const { user } = useAuth();
   const { state } = useSidebar();
   
-  // Simplified navigation items (removed Home, Diagnostics, Parts & Repairs)
   const primaryNavItems = [
     {
       title: "My Vehicles",
@@ -36,15 +35,13 @@ const ChatSidebar = () => {
       icon: Car,
     },
   ];
-  
-  // Example projects (unchanged)
+
   const userProjects = [
     { title: "Honda Civic Issues", path: "#" },
     { title: "Truck Maintenance", path: "#" },
     { title: "DIY Repair Notes", path: "#" },
   ];
 
-  // Example chat history (new)
   const chatHistory = [
     { title: "Check Engine Light P0420", timestamp: "2h ago", path: "#" },
     { title: "Battery Replacement Options", timestamp: "Yesterday", path: "#" },
@@ -56,10 +53,8 @@ const ChatSidebar = () => {
     <Sidebar>
       <SidebarHeader className="p-4">
         <div className="flex items-center justify-between">
-          {/* Sidebar toggle inside the sidebar */}
           <SidebarTrigger className="bg-background/80 backdrop-blur-sm rounded-md shadow-sm" />
           
-          {/* Search and New Chat buttons on the right */}
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <Search className="h-4 w-4" />
@@ -153,19 +148,16 @@ const ChatSidebar = () => {
       
       <SidebarFooter className="border-t p-4">
         <div className="flex items-center">
-          <div className="flex-shrink-0">
-            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-              {user?.email?.charAt(0).toUpperCase() || 'U'}
-            </div>
-          </div>
+          <Link to="/profile" className="flex-shrink-0">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback>
+                {user?.email?.charAt(0).toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
           <div className="ml-3 truncate">
             <p className="text-sm font-medium truncate">{user?.email || 'User'}</p>
           </div>
-          <Link to="/profile" className="ml-auto">
-            <Button variant="ghost" size="icon">
-              <Wrench className="h-4 w-4" />
-            </Button>
-          </Link>
         </div>
       </SidebarFooter>
     </Sidebar>

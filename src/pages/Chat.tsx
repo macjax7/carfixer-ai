@@ -53,8 +53,6 @@ const ChatHeader = () => {
 const Chat: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-background">
-      {/* Remove the header completely since we have the logo in the sidebar */}
-      
       <SidebarProvider>
         <div className="flex flex-1 w-full overflow-hidden">
           <ChatSidebar />
