@@ -24,7 +24,7 @@ const AIChat: React.FC = () => {
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isLoading]);
   
   return (
     <div className="flex flex-col h-full bg-background pt-14"> {/* Added pt-14 to account for header */}
