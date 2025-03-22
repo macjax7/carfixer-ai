@@ -29,7 +29,7 @@ export async function handleVehicleListing(data: any) {
         unreliableExtraction: true,
         error: extractedData.error,
         url,
-        errorMessage: extractedData.data.errorMessage || 'Could not extract vehicle information from the provided link.',
+        errorMessage: extractedData.data.errorMessage || 'Could not extract vehicle information from the provided link. The site may be blocking our access.',
         ...extractedData.data
       });
     }
@@ -38,15 +38,27 @@ export async function handleVehicleListing(data: any) {
     if (extractedData.data.unreliableExtraction) {
       console.warn('Data extraction was unreliable');
       
-      return createSuccessResponse({
-        ...extractedData.data,
-        analysis: {
+      // Attempt to use what data we have
+      const vehicleAnalyzer = new VehicleAnalyzerService();
+      let analysis;
+      
+      try {
+        analysis = await vehicleAnalyzer.analyzeVehicleListing(extractedData.data);
+      } catch (error) {
+        console.error('Error analyzing partial vehicle data:', error);
+        analysis = {
           reliability: "Unable to provide a reliability analysis as I couldn't extract sufficient vehicle information from the provided link.",
           marketValue: "I couldn't determine the market value as I was unable to extract sufficient vehicle information from the provided link.",
           maintenanceNeeds: "Maintenance needs cannot be determined without specific vehicle information, which I was unable to extract from the provided link.",
           redFlags: "I noticed a potential concern: I was unable to extract the vehicle details from this listing URL. This could mean the URL is invalid, requires authentication, or the listing has been removed.",
           recommendation: "I recommend sharing a different vehicle listing URL or manually providing the vehicle details (make, model, year, mileage, and price) for analysis."
-        }
+        };
+      }
+      
+      return createSuccessResponse({
+        ...extractedData.data,
+        analysis,
+        url
       });
     }
     

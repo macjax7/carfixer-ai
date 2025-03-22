@@ -39,16 +39,25 @@ export async function analyzeVehicleListing(url: string) {
     }
     
     // Check for extraction reliability flag
-    if (data.extractionFailed || data.unreliableExtraction) {
+    if (data.extractionFailed || (data.unreliableExtraction && !data.make && !data.model && !data.year)) {
       console.warn('Vehicle data extraction was unreliable or failed', data);
-      let errorMessage = data.errorMessage || 'Could not reliably extract vehicle information from the provided link';
+      let errorMessage = data.errorMessage || 'Could not reliably extract vehicle information from the provided link. Please try a different listing from another site.';
       throw new Error(errorMessage);
     }
     
-    // Verify essential data was extracted
-    if (!data.make && !data.model && !data.year) {
-      console.warn('Missing essential vehicle data (make, model, or year):', data);
-      throw new Error('Could not extract basic vehicle information from the provided link. The listing may require login or the URL may be invalid.');
+    // Check for partial extraction
+    if (data.unreliableExtraction) {
+      console.warn('Vehicle data extraction was partially successful', data);
+      // Continue with partial data if we have some basic info
+      if (data.make || data.model || data.year) {
+        console.log('Using partial vehicle data for analysis');
+      }
+    }
+    
+    // Verify we have at least some data to work with
+    if (!data.make && !data.model && !data.year && !data.price && !data.mileage) {
+      console.warn('Missing all essential vehicle data:', data);
+      throw new Error('Could not extract any vehicle information from the provided link. The listing may require login or the URL may be invalid.');
     }
     
     console.log('Vehicle listing analysis complete:', data);
