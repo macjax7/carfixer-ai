@@ -50,13 +50,8 @@ const ChatSidebar = () => {
 
   return (
     <Sidebar>
-      <SidebarHeader className="flex items-center p-4">
-        <div className="flex items-center gap-2">
-          <div className="rounded-md bg-carfix-600 p-1">
-            <Wrench className="h-5 w-5 text-white" />
-          </div>
-          <h1 className="text-lg font-semibold">CarFix AI</h1>
-        </div>
+      <SidebarHeader className="p-4">
+        <div className="h-5"></div>
       </SidebarHeader>
       
       <SidebarContent>

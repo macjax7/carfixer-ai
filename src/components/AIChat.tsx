@@ -27,7 +27,7 @@ const AIChat: React.FC = () => {
   }, [messages]);
   
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-background pt-14"> {/* Added pt-14 to account for header */}
       {/* Welcome message when no messages exist (except default) */}
       {messages.length === 1 && (
         <div className="flex-1 flex items-center justify-center">

@@ -19,7 +19,7 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({ handleSuggestedProm
           <button
             key={index}
             onClick={() => handleSuggestedPrompt(prompt)}
-            className="suggested-prompt-box"
+            className="suggested-prompt-box border border-border/60 shadow-sm hover:border-border/90 hover:shadow-md transition-all"
           >
             <LightbulbIcon className="h-5 w-5 mr-3 text-carfix-500 flex-shrink-0 mt-0.5" />
             <span>{prompt}</span>
