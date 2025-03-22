@@ -12,10 +12,10 @@ export async function handleImageAnalysis(data: any) {
     // Add vehicle specificity instructions when vehicle info is provided
     if (vehicleInfo && Object.keys(vehicleInfo).length > 0) {
       systemPrompt += ` Your analysis should consider the context of a ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}. Identify the exact part with its OEM part number if possible.`;
-      systemPrompt += ' Provide the following information in your response: 1) Part name and exact OEM part number, 2) Function and purpose of this part, 3) Common symptoms when this part fails, 4) Estimated replacement cost (OEM vs aftermarket), 5) Difficulty level for DIY replacement, and 6) Where to purchase replacement parts.';
+      systemPrompt += ' Provide the following information in your response: 1) Part name and exact OEM part number, 2) Function and purpose of this part, 3) Common symptoms when this part fails, 4) Estimated replacement cost (OEM vs aftermarket), 5) Difficulty level for DIY replacement, 6) Where to purchase replacement parts, and 7) A brief description of where this component is located in the vehicle.';
     } else {
       systemPrompt += ' If a specific vehicle is mentioned in the user prompt, provide information relevant to that vehicle including the OEM part number if possible. Otherwise, provide general information about the part.';
-      systemPrompt += ' Structure your response with these sections: 1) Part Identification (name and possible part numbers), 2) Function, 3) Replacement Information, and 4) Purchase Options.';
+      systemPrompt += ' Structure your response with these sections: 1) Part Identification (name and possible part numbers), 2) Function, 3) Replacement Information, 4) Purchase Options, and 5) Location in the vehicle.';
     }
     
     // For image analysis, we use GPT-4o with vision capabilities

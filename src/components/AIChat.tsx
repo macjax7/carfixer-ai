@@ -82,6 +82,8 @@ const AIChat: React.FC = () => {
                 sender={msg.sender}
                 text={msg.text}
                 timestamp={msg.timestamp}
+                image={msg.image}
+                componentDiagram={msg.componentDiagram}
               />
             ))}
             
