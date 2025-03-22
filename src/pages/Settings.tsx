@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -30,9 +31,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from '@/context/AuthContext';
-import { useVehicles } from '@/context/VehicleContext';
+import { useVehicles } from '@/hooks/use-vehicles';
 import { useNotifications } from '@/context/NotificationContext';
 import ChatSidebar from '@/components/chat/ChatSidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 // Settings page layout inspired by ChatGPT
 const Settings = () => {
@@ -408,44 +410,46 @@ const Settings = () => {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <ChatSidebar />
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-3xl mx-auto p-4 md:p-6">
-          <div className="bg-card shadow-md rounded-lg border">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-xl font-semibold">Settings</h2>
-              <Button variant="ghost" size="icon" onClick={handleClose}>
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-            
-            <div className="flex flex-col md:flex-row h-full">
-              {/* Sidebar */}
-              <div className="w-full md:w-64 p-2 md:border-r">
-                <div className="space-y-1">
-                  {sections.map((section) => (
-                    <Button
-                      key={section.id}
-                      variant={selectedSection === section.id ? "secondary" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setSelectedSection(section.id)}
-                    >
-                      <div className="mr-2">{section.icon}</div>
-                      <span>{section.label}</span>
-                    </Button>
-                  ))}
-                </div>
+      <SidebarProvider>
+        <ChatSidebar />
+        <div className="flex-1 overflow-auto">
+          <div className="max-w-3xl mx-auto p-4 md:p-6">
+            <div className="bg-card shadow-md rounded-lg border">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b">
+                <h2 className="text-xl font-semibold">Settings</h2>
+                <Button variant="ghost" size="icon" onClick={handleClose}>
+                  <X className="h-5 w-5" />
+                </Button>
               </div>
               
-              {/* Content */}
-              <div className="flex-1 p-4 md:p-6 overflow-auto">
-                {renderContent()}
+              <div className="flex flex-col md:flex-row h-full">
+                {/* Sidebar */}
+                <div className="w-full md:w-64 p-2 md:border-r">
+                  <div className="space-y-1">
+                    {sections.map((section) => (
+                      <Button
+                        key={section.id}
+                        variant={selectedSection === section.id ? "secondary" : "ghost"}
+                        className="w-full justify-start"
+                        onClick={() => setSelectedSection(section.id)}
+                      >
+                        <div className="mr-2">{section.icon}</div>
+                        <span>{section.label}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Content */}
+                <div className="flex-1 p-4 md:p-6 overflow-auto">
+                  {renderContent()}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </SidebarProvider>
     </div>
   );
 };
