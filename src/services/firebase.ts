@@ -16,7 +16,7 @@ import {
 } from "firebase/messaging";
 import { firebaseConfig } from "../config/firebase";
 
-// Initialize Firebase - fix the app initialization to prevent duplicate app errors
+// Initialize Firebase - ensure we only initialize once
 let app;
 try {
   app = initializeApp(firebaseConfig);
@@ -25,17 +25,20 @@ try {
     throw error;
   }
   // If we already have an app instance, use the existing one
-  app = initializeApp();
+  const apps = (window as any).firebase?.apps;
+  app = apps && apps.length ? apps[0] : initializeApp(firebaseConfig);
 }
 
 export const auth = getAuth(app);
 
 // Initialize Firebase Cloud Messaging
-let messaging: any;
-try {
-  messaging = getMessaging(app);
-} catch (error) {
-  console.error("Firebase messaging failed to initialize:", error);
+let messaging: any = null;
+if (typeof window !== 'undefined' && 'Notification' in window) {
+  try {
+    messaging = getMessaging(app);
+  } catch (error) {
+    console.error("Firebase messaging failed to initialize:", error);
+  }
 }
 
 // Authentication functions
