@@ -8,7 +8,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import ProfileMenu from '@/components/ProfileMenu';
 import {
   Sidebar,
   SidebarContent,
@@ -149,13 +149,7 @@ const ChatSidebar = () => {
       
       <SidebarFooter className="border-t p-4">
         <div className="flex items-center">
-          <Link to="/profile" className="flex-shrink-0">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback>
-                {user?.email?.charAt(0).toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-          </Link>
+          <ProfileMenu />
           <div className="ml-3 truncate">
             <p className="text-sm font-medium truncate">{user?.email || 'User'}</p>
           </div>

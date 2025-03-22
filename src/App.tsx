@@ -11,7 +11,6 @@ import { NotificationProvider } from "./context/NotificationContext";
 
 import Chat from "./pages/Chat";
 import Vehicles from "./pages/Vehicles";
-import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
@@ -45,11 +44,6 @@ const App = () => (
                   <Route path="/vehicles" element={
                     <ProtectedRoute>
                       <Vehicles />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/profile" element={
-                    <ProtectedRoute>
-                      <Profile />
                     </ProtectedRoute>
                   } />
                   <Route path="*" element={<NotFound />} />
