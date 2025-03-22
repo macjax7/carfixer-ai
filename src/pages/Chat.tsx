@@ -6,10 +6,10 @@ import AIChat from '../components/AIChat';
 
 const Chat: React.FC = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <Header title="AI Assistant" showBackButton={true} />
+    <div className="flex flex-col h-screen bg-background">
+      <Header title="CarFix AI" showBackButton={true} />
       
-      <main className="container max-w-md mx-auto px-4 py-2 pb-20">
+      <main className="flex-1 overflow-hidden">
         <AIChat />
       </main>
       
