@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { useVehicles } from '@/context/VehicleContext';
 
@@ -16,6 +17,7 @@ export async function sendChatMessage(messages: ChatMessage[], includeVehicleCon
     
     const { data, error } = await supabase.functions.invoke('openai', {
       body: {
+        service: 'diagnostic',
         action: 'chat',
         data: {
           messages: apiMessages,
@@ -40,7 +42,8 @@ export async function analyzeImage(imageUrl: string, prompt?: string) {
   try {
     const { data, error } = await supabase.functions.invoke('openai', {
       body: {
-        action: 'analyze-image',
+        service: 'image',
+        action: 'analyze',
         data: {
           image: imageUrl,
           prompt
@@ -68,7 +71,8 @@ export async function getDiagnosticInfo(params: {
   try {
     const { data, error } = await supabase.functions.invoke('openai', {
       body: {
-        action: 'diagnostic',
+        service: 'diagnostic',
+        action: 'analyze',
         data: params
       }
     });
@@ -94,7 +98,8 @@ export async function lookupPart(params: {
   try {
     const { data, error } = await supabase.functions.invoke('openai', {
       body: {
-        action: 'part-lookup',
+        service: 'parts',
+        action: 'lookup',
         data: params
       }
     });
@@ -119,7 +124,8 @@ export async function getRepairGuidance(params: {
   try {
     const { data, error } = await supabase.functions.invoke('openai', {
       body: {
-        action: 'repair-guidance',
+        service: 'repair',
+        action: 'guide',
         data: params
       }
     });
@@ -133,26 +139,49 @@ export async function getRepairGuidance(params: {
 }
 
 /**
- * Convert speech to text using OpenAI's Whisper API
+ * Decode a VIN number to get vehicle details
  */
-export async function convertSpeechToText(audioBase64: string) {
+export async function decodeVIN(vin: string) {
   try {
-    const { data, error } = await supabase.functions.invoke('voice-to-text', {
+    const { data, error } = await supabase.functions.invoke('openai', {
       body: {
-        audio: audioBase64
+        service: 'vehicle',
+        action: 'decode-vin',
+        data: { vin }
       }
     });
 
     if (error) throw new Error(error.message);
-    return data.text;
+    return data;
   } catch (error) {
-    console.error('Error converting speech to text:', error);
+    console.error('Error decoding VIN:', error);
     throw error;
   }
 }
 
 /**
- * Custom hook to use the OpenAI API with vehicle context
+ * Get live OBD-II sensor data
+ */
+export async function getOBDSensorData() {
+  try {
+    const { data, error } = await supabase.functions.invoke('openai', {
+      body: {
+        service: 'vehicle',
+        action: 'fetch-sensors',
+        data: {}
+      }
+    });
+
+    if (error) throw new Error(error.message);
+    return data.sensors;
+  } catch (error) {
+    console.error('Error getting OBD sensor data:', error);
+    throw error;
+  }
+}
+
+/**
+ * Custom hook to use the CarFix API with vehicle context
  */
 export function useOpenAI() {
   const { selectedVehicle } = useVehicles();
@@ -203,8 +232,12 @@ export function useOpenAI() {
     });
   };
   
-  const speechToText = async (audioBase64: string) => {
-    return convertSpeechToText(audioBase64);
+  const decodeVehicleVIN = async (vin: string) => {
+    return decodeVIN(vin);
+  };
+  
+  const getOBDData = async () => {
+    return getOBDSensorData();
   };
   
   return {
@@ -213,6 +246,7 @@ export function useOpenAI() {
     getDiagnostics,
     findParts,
     getRepairSteps,
-    speechToText
+    decodeVehicleVIN,
+    getOBDData
   };
 }
