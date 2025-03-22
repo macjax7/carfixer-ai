@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -59,10 +58,7 @@ const ChatSidebar = () => {
           </div>
           <h1 className="text-lg font-semibold">CarFix AI</h1>
         </div>
-        <div className="ml-auto hidden md:block">
-          {/* Only hide on mobile - show on desktop */}
-          <SidebarTrigger />
-        </div>
+        {/* Removed SidebarTrigger from header since we now have a persistent one in the main content */}
       </SidebarHeader>
       
       <SidebarContent>

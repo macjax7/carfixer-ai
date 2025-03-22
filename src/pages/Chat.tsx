@@ -15,8 +15,8 @@ const Chat: React.FC = () => {
           <ChatSidebar />
           
           <main className="flex-1 overflow-hidden relative">
-            {/* Add a persistent SidebarTrigger that's always visible */}
-            <div className="absolute top-4 left-4 z-20 md:hidden">
+            {/* Add persistent SidebarTrigger visible on all screen sizes and in all sidebar states */}
+            <div className="absolute top-4 left-4 z-20">
               <SidebarTrigger className="bg-background/80 backdrop-blur-sm rounded-md shadow-sm" />
             </div>
             <AIChat />
