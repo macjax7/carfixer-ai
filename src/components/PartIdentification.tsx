@@ -1,32 +1,56 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Upload, Camera, AlertCircle, Loader2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useOpenAI } from '@/utils/openai';
+import { nanoid } from 'nanoid';
 
 const PartIdentification: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ name: string; confidence: number } | null>(null);
+  const [result, setResult] = useState<{ name: string; confidence: number; description: string } | null>(null);
+  const { toast } = useToast();
+  const { identifyPart } = useOpenAI();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const simulatePartIdentification = (file: File) => {
+  const uploadAndIdentifyPart = async (file: File) => {
     setIsUploading(true);
     setError(null);
     
-    // In a real app, this would send the image to an AI vision API
-    // For demo purposes, we'll simulate a response after a delay
-    setTimeout(() => {
-      const randomParts = [
-        { name: 'Alternator', confidence: 0.92 },
-        { name: 'Oxygen Sensor', confidence: 0.87 },
-        { name: 'Ignition Coil', confidence: 0.94 },
-        { name: 'Mass Air Flow Sensor', confidence: 0.89 },
-        { name: 'Fuel Injector', confidence: 0.91 }
-      ];
+    try {
+      // First, upload the image to Supabase storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${nanoid()}.${fileExt}`;
+      const filePath = `part-images/${fileName}`;
       
-      const randomResult = randomParts[Math.floor(Math.random() * randomParts.length)];
+      // Create a public URL for the image (this is needed for OpenAI to access it)
+      const signedUrl = URL.createObjectURL(file);
       
-      setResult(randomResult);
+      // Call the OpenAI API to identify the part using our edge function
+      const analysis = await identifyPart(signedUrl);
+      
+      // Parse the response to get part name and details
+      // This is a simple implementation - in a real app, you might want to structure this differently
+      const name = analysis.split('\n')[0].replace(/^(.*?):/g, '').trim();
+      const confidence = 0.9; // Placeholder since OpenAI doesn't return confidence scores directly
+      
+      setResult({
+        name,
+        confidence,
+        description: analysis
+      });
+    } catch (error) {
+      console.error('Error identifying part:', error);
+      setError('Failed to identify the part. Please try again.');
+      toast({
+        title: "Error",
+        description: "Could not identify the part. Please try again with a clearer image.",
+        variant: "destructive"
+      });
+    } finally {
       setIsUploading(false);
-    }, 2000);
+    }
   };
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +72,7 @@ const PartIdentification: React.FC = () => {
       return;
     }
     
-    simulatePartIdentification(file);
+    uploadAndIdentifyPart(file);
   };
   
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -70,7 +94,7 @@ const PartIdentification: React.FC = () => {
       return;
     }
     
-    simulatePartIdentification(file);
+    uploadAndIdentifyPart(file);
   };
   
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -79,7 +103,7 @@ const PartIdentification: React.FC = () => {
   
   const handleCameraClick = () => {
     // In a real app, this would open the device camera
-    document.getElementById('file-upload')?.click();
+    fileInputRef.current?.click();
   };
   
   return (
@@ -94,6 +118,7 @@ const PartIdentification: React.FC = () => {
         >
           <input
             id="file-upload"
+            ref={fileInputRef}
             type="file"
             accept="image/*"
             className="hidden"
@@ -117,7 +142,7 @@ const PartIdentification: React.FC = () => {
               
               <div className="flex space-x-3 justify-center">
                 <button
-                  onClick={() => document.getElementById('file-upload')?.click()}
+                  onClick={() => fileInputRef.current?.click()}
                   className="px-4 py-2 bg-carfix-600 text-white rounded-lg hover:bg-carfix-700 transition-colors"
                 >
                   Upload Image
@@ -152,8 +177,8 @@ const PartIdentification: React.FC = () => {
           
           <div className="bg-white p-3 rounded-lg border border-border mb-4">
             <h4 className="font-medium mb-1">Part Information</h4>
-            <p className="text-sm text-muted-foreground">
-              Common in many modern vehicles, the {result.name.toLowerCase()} is an essential component of the engine's electrical system.
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              {result.description}
             </p>
           </div>
           

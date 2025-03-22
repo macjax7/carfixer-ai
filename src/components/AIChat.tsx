@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useDiagnostics } from '../context/DiagnosticContext';
 import { useVehicles } from '../context/VehicleContext';
@@ -6,6 +5,8 @@ import { Send, Image, Loader2, Mic, Sparkles, LightbulbIcon } from 'lucide-react
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Textarea } from './ui/textarea';
+import { useOpenAI, ChatMessage } from '@/utils/openai';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Message {
   id: string;
@@ -28,16 +29,18 @@ const AIChat: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { toast } = useToast();
   
   const { selectedVehicle } = useVehicles();
   const { currentSession } = useDiagnostics();
+  const { chatWithAI } = useOpenAI();
   
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!input.trim() || isLoading) return;
@@ -50,7 +53,7 @@ const AIChat: React.FC = () => {
       timestamp: new Date()
     };
     
-    setMessages([...messages, userMessage]);
+    setMessages(prevMessages => [...prevMessages, userMessage]);
     setInput('');
     setIsLoading(true);
     
@@ -59,28 +62,37 @@ const AIChat: React.FC = () => {
       textareaRef.current.style.height = 'auto';
     }
     
-    // In a real app, this would call an AI API
-    // For demo purposes, we'll simulate a response after a delay
-    setTimeout(() => {
-      const aiResponses = [
-        `Based on your ${selectedVehicle ? selectedVehicle.make + ' ' + selectedVehicle.model : 'vehicle'}'s symptoms, this could be related to the fuel system. I'd recommend checking the fuel pressure regulator and fuel injectors.`,
-        "If you're hearing a knocking sound from the engine, it could be a sign of worn bearings or low oil pressure. Have you checked the oil level recently?",
-        "For the P0420 code, the catalytic converter is likely not functioning efficiently. This could be due to an oxygen sensor issue or the converter itself being worn out.",
-        "The ABS light coming on is typically related to a wheel speed sensor or the ABS module itself. It would be good to scan for specific codes."
-      ];
+    try {
+      // Prepare the messages array for the API
+      const apiMessages: ChatMessage[] = messages
+        .filter(msg => msg.id !== '1') // Filter out the welcome message
+        .concat(userMessage)
+        .map(msg => ({
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.text
+        }));
       
-      const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
+      // Call the OpenAI API
+      const aiResponse = await chatWithAI(apiMessages);
       
       const aiMessage: Message = {
         id: Date.now().toString(),
         sender: 'ai',
-        text: randomResponse,
+        text: aiResponse,
         timestamp: new Date()
       };
       
-      setMessages((prev) => [...prev, aiMessage]);
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      toast({
+        title: "Error",
+        description: "Sorry, I couldn't process your request. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
   
   const handleImageUpload = () => {
