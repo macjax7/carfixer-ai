@@ -59,9 +59,19 @@ export const useChat = () => {
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error('Error getting AI response:', error);
+      
+      // Extract a more user-friendly error message if possible
+      let errorMessage = "Sorry, I couldn't process your request. Please try again.";
+      if (error instanceof Error) {
+        // Try to extract a more specific error if available
+        if (error.message.includes('OpenAI API error')) {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "Sorry, I couldn't process your request. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
