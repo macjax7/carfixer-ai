@@ -220,14 +220,14 @@ const ChatSidebar = () => {
                 <SidebarMenu>
                   {chatHistory.map((chat, index) => (
                     <SidebarMenuItem key={index}>
-                      <SidebarMenuButton asChild className="flex flex-col items-start py-1.5 px-2">
+                      <SidebarMenuButton asChild className="block w-full px-2 py-2">
                         <Link to={chat.path} className="w-full">
                           <div className="flex flex-col w-full">
-                            <span className="text-sm truncate text-sidebar-foreground">{chat.title}</span>
-                            <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                              <Clock className="h-3 w-3" />
-                              {chat.timestamp}
-                            </span>
+                            <span className="text-base font-normal truncate text-sidebar-foreground">{chat.title}</span>
+                            <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                              <Clock className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">{chat.timestamp}</span>
+                            </div>
                           </div>
                         </Link>
                       </SidebarMenuButton>
