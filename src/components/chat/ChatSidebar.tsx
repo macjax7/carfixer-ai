@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Car, Wrench, PlusCircle, FolderPlus,
-  MessageSquare, Clock
+  MessageSquare, Clock, Search
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -17,12 +18,15 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarFooter
+  SidebarFooter,
+  SidebarTrigger,
+  useSidebar
 } from '@/components/ui/sidebar';
 
 const ChatSidebar = () => {
   const location = useLocation();
   const { user } = useAuth();
+  const { state } = useSidebar();
   
   // Simplified navigation items (removed Home, Diagnostics, Parts & Repairs)
   const primaryNavItems = [
@@ -51,7 +55,26 @@ const ChatSidebar = () => {
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <div className="h-5"></div>
+        <div className="flex items-center justify-between">
+          {/* Sidebar toggle inside the sidebar */}
+          <SidebarTrigger className="bg-background/80 backdrop-blur-sm rounded-md shadow-sm" />
+          
+          {/* Search and New Chat buttons on the right */}
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Search className="h-4 w-4" />
+            </Button>
+            
+            <Button 
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1 h-8"
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span className="text-xs">New Chat</span>
+            </Button>
+          </div>
+        </div>
       </SidebarHeader>
       
       <SidebarContent>

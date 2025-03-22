@@ -10,18 +10,35 @@ import { Link } from 'react-router-dom';
 const ChatHeader = () => {
   const { state } = useSidebar();
   
+  // Only show these UI elements when the sidebar is collapsed
+  if (state === 'collapsed') {
+    return (
+      <div className="absolute top-0 left-0 right-0 z-10 px-2 py-3 flex items-center bg-background/80 backdrop-blur-sm">
+        <div className="flex items-center transition-all duration-200 ml-2">
+          <SidebarTrigger className="bg-background/80 backdrop-blur-sm rounded-md shadow-sm mr-2" />
+          
+          <button 
+            className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-border/60 hover:bg-secondary transition-colors mr-3"
+          >
+            <PlusCircle className="h-4 w-4" />
+            <span>New Chat</span>
+          </button>
+          
+          <Link to="/" className="flex items-center gap-2">
+            <div className="rounded-md bg-carfix-600 p-1">
+              <Wrench className="h-5 w-5 text-white" />
+            </div>
+            <h1 className="text-lg font-semibold hidden sm:block">CarFix AI</h1>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  
+  // When sidebar is expanded, only show the CarFix AI logo
   return (
     <div className="absolute top-0 left-0 right-0 z-10 px-2 py-3 flex items-center bg-background/80 backdrop-blur-sm">
-      <div className={`flex items-center transition-all duration-200 ${state === 'expanded' ? 'ml-0' : 'ml-2'}`}>
-        <SidebarTrigger className="bg-background/80 backdrop-blur-sm rounded-md shadow-sm mr-2" />
-        
-        <button 
-          className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-border/60 hover:bg-secondary transition-colors mr-3"
-        >
-          <PlusCircle className="h-4 w-4" />
-          <span>New Chat</span>
-        </button>
-        
+      <div className="flex items-center ml-4">
         <Link to="/" className="flex items-center gap-2">
           <div className="rounded-md bg-carfix-600 p-1">
             <Wrench className="h-5 w-5 text-white" />
