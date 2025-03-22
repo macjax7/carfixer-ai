@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CheckCircle, Car, AlertTriangle, DollarSign, Wrench, Star, ExternalLink } from 'lucide-react';
+import { CheckCircle, Car, AlertTriangle, DollarSign, Wrench, Star, ExternalLink, Calendar, Gauge } from 'lucide-react';
 
 interface VehicleListingAnalysisProps {
   vehicleListingAnalysis: {
@@ -49,10 +49,54 @@ const VehicleListingAnalysis: React.FC<VehicleListingAnalysisProps> = ({
     }
   };
 
+  // Get platform name from URL
+  const getPlatformName = (url: string): string => {
+    const lowerUrl = url.toLowerCase();
+    if (lowerUrl.includes('craigslist.org')) return 'Craigslist';
+    if (lowerUrl.includes('facebook.com') || lowerUrl.includes('marketplace')) return 'Facebook Marketplace';
+    if (lowerUrl.includes('cargurus.com')) return 'CarGurus';
+    if (lowerUrl.includes('edmunds.com')) return 'Edmunds';
+    if (lowerUrl.includes('autotrader.com')) return 'AutoTrader';
+    if (lowerUrl.includes('cars.com')) return 'Cars.com';
+    if (lowerUrl.includes('truecar.com')) return 'TrueCar';
+    if (lowerUrl.includes('carmax.com')) return 'CarMax';
+    if (lowerUrl.includes('ebay.com')) return 'eBay Motors';
+    return 'Listing Site';
+  };
+
   // Determine if we have enough vehicle info to show the full header
-  const hasVehicleInfo = vehicleListingAnalysis.make && 
-                         vehicleListingAnalysis.model && 
+  const hasVehicleInfo = vehicleListingAnalysis.make || 
+                         vehicleListingAnalysis.model || 
                          vehicleListingAnalysis.year;
+
+  // Get class for data status (red for missing data, green for present)
+  const getStatusClass = (value: any, isImportant = false) => {
+    if (value === undefined || value === null || value === '') {
+      return isImportant ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400';
+    }
+    return 'text-green-600 dark:text-green-400';
+  };
+
+  // Get vehicle title - formatted based on available info
+  const getVehicleTitle = () => {
+    const { year, make, model } = vehicleListingAnalysis;
+    
+    if (year && make && model) {
+      return `${year} ${make} ${model}`;
+    } else if (make && model) {
+      return `${make} ${model}`;
+    } else if (year && (make || model)) {
+      return `${year} ${make || model}`;
+    } else if (make) {
+      return make;
+    } else if (model) {
+      return model;
+    } else if (year) {
+      return `${year} Vehicle`;
+    }
+    
+    return "Vehicle Listing";
+  };
 
   return (
     <div className="mt-4 border border-border/60 rounded-lg overflow-hidden bg-background/50 shadow-sm">
@@ -61,21 +105,29 @@ const VehicleListingAnalysis: React.FC<VehicleListingAnalysisProps> = ({
         <div className="flex items-center gap-2 mb-2 text-carfix-600">
           <Car className="h-4 w-4" />
           <h4 className="font-medium">Vehicle Listing Analysis</h4>
+          <span className="text-xs bg-carfix-100 dark:bg-carfix-900/50 text-carfix-800 dark:text-carfix-300 px-2 py-0.5 rounded-full">
+            {getPlatformName(vehicleListingAnalysis.url)}
+          </span>
         </div>
         
         <div className="flex flex-col md:flex-row gap-4">
           {/* Vehicle image (if available) */}
           {vehicleListingAnalysis.imageUrl && (
-            <div className="md:w-2/5 rounded-md overflow-hidden border border-border/60 bg-black/5">
+            <div className="md:w-2/5 rounded-md overflow-hidden border border-border/60 bg-black/5 relative">
               <img 
                 src={vehicleListingAnalysis.imageUrl} 
-                alt={hasVehicleInfo ? 
-                  `${vehicleListingAnalysis.year} ${vehicleListingAnalysis.make} ${vehicleListingAnalysis.model}` : 
-                  "Vehicle Listing"}
+                alt={hasVehicleInfo ? getVehicleTitle() : "Vehicle Listing"}
                 className="w-full object-cover h-48 md:h-40"
                 onError={(e) => {
                   // Hide image on error
                   (e.target as HTMLImageElement).style.display = 'none';
+                  // Add a placeholder background
+                  (e.target as HTMLImageElement).parentElement!.classList.add('bg-muted');
+                  // Add a placeholder icon
+                  const placeholder = document.createElement('div');
+                  placeholder.className = 'absolute inset-0 flex items-center justify-center text-muted-foreground';
+                  placeholder.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>';
+                  (e.target as HTMLImageElement).parentElement!.appendChild(placeholder);
                 }}
               />
             </div>
@@ -85,25 +137,53 @@ const VehicleListingAnalysis: React.FC<VehicleListingAnalysisProps> = ({
           <div className={`${vehicleListingAnalysis.imageUrl ? 'md:w-3/5' : 'w-full'}`}>
             {hasVehicleInfo && (
               <h3 className="text-lg font-semibold mb-1">
-                {vehicleListingAnalysis.year} {vehicleListingAnalysis.make} {vehicleListingAnalysis.model}
+                {getVehicleTitle()}
               </h3>
             )}
             
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-              {vehicleListingAnalysis.price && (
-                <div>
-                  <span className="text-muted-foreground">Price:</span>{' '}
-                  <span className="font-medium">{formatPrice(vehicleListingAnalysis.price)}</span>
-                </div>
-              )}
+              {/* Year info */}
+              <div className={getStatusClass(vehicleListingAnalysis.year, true)}>
+                <span className="inline-flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span className="text-muted-foreground">Year:</span>
+                </span>{' '}
+                <span className="font-medium">
+                  {vehicleListingAnalysis.year || 'Not specified'}
+                </span>
+              </div>
               
-              {vehicleListingAnalysis.mileage && (
-                <div>
-                  <span className="text-muted-foreground">Mileage:</span>{' '}
-                  <span className="font-medium">{formatMileage(vehicleListingAnalysis.mileage)}</span>
-                </div>
-              )}
+              {/* Make/Model info */}
+              <div className={getStatusClass(vehicleListingAnalysis.make || vehicleListingAnalysis.model, true)}>
+                <span className="inline-flex items-center gap-1">
+                  <Car className="h-3.5 w-3.5" />
+                  <span className="text-muted-foreground">Make/Model:</span>
+                </span>{' '}
+                <span className="font-medium">
+                  {vehicleListingAnalysis.make || ''} {vehicleListingAnalysis.model || ''}
+                  {!vehicleListingAnalysis.make && !vehicleListingAnalysis.model && 'Not specified'}
+                </span>
+              </div>
               
+              {/* Price info */}
+              <div className={getStatusClass(vehicleListingAnalysis.price)}>
+                <span className="inline-flex items-center gap-1">
+                  <DollarSign className="h-3.5 w-3.5" />
+                  <span className="text-muted-foreground">Price:</span>
+                </span>{' '}
+                <span className="font-medium">{formatPrice(vehicleListingAnalysis.price)}</span>
+              </div>
+              
+              {/* Mileage info */}
+              <div className={getStatusClass(vehicleListingAnalysis.mileage)}>
+                <span className="inline-flex items-center gap-1">
+                  <Gauge className="h-3.5 w-3.5" />
+                  <span className="text-muted-foreground">Mileage:</span>
+                </span>{' '}
+                <span className="font-medium">{formatMileage(vehicleListingAnalysis.mileage)}</span>
+              </div>
+              
+              {/* VIN info */}
               {vehicleListingAnalysis.vin && (
                 <div className="col-span-2 mt-1">
                   <span className="text-muted-foreground">VIN:</span>{' '}

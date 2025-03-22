@@ -25,20 +25,39 @@ export class FirecrawlService {
       try {
         console.log(`Attempt ${attempts + 1}/${this.maxRetries + 1} for URL: ${url}`);
         
-        // Configure the crawl request
+        // Configure the crawl request with improved selectors for vehicle listings
         const requestBody = {
           url,
           limit: 1, // We only need the listing page itself
           scrapeOptions: {
             formats: ['markdown', 'html'], // Get content in both markdown and HTML format
-            selector: '.vehicle-details, .listing-details, .vehicle-info, .listing-content, .marketplace-item, article, .vdp-content, .vdp-details', // Enhanced selectors for vehicle listings
-            followLinks: false, // Don't follow links on the page
-            waitUntil: 'networkidle0', // Wait until network is idle (improves success with JS-heavy sites)
-            timeout: 20000, // 20 second timeout for JS-heavy sites
-            javascript: true, // Ensure JavaScript execution
+            // Enhanced selectors targeting common vehicle listing elements across different sites
+            selector: [
+              // Vehicle details containers
+              '.vehicle-details', '.listing-details', '.vehicle-info', '.vdp-content', '.vdp-details',
+              // Facebook Marketplace selectors
+              '[data-testid="marketplace_pdp_container"]', '.x1qjc9v5', '.x9f619',
+              // Craigslist selectors
+              '#postingbody', '.attrgroup', '.mapAndAttrs',
+              // CarGurus selectors
+              '.cg-listing-key-details', '.cg-listing-attributes', '.cg-listing-description',
+              // AutoTrader selectors
+              '.first-price', '.about-section', '.vehicle-info',
+              // Generic selectors
+              '.price', '.mileage', '.vin', '.description',
+              // Fallback to broader content if specific selectors fail
+              'article', 'main', '#content', '.content'
+            ].join(', '),
+            followLinks: false,
+            waitUntil: 'networkidle0', // Wait until network is idle for more JS-heavy sites
+            timeout: 30000, // Increased timeout for slower sites
+            javascript: true, // Ensure JavaScript execution for dynamic content
             imagesAndCSSRequired: true, // Load images and CSS for better rendering
+            scrollToBottom: true, // Scroll to load any lazy-loaded content
             extraHTTPHeaders: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36',
+              'Accept-Language': 'en-US,en;q=0.9',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'
             }
           }
         };
@@ -165,9 +184,14 @@ export class FirecrawlService {
       // Common patterns for vehicle listing images
       const imgPatterns = [
         /<meta\s+property="og:image"\s+content="([^"]+)"/i,
-        /<img[^>]+class="[^"]*(?:main-image|primary-image|hero-image|gallery-image)[^"]*"[^>]+src="([^"]+)"/i,
-        /<img[^>]+id="[^"]*(?:main-image|primary-image|hero)[^"]*"[^>]+src="([^"]+)"/i,
-        /<img[^>]+src="([^"]+(?:jpg|jpeg|png|webp))"[^>]+(?:alt="[^"]*(?:vehicle|car|truck|auto)[^"]*"|class="[^"]*(?:vehicle|car|truck|auto)[^"]*")/i
+        /<meta\s+content="([^"]+)"\s+property="og:image"/i,
+        /<img[^>]+class="[^"]*(?:main-image|primary-image|hero-image|gallery-image|carousel-image)[^"]*"[^>]+src="([^"]+)"/i,
+        /<img[^>]+id="[^"]*(?:main-image|primary-image|hero|main-photo)[^"]*"[^>]+src="([^"]+)"/i,
+        /<img[^>]+src="([^"]+(?:jpg|jpeg|png|webp))"[^>]+(?:alt="[^"]*(?:vehicle|car|truck|auto)[^"]*"|class="[^"]*(?:vehicle|car|truck|auto)[^"]*")/i,
+        // Facebook Marketplace specific patterns
+        /<div[^>]+class="[^"]*(?:x1rg5ohu|x1n2onr6)[^"]*"[^>]*>[\s\S]*?<img[^>]+src="([^"]+)"/i,
+        // Craigslist specific patterns
+        /<div[^>]+id="thumbs"[^>]*>[\s\S]*?<a[^>]+href="([^"]+)"/i
       ];
       
       for (const pattern of imgPatterns) {
