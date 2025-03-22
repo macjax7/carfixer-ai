@@ -31,14 +31,19 @@ export class FirecrawlService {
           limit: 1, // We only need the listing page itself
           scrapeOptions: {
             formats: ['markdown', 'html'], // Get content in both markdown and HTML format
-            selector: '.vehicle-details, .listing-details, .vehicle-info, .listing-content, .marketplace-item', // Common selectors for vehicle listings
+            selector: '.vehicle-details, .listing-details, .vehicle-info, .listing-content, .marketplace-item, article, .vdp-content, .vdp-details', // Enhanced selectors for vehicle listings
             followLinks: false, // Don't follow links on the page
             waitUntil: 'networkidle0', // Wait until network is idle (improves success with JS-heavy sites)
-            timeout: 15000, // 15 second timeout
+            timeout: 20000, // 20 second timeout for JS-heavy sites
+            javascript: true, // Ensure JavaScript execution
+            imagesAndCSSRequired: true, // Load images and CSS for better rendering
+            extraHTTPHeaders: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
           }
         };
         
-        console.log(`Request payload configured with selectors for vehicle listings`);
+        console.log(`Request payload configured with enhanced selectors for vehicle listings`);
         
         // Make request to Firecrawl API
         console.log(`Sending request to Firecrawl API...`);
@@ -150,5 +155,56 @@ export class FirecrawlService {
       success: false,
       error: 'Maximum retry attempts exceeded'
     };
+  }
+  
+  /**
+   * Attempt to extract the main vehicle image URL from HTML content
+   */
+  extractMainImageUrl(htmlContent: string): string | null {
+    try {
+      // Common patterns for vehicle listing images
+      const imgPatterns = [
+        /<meta\s+property="og:image"\s+content="([^"]+)"/i,
+        /<img[^>]+class="[^"]*(?:main-image|primary-image|hero-image|gallery-image)[^"]*"[^>]+src="([^"]+)"/i,
+        /<img[^>]+id="[^"]*(?:main-image|primary-image|hero)[^"]*"[^>]+src="([^"]+)"/i,
+        /<img[^>]+src="([^"]+(?:jpg|jpeg|png|webp))"[^>]+(?:alt="[^"]*(?:vehicle|car|truck|auto)[^"]*"|class="[^"]*(?:vehicle|car|truck|auto)[^"]*")/i
+      ];
+      
+      for (const pattern of imgPatterns) {
+        const match = htmlContent.match(pattern);
+        if (match && match[1]) {
+          return match[1];
+        }
+      }
+      
+      // Fallback: try to find any reasonably sized image
+      const imgTagRegex = /<img[^>]+src="([^"]+(?:jpg|jpeg|png|webp))"[^>]+(?:width=["'](\d+)["']|height=["'](\d+)["'])/gi;
+      let match;
+      const imgCandidates = [];
+      
+      while ((match = imgTagRegex.exec(htmlContent)) !== null) {
+        const width = match[2] ? parseInt(match[2], 10) : 0;
+        const height = match[3] ? parseInt(match[3], 10) : 0;
+        
+        // Only consider reasonably sized images
+        if (width > 300 || height > 300) {
+          imgCandidates.push({
+            url: match[1],
+            size: width * height
+          });
+        }
+      }
+      
+      // Sort by size (descending) and take the largest
+      if (imgCandidates.length > 0) {
+        imgCandidates.sort((a, b) => b.size - a.size);
+        return imgCandidates[0].url;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error extracting image URL:', error);
+      return null;
+    }
   }
 }

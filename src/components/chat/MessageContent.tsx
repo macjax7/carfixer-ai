@@ -9,23 +9,31 @@ const MessageContent: React.FC<MessageContentProps> = ({
 }) => {
   // Convert URLs in text to clickable links
   const renderTextWithLinks = (content: string) => {
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    // Enhanced URL regex that matches more URL formats
+    const urlRegex = /(https?:\/\/[^\s<]+[^<,.:\s])/g;
     const parts = content.split(urlRegex);
     
     return parts.map((part, index) => {
       if (part.match(urlRegex)) {
+        // This is a URL, create a link
+        const truncatedUrl = part.length > 50 
+          ? part.substring(0, 40) + '...' + part.substring(part.length - 10)
+          : part;
+          
         return (
           <a 
             key={index} 
             href={part} 
             target="_blank" 
             rel="noopener noreferrer" 
-            className={`${sender === 'user' ? 'text-white underline' : 'text-blue-500 hover:underline'}`}
+            className={`${sender === 'user' ? 'text-white underline opacity-90 hover:opacity-100' : 'text-blue-500 hover:underline'}`}
+            title={part}
           >
-            {part}
+            {truncatedUrl}
           </a>
         );
       }
+      // This is regular text, just render it
       return <span key={index}>{part}</span>;
     });
   };
