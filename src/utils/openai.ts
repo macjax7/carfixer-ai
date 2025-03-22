@@ -146,7 +146,7 @@ export async function speechToText(audioBlob: Blob) {
   try {
     // Convert blob to base64
     const reader = new FileReader();
-    return new Promise((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
       reader.onloadend = async () => {
         try {
           const base64data = (reader.result as string).split(',')[1];

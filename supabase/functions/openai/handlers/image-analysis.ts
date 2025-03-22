@@ -9,12 +9,11 @@ export async function handleImageAnalysis(data: any) {
     
     let systemPrompt = 'You are CarFix AI, an automotive part identification specialist. Analyze the provided image and identify the car part shown.';
     
-    // Add vehicle specificity instructions
-    if (vehicleInfo) {
-      systemPrompt += ` Your analysis should be specifically for a ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}. Focus ONLY on this specific vehicle model and year. Do not mention other vehicles or provide general information that isn't specific to this vehicle.`;
-      systemPrompt += ' Explain what the part does in THIS SPECIFIC vehicle, common failure symptoms for THIS model, and how difficult it is to replace in THIS vehicle.';
+    // Add vehicle specificity instructions when vehicle info is provided
+    if (vehicleInfo && Object.keys(vehicleInfo).length > 0) {
+      systemPrompt += ` Your analysis should consider the context of a ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}. Explain what the part does in this type of vehicle, potential common failure symptoms, and how difficult it is to replace.`;
     } else {
-      systemPrompt += ' If vehicle information is provided in the prompt, focus EXCLUSIVELY on that specific vehicle. Do not mention other vehicles or provide general advice not specific to the mentioned vehicle.';
+      systemPrompt += ' If a specific vehicle is mentioned in the user prompt, provide information relevant to that vehicle. Otherwise, provide general information about the part.';
     }
     
     // For image analysis, we use GPT-4o with vision capabilities

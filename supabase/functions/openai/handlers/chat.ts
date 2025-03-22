@@ -11,14 +11,15 @@ export async function handleChatRequest(data: any) {
       throw new Error('No messages provided for chat request');
     }
     
+    // Modified system prompt to allow answering about any vehicle mentioned by the user
     let systemPrompt = 'You are CarFix AI, an automotive diagnostic assistant. Provide helpful, accurate advice about vehicle problems, maintenance, and repairs. Always be clear when a repair requires professional help.';
     
-    // Updated to include strict focus on the specific vehicle mentioned
-    systemPrompt += ' IMPORTANT: Focus ONLY on the specific vehicle the user is asking about. Do NOT provide general advice or mention other vehicles in your responses. If vehicle information is provided, tailor your answer exclusively to that specific make, model, and year.';
+    // Updated to encourage focusing on the specific vehicle mentioned in the query, not just saved vehicles
+    systemPrompt += ' IMPORTANT: Focus on the specific vehicle the user is asking about in their query. Provide detailed, accurate information for the exact make, model, and year mentioned in the user\'s message. Do not restrict your answers to only vehicles saved in the user\'s profile.';
     
-    if (includeVehicleContext && vehicleInfo) {
-      systemPrompt += ` The user's vehicle is a ${vehicleInfo.year || ''} ${vehicleInfo.make || ''} ${vehicleInfo.model || ''}.`;
-      systemPrompt += ' Your answer must be exclusively focused on this specific vehicle. Do not mention or compare with other vehicles.';
+    // If user has a selected vehicle in their profile, mention it but don't restrict answers to only that vehicle
+    if (includeVehicleContext && vehicleInfo && Object.keys(vehicleInfo).length > 0) {
+      systemPrompt += ` The user's currently selected vehicle is a ${vehicleInfo.year || ''} ${vehicleInfo.make || ''} ${vehicleInfo.model || ''}, but you should still provide assistance for any vehicle they ask about in their message.`;
     }
 
     const requestMessages = [
