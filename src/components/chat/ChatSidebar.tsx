@@ -1,14 +1,16 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Car, Wrench, PlusCircle, FolderPlus,
-  MessageSquare, Clock, Search
+  MessageSquare, Clock, Search,
+  ChevronDown, ChevronUp, Folder
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import ProfileMenu from '@/components/ProfileMenu';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Sidebar,
   SidebarContent,
@@ -28,6 +30,10 @@ const ChatSidebar = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { state } = useSidebar();
+  
+  // State for collapsible sections
+  const [projectsOpen, setProjectsOpen] = useState(true);
+  const [chatHistoryOpen, setChatHistoryOpen] = useState(true);
   
   const primaryNavItems = [
     {
@@ -96,54 +102,89 @@ const ChatSidebar = () => {
         </SidebarGroup>
         
         <SidebarGroup className="mt-4 pt-2 border-t border-border">
-          <div className="flex items-center">
-            <SidebarGroupLabel>Projects</SidebarGroupLabel>
-            <Button variant="ghost" size="icon" className="ml-auto mr-2 h-7 w-7">
-              <FolderPlus className="h-4 w-4" />
-            </Button>
-          </div>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {userProjects.map((project) => (
-                <SidebarMenuItem key={project.title}>
-                  <SidebarMenuButton asChild>
-                    <Link to={project.path}>
-                      <span>{project.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <PlusCircle className="h-4 w-4" />
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <Collapsible
+            open={projectsOpen}
+            onOpenChange={setProjectsOpen}
+            className="w-full"
+          >
+            <div className="flex items-center">
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center w-full p-2 text-sm font-medium hover:bg-sidebar-accent rounded-md transition-colors">
+                  <span className="flex-1 flex items-center">
+                    {projectsOpen ? 
+                      <ChevronDown className="h-4 w-4 mr-2 text-muted-foreground" /> : 
+                      <ChevronUp className="h-4 w-4 mr-2 text-muted-foreground" />}
+                    Projects
+                  </span>
+                  <Button variant="ghost" size="icon" className="ml-auto h-7 w-7">
+                    <FolderPlus className="h-4 w-4" />
+                  </Button>
+                </button>
+              </CollapsibleTrigger>
+            </div>
+            
+            <CollapsibleContent className="transition-all duration-200 ease-in-out">
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {userProjects.map((project) => (
+                    <SidebarMenuItem key={project.title}>
+                      <SidebarMenuButton asChild>
+                        <Link to={project.path} className="flex items-center">
+                          <Folder className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <span>{project.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton className="text-muted-foreground">
+                      <PlusCircle className="h-4 w-4" />
+                      <span>New Project</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </Collapsible>
         </SidebarGroup>
         
         <SidebarGroup className="mt-4 pt-2 border-t border-border">
-          <SidebarGroupLabel>Chat History</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {chatHistory.map((chat, index) => (
-                <SidebarMenuItem key={index}>
-                  <SidebarMenuButton asChild>
-                    <Link to={chat.path} className="flex flex-col items-start">
-                      <span className="flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                        <span className="truncate">{chat.title}</span>
-                      </span>
-                      <span className="text-xs text-muted-foreground flex items-center gap-1 pl-6">
-                        <Clock className="h-3 w-3" />
-                        {chat.timestamp}
-                      </span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <Collapsible
+            open={chatHistoryOpen}
+            onOpenChange={setChatHistoryOpen}
+            className="w-full"
+          >
+            <CollapsibleTrigger asChild>
+              <button className="flex items-center w-full p-2 text-sm font-medium hover:bg-sidebar-accent rounded-md transition-colors">
+                <span className="flex-1 flex items-center">
+                  {chatHistoryOpen ? 
+                    <ChevronDown className="h-4 w-4 mr-2 text-muted-foreground" /> : 
+                    <ChevronUp className="h-4 w-4 mr-2 text-muted-foreground" />}
+                  Chat History
+                </span>
+              </button>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent className="transition-all duration-200 ease-in-out">
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {chatHistory.map((chat, index) => (
+                    <SidebarMenuItem key={index}>
+                      <SidebarMenuButton asChild>
+                        <Link to={chat.path} className="flex flex-col items-start">
+                          <span className="truncate">{chat.title}</span>
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {chat.timestamp}
+                          </span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </Collapsible>
         </SidebarGroup>
       </SidebarContent>
       
