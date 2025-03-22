@@ -48,6 +48,13 @@ const ChatSidebar = () => {
       [project]: !prev[project]
     }));
   };
+  
+  // Handle creating a new project
+  const handleNewProject = (e) => {
+    e.stopPropagation(); // Prevent triggering the parent collapsible
+    // Add new project functionality here
+    console.log("Create new project");
+  };
 
   const primaryNavItems = [
     {
@@ -132,18 +139,23 @@ const ChatSidebar = () => {
           >
             <div className="flex items-center">
               <CollapsibleTrigger asChild>
-                <button className="flex items-center w-full p-2 text-sm font-medium hover:bg-sidebar-accent rounded-md transition-colors">
+                <button className="flex items-center flex-grow p-2 text-sm font-medium hover:bg-sidebar-accent rounded-md transition-colors">
                   <span className="flex-1 flex items-center">
                     {projectsOpen ? 
                       <ChevronDown className="h-4 w-4 mr-2 text-muted-foreground" /> : 
                       <ChevronRight className="h-4 w-4 mr-2 text-muted-foreground" />}
                     Projects
                   </span>
-                  <Button variant="ghost" size="icon" className="ml-auto h-7 w-7">
-                    <FolderPlus className="h-4 w-4" />
-                  </Button>
                 </button>
               </CollapsibleTrigger>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-7 w-7 mr-2" 
+                onClick={handleNewProject}
+              >
+                <FolderPlus className="h-4 w-4" />
+              </Button>
             </div>
             
             <CollapsibleContent className="transition-all duration-200 ease-in-out">
@@ -208,13 +220,15 @@ const ChatSidebar = () => {
                 <SidebarMenu>
                   {chatHistory.map((chat, index) => (
                     <SidebarMenuItem key={index}>
-                      <SidebarMenuButton asChild>
-                        <Link to={chat.path} className="flex flex-col items-start">
-                          <span className="truncate">{chat.title}</span>
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {chat.timestamp}
-                          </span>
+                      <SidebarMenuButton asChild className="flex flex-col items-start py-1.5 px-2">
+                        <Link to={chat.path} className="w-full">
+                          <div className="flex flex-col w-full">
+                            <span className="text-sm truncate text-sidebar-foreground">{chat.title}</span>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                              <Clock className="h-3 w-3" />
+                              {chat.timestamp}
+                            </span>
+                          </div>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
