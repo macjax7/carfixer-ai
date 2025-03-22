@@ -1,7 +1,6 @@
 
 import React from 'react';
 import Header from '../components/Header';
-import BottomNav from '../components/BottomNav';
 import DiagnosticResult from '../components/DiagnosticResult';
 import { useVehicles } from '../context/VehicleContext';
 import { useDiagnostics } from '../context/DiagnosticContext';
@@ -135,8 +134,6 @@ const Index: React.FC = () => {
           </div>
         )}
       </main>
-      
-      <BottomNav />
     </div>
   );
 };

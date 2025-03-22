@@ -1,7 +1,6 @@
 
 import React from 'react';
 import Header from '../components/Header';
-import BottomNav from '../components/BottomNav';
 import VehicleManager from '../components/VehicleManager';
 
 const Vehicles: React.FC = () => {
@@ -12,8 +11,6 @@ const Vehicles: React.FC = () => {
       <main className="container max-w-md mx-auto px-4 py-6">
         <VehicleManager />
       </main>
-      
-      <BottomNav />
     </div>
   );
 };
