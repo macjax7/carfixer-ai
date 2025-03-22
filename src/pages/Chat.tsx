@@ -3,7 +3,7 @@ import React from 'react';
 import Header from '../components/Header';
 import AIChat from '../components/AIChat';
 import ChatSidebar from '../components/chat/ChatSidebar';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 
 const Chat: React.FC = () => {
   return (
@@ -14,7 +14,11 @@ const Chat: React.FC = () => {
         <div className="flex flex-1 w-full overflow-hidden">
           <ChatSidebar />
           
-          <main className="flex-1 overflow-hidden">
+          <main className="flex-1 overflow-hidden relative">
+            {/* Add a persistent SidebarTrigger that's always visible */}
+            <div className="absolute top-4 left-4 z-20 md:hidden">
+              <SidebarTrigger className="bg-background/80 backdrop-blur-sm rounded-md shadow-sm" />
+            </div>
             <AIChat />
           </main>
         </div>
