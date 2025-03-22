@@ -1,4 +1,3 @@
-
 import { corsHeaders, createSuccessResponse, createErrorResponse } from '../utils.ts';
 import { FirecrawlService } from '../services/firecrawl.ts';
 
@@ -53,7 +52,7 @@ async function extractListingData(url: string) {
           console.log('Successfully extracted data with Firecrawl');
           
           // Process the crawled data to extract vehicle information
-          const vehicleData = processFirecrawlData(crawlResult.data, platform);
+          const vehicleData = await processFirecrawlData(crawlResult.data, platform);
           return {
             success: true,
             data: vehicleData
@@ -79,12 +78,24 @@ async function extractListingData(url: string) {
   }
 }
 
-function processFirecrawlData(crawlData: any, platform: string): any {
+async function processFirecrawlData(crawlData: any, platform: string): Promise<any> {
   try {
     console.log('Processing Firecrawl data for', platform);
     
     // Extract texts from the page content
     const pageText = crawlData?.pages?.[0]?.content?.markdown || '';
+    const pageHtml = crawlData?.pages?.[0]?.content?.html || '';
+    
+    console.log('Extracted text length:', pageText.length);
+    if (pageText.length < 50 && pageHtml) {
+      console.log('Markdown content too short, trying to extract from HTML');
+      // If markdown is too short, try to extract text from HTML
+      const textFromHtml = extractTextFromHtml(pageHtml);
+      if (textFromHtml.length > pageText.length) {
+        console.log('Using text extracted from HTML instead');
+        return extractVehicleDataFromText(textFromHtml, platform);
+      }
+    }
     
     // Use OpenAI to extract structured vehicle data from the crawled text
     return extractVehicleDataFromText(pageText, platform);
@@ -94,12 +105,22 @@ function processFirecrawlData(crawlData: any, platform: string): any {
   }
 }
 
+function extractTextFromHtml(html: string): string {
+  // Simple function to extract text from HTML
+  // Remove HTML tags but keep their content
+  return html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+             .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+             .replace(/<[^>]+>/g, ' ')
+             .replace(/\s{2,}/g, ' ')
+             .trim();
+}
+
 async function extractVehicleDataFromText(text: string, platform: string): Promise<any> {
   try {
     const promptText = `
 Extract vehicle information from this ${platform} listing:
 
-${text}
+${text.slice(0, 8000)}  # Limit text to avoid exceeding token limits
 
 Extract and format as JSON with these fields:
 - make (string): Car manufacturer

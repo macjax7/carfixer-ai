@@ -21,7 +21,9 @@ export class FirecrawlService {
         url,
         limit: 1, // We only need the listing page itself
         scrapeOptions: {
-          formats: ['markdown'], // Get text content in markdown format
+          formats: ['markdown', 'html'], // Get content in both markdown and HTML format
+          selector: '.vehicle-details, .listing-details, .vehicle-info, .listing-content', // Common selectors for vehicle listings
+          followLinks: false, // Don't follow links on the page
         }
       };
       
