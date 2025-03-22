@@ -29,7 +29,8 @@ export async function handleVehicleListing(data: any) {
         unreliableExtraction: true,
         error: extractedData.error,
         url,
-        errorMessage: extractedData.data.errorMessage || 'Could not extract vehicle information from the provided link. The site may be blocking our access.',
+        errorMessage: extractedData.data.errorMessage || 
+          'Could not extract vehicle information from the provided link. Consider using an official dealer website like AutoTrader or Cars.com for better compatibility.',
         ...extractedData.data
       });
     }
@@ -51,7 +52,7 @@ export async function handleVehicleListing(data: any) {
           marketValue: "I couldn't determine the market value as I was unable to extract sufficient vehicle information from the provided link.",
           maintenanceNeeds: "Maintenance needs cannot be determined without specific vehicle information, which I was unable to extract from the provided link.",
           redFlags: "I noticed a potential concern: I was unable to extract the vehicle details from this listing URL. This could mean the URL is invalid, requires authentication, or the listing has been removed.",
-          recommendation: "I recommend sharing a different vehicle listing URL or manually providing the vehicle details (make, model, year, mileage, and price) for analysis."
+          recommendation: "I recommend sharing a different vehicle listing URL (preferably from AutoTrader, Cars.com, or a dealer website) or manually providing the vehicle details (make, model, year, mileage, and price) for analysis."
         };
       }
       
@@ -75,7 +76,7 @@ export async function handleVehicleListing(data: any) {
           marketValue: "Market value assessment requires complete vehicle details that weren't available in this listing.",
           maintenanceNeeds: "I need more vehicle details to provide maintenance information.",
           redFlags: "The listing appears to be missing essential vehicle information which is a concern.",
-          recommendation: "I recommend finding a more detailed listing or manually providing the missing vehicle details for a complete analysis."
+          recommendation: "I recommend finding a more detailed listing (preferably from AutoTrader, Cars.com, or a dealer website) or manually providing the missing vehicle details for a complete analysis."
         }
       });
     }

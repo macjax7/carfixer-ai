@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { VehicleApiManager } from './api/vehicleApiManager';
 
 /**
  * Analyze a vehicle listing URL
@@ -20,7 +21,21 @@ export async function analyzeVehicleListing(url: string) {
       throw new Error('Please provide a valid vehicle listing URL');
     }
     
-    // Call the Supabase Edge Function to analyze the listing
+    // Initialize the API Manager which will handle all platform-specific integrations
+    const apiManager = new VehicleApiManager();
+    
+    // First try to extract data using official APIs if available
+    const apiResult = await apiManager.extractVehicleData(cleanUrl);
+    
+    // If we have usable data from an API, return it
+    if (apiResult.success && !apiResult.extractionFailed) {
+      console.log('Successfully extracted vehicle data using API:', apiResult.data);
+      return apiResult.data;
+    }
+    
+    console.log('API extraction unsuccessful, falling back to Supabase function');
+    
+    // Fall back to the Supabase Edge Function for analysis
     const { data, error } = await supabase.functions.invoke('openai', {
       body: {
         service: 'vehicle',
