@@ -15,6 +15,7 @@ export class ResponseParser {
       return data;
     } catch (e) {
       console.error('Error parsing OpenAI response as JSON:', e);
+      
       // Try to extract JSON from the response if it's not pure JSON
       const jsonMatch = textContent.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
@@ -27,7 +28,12 @@ export class ResponseParser {
           throw new Error('Could not extract JSON from OpenAI response');
         }
       } else {
-        throw new Error('Could not extract JSON from OpenAI response');
+        // Create a fallback response with an error message
+        return {
+          unreliableExtraction: true,
+          extractionFailed: true,
+          errorMessage: 'Could not parse vehicle data from the listing'
+        };
       }
     }
   }

@@ -11,7 +11,8 @@ export class FirecrawlRequestBuilder {
   static buildVehicleListingRequest(url: string): FirecrawlRequestOptions {
     console.log(`Building request configuration for URL: ${url}`);
     
-    return {
+    // Default options
+    let options: FirecrawlRequestOptions = {
       url,
       limit: 1, // We only need the listing page itself
       followRedirects: true, // Follow redirects for URL shorteners
@@ -28,6 +29,33 @@ export class FirecrawlRequestBuilder {
         extraHTTPHeaders: this.getStandardHeaders()
       }
     };
+    
+    // Platform-specific optimizations
+    if (url.includes('cargurus.com')) {
+      console.log('Applying CarGurus-specific scraping options');
+      options.scrapeOptions = {
+        ...options.scrapeOptions,
+        waitUntil: 'networkidle0',
+        blockAds: true,
+        timeout: 45000, // Longer timeout for CarGurus
+        extraHTTPHeaders: {
+          ...options.scrapeOptions.extraHTTPHeaders,
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Cache-Control': 'max-age=0',
+          'Sec-Ch-Ua': '"Google Chrome";v="119", "Chromium";v="119", "Not?A_Brand";v="24"',
+          'Sec-Ch-Ua-Mobile': '?0',
+          'Sec-Ch-Ua-Platform': '"Windows"',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1'
+        }
+      };
+    }
+    
+    return options;
   }
   
   /**

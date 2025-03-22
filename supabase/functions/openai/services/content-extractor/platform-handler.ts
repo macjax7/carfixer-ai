@@ -50,6 +50,36 @@ export class PlatformHandler {
       }
     }
     
+    // For CarGurus, add special handling
+    if (platform.toLowerCase().includes('cargurus') && htmlContent) {
+      console.log('Using special handling for CarGurus content');
+      
+      // Try to find CarGurus-specific patterns
+      const priceMatch = htmlContent.match(/<span[^>]*class="[^"]*price[^"]*"[^>]*>\$([0-9,]+)<\/span>/i);
+      const titleMatch = htmlContent.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+      const mileageMatch = htmlContent.match(/([0-9,]+)\s*miles/i);
+      
+      if (priceMatch || titleMatch || mileageMatch) {
+        console.log('Found CarGurus-specific patterns in HTML');
+        let cargurusContent = '';
+        
+        if (titleMatch && titleMatch[1]) {
+          cargurusContent += `Title: ${titleMatch[1].trim()}\n`;
+        }
+        
+        if (priceMatch && priceMatch[1]) {
+          cargurusContent += `Price: $${priceMatch[1]}\n`;
+        }
+        
+        if (mileageMatch && mileageMatch[1]) {
+          cargurusContent += `Mileage: ${mileageMatch[1]} miles\n`;
+        }
+        
+        // Append the original text
+        return cargurusContent + '\n' + text;
+      }
+    }
+    
     return text;
   }
 }

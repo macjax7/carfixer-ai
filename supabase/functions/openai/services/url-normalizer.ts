@@ -37,6 +37,27 @@ export class UrlNormalizerService {
         return urlObj.toString();
       }
       
+      // Special handling for CarGurus URLs
+      if (urlObj.hostname.includes('cargurus.com')) {
+        // Ensure we're using the www subdomain for consistency
+        if (!urlObj.hostname.startsWith('www.')) {
+          urlObj.hostname = 'www.' + urlObj.hostname;
+        }
+        
+        // Remove problematic parameters that might cause login redirects
+        const searchParams = new URLSearchParams(urlObj.search);
+        searchParams.delete('partnerId');
+        searchParams.delete('sourceContext');
+        searchParams.delete('utm_source');
+        searchParams.delete('utm_medium');
+        searchParams.delete('utm_campaign');
+        
+        // Rebuild the URL
+        urlObj.search = searchParams.toString();
+        
+        return urlObj.toString();
+      }
+      
       // Return the normalized URL
       return url;
     } catch (error) {

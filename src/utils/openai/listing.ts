@@ -39,7 +39,7 @@ export async function analyzeVehicleListing(url: string) {
     }
     
     // Check for extraction reliability flag
-    if (data.unreliableExtraction || data.extractionFailed) {
+    if (data.extractionFailed || data.unreliableExtraction) {
       console.warn('Vehicle data extraction was unreliable or failed', data);
       let errorMessage = data.errorMessage || 'Could not reliably extract vehicle information from the provided link';
       throw new Error(errorMessage);
