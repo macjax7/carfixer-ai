@@ -33,3 +33,9 @@ export interface VehicleListingAnalysis {
     recommendation: string;
   };
 }
+
+export interface MessageContentProps {
+  text: string;
+  image?: string;
+  sender: 'user' | 'ai';
+}

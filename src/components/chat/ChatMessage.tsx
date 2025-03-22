@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import MessageHeader from './MessageHeader';
 import ComponentDiagram from './ComponentDiagram';
 import VehicleListingAnalysis from './VehicleListingAnalysis';
+import MessageContent from './MessageContent';
 
 interface MessageProps {
   id: string;
@@ -56,17 +57,11 @@ const ChatMessage: React.FC<MessageProps> = ({
     >
       <MessageHeader sender={sender} />
       
-      {image && (
-        <div className="mb-2">
-          <img 
-            src={image} 
-            alt="Uploaded" 
-            className="rounded-lg max-h-48 w-auto object-contain bg-black/10"
-          />
-        </div>
-      )}
-      
-      <p className="text-sm md:text-base whitespace-pre-wrap">{text}</p>
+      <MessageContent 
+        text={text}
+        image={image}
+        sender={sender}
+      />
       
       {componentDiagram && <ComponentDiagram componentDiagram={componentDiagram} />}
       
