@@ -9,9 +9,7 @@ import { DiagnosticProvider } from "./context/DiagnosticContext";
 import { AuthProvider } from "./context/AuthContext";
 import { NotificationProvider } from "./context/NotificationContext";
 
-import Index from "./pages/Index";
 import Chat from "./pages/Chat";
-import Scan from "./pages/Scan";
 import Vehicles from "./pages/Vehicles";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -32,17 +30,16 @@ const App = () => (
               <Sonner />
               <BrowserRouter>
                 <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<SignUp />} />
-                  <Route path="/chat" element={
+                  <Route path="/" element={
                     <ProtectedRoute>
                       <Chat />
                     </ProtectedRoute>
                   } />
-                  <Route path="/scan" element={
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<SignUp />} />
+                  <Route path="/chat" element={
                     <ProtectedRoute>
-                      <Scan />
+                      <Navigate to="/" replace />
                     </ProtectedRoute>
                   } />
                   <Route path="/vehicles" element={

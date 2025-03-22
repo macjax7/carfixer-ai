@@ -24,12 +24,12 @@ const ChatHeader = () => {
             <span>New Chat</span>
           </button>
           
-          <Link to="/" className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <div className="rounded-md bg-carfix-600 p-1">
               <Wrench className="h-5 w-5 text-white" />
             </div>
             <h1 className="text-lg font-semibold hidden sm:block">CarFix AI</h1>
-          </Link>
+          </div>
         </div>
       </div>
     );
@@ -39,12 +39,12 @@ const ChatHeader = () => {
   return (
     <div className="absolute top-0 left-0 right-0 z-10 px-2 py-3 flex items-center bg-background/80 backdrop-blur-sm">
       <div className="flex items-center ml-4">
-        <Link to="/" className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <div className="rounded-md bg-carfix-600 p-1">
             <Wrench className="h-5 w-5 text-white" />
           </div>
           <h1 className="text-lg font-semibold hidden sm:block">CarFix AI</h1>
-        </Link>
+        </div>
       </div>
     </div>
   );
