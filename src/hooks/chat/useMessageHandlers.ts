@@ -1,63 +1,33 @@
 
-import { useState } from 'react';
+import { FormEvent } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useOpenAI, ChatMessage } from '@/utils/openai';
-import { Message } from './types';
 import { useVehicles } from '@/hooks/use-vehicles';
-import { nanoid } from 'nanoid';
+import { useChatMessages } from './useChatMessages';
+import { useMessageInput } from './useMessageInput';
+import { useCodeDetection } from './useCodeDetection';
 
-export const useChat = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      sender: 'ai',
-      text: "Hello! I'm your CarFix AI assistant. How can I help with your vehicle today?",
-      timestamp: new Date()
-    }
-  ]);
-  
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [messageHistory, setMessageHistory] = useState<string[]>([]);
-  const [hasAskedForVehicle, setHasAskedForVehicle] = useState(false);
+export const useMessageHandlers = () => {
   const { toast } = useToast();
   const { chatWithAI, identifyPart, analyzeListing } = useOpenAI();
   const { selectedVehicle } = useVehicles();
+  const { messages, messageHistory, addUserMessage, addAIMessage, getMessagesForAPI } = useChatMessages();
+  const { input, setInput, isLoading, setIsLoading, hasAskedForVehicle, setHasAskedForVehicle } = useMessageInput();
+  const { containsDTCCode } = useCodeDetection();
   
-  // Helper function to detect OBD-II codes in a message
-  const containsDTCCode = (message: string): boolean => {
-    // Pattern for OBD-II codes: P, B, C, or U followed by 4 digits
-    const dtcPattern = /\b[PBCU][0-9]{4}\b/i;
-    return dtcPattern.test(message);
-  };
-  
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const handleSendMessage = async (e: FormEvent) => {
     e.preventDefault();
     
     if (!input.trim() || isLoading) return;
     
     // Add user message
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      sender: 'user',
-      text: input,
-      timestamp: new Date()
-    };
-    
-    setMessages(prevMessages => [...prevMessages, userMessage]);
-    setMessageHistory(prev => [...prev, input]); // Add to message history
+    const userMessage = addUserMessage(input);
     setInput('');
     setIsLoading(true);
     
     try {
       // Prepare the messages array for the API
-      const apiMessages: ChatMessage[] = messages
-        .filter(msg => msg.id !== '1') // Filter out the welcome message
-        .concat(userMessage)
-        .map(msg => ({
-          role: msg.sender === 'user' ? 'user' : 'assistant',
-          content: msg.text
-        }));
+      const apiMessages: ChatMessage[] = getMessagesForAPI(userMessage);
       
       // Check if the query contains a DTC code
       const containsCode = containsDTCCode(input);
@@ -70,14 +40,7 @@ export const useChat = () => {
         setHasAskedForVehicle(true);
       }
       
-      const aiMessage: Message = {
-        id: Date.now().toString(),
-        sender: 'ai',
-        text: typeof aiResponse === 'object' ? aiResponse.message : aiResponse,
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
+      addAIMessage(typeof aiResponse === 'object' ? aiResponse.message : aiResponse);
     } catch (error) {
       console.error('Error getting AI response:', error);
       
@@ -105,15 +68,8 @@ export const useChat = () => {
     
     // Create a message for the user indicating they've uploaded an image
     const userPrompt = input.trim() || "Can you identify this car part?";
-    const userMessage: Message = {
-      id: nanoid(),
-      sender: 'user',
-      text: userPrompt,
-      timestamp: new Date(),
-      image: URL.createObjectURL(file)
-    };
+    const userMessage = addUserMessage(userPrompt, URL.createObjectURL(file));
     
-    setMessages(prevMessages => [...prevMessages, userMessage]);
     setInput('');
     setIsLoading(true);
     
@@ -128,14 +84,7 @@ export const useChat = () => {
       const imageUrl = URL.createObjectURL(file);
       const analysis = await identifyPart(imageUrl, prompt);
       
-      const aiMessage: Message = {
-        id: nanoid(),
-        sender: 'ai',
-        text: analysis,
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
+      addAIMessage(analysis);
     } catch (error) {
       console.error('Error analyzing image:', error);
       
@@ -151,12 +100,7 @@ export const useChat = () => {
       });
       
       // Add an error message from the AI
-      setMessages(prev => [...prev, {
-        id: nanoid(),
-        sender: 'ai',
-        text: "I couldn't analyze that image. Please try again with a clearer picture of the car part.",
-        timestamp: new Date()
-      }]);
+      addAIMessage("I couldn't analyze that image. Please try again with a clearer picture of the car part.");
     } finally {
       setIsLoading(false);
     }
@@ -166,14 +110,8 @@ export const useChat = () => {
     if (isLoading) return;
     
     // Create a message for the user indicating they've shared a listing URL
-    const userMessage: Message = {
-      id: nanoid(),
-      sender: 'user',
-      text: `Can you analyze this vehicle listing? ${url}`,
-      timestamp: new Date()
-    };
+    const userMessage = addUserMessage(`Can you analyze this vehicle listing? ${url}`);
     
-    setMessages(prevMessages => [...prevMessages, userMessage]);
     setInput('');
     setIsLoading(true);
     
@@ -182,18 +120,12 @@ export const useChat = () => {
       const listingData = await analyzeListing(url);
       
       // Create AI response with the vehicle listing analysis
-      const aiMessage: Message = {
-        id: nanoid(),
-        sender: 'ai',
-        text: "I've analyzed this vehicle listing for you. Here's what I found:",
-        timestamp: new Date(),
+      addAIMessage("I've analyzed this vehicle listing for you. Here's what I found:", {
         vehicleListingAnalysis: {
           url,
           ...listingData
         }
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
+      });
     } catch (error) {
       console.error('Error analyzing vehicle listing:', error);
       
@@ -209,12 +141,7 @@ export const useChat = () => {
       });
       
       // Add an error message from the AI
-      setMessages(prev => [...prev, {
-        id: nanoid(),
-        sender: 'ai',
-        text: "I couldn't analyze that vehicle listing. The URL may be invalid or not from a supported platform. Try pasting a direct link to a vehicle listing from platforms like Craigslist, Facebook Marketplace, CarGurus, AutoTrader, etc.",
-        timestamp: new Date()
-      }]);
+      addAIMessage("I couldn't analyze that vehicle listing. The URL may be invalid or not from a supported platform. Try pasting a direct link to a vehicle listing from platforms like Craigslist, Facebook Marketplace, CarGurus, AutoTrader, etc.");
     } finally {
       setIsLoading(false);
     }
@@ -224,17 +151,6 @@ export const useChat = () => {
     setInput(prompt);
   };
   
-  // Adding more car-related suggested prompts including OBD code examples and part identification
-  const suggestedPrompts = [
-    "What could cause a P0300 code?",
-    "My check engine light is on with code P0420",
-    "My engine is overheating",
-    "How do I change brake pads?",
-    "What does the check engine light mean?",
-    "Can you help identify a car part from a photo?",
-    "Analyze a vehicle listing for me"
-  ];
-
   return {
     messages,
     input,
@@ -244,7 +160,6 @@ export const useChat = () => {
     handleImageUpload,
     handleListingAnalysis,
     handleSuggestedPrompt,
-    suggestedPrompts,
     hasAskedForVehicle
   };
 };

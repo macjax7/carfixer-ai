@@ -5,7 +5,7 @@ import ChatMessage from './chat/ChatMessage';
 import ChatInput from './chat/ChatInput';
 import SuggestedPrompts from './chat/SuggestedPrompts';
 import LoadingIndicator from './chat/LoadingIndicator';
-import { useChat } from './chat/useChat';
+import { useChat } from '@/hooks/chat/useChat';
 import { useVehicles } from '@/hooks/use-vehicles';
 
 const AIChat: React.FC = () => {
