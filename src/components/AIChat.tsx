@@ -30,15 +30,17 @@ const AIChat: React.FC = () => {
     <div className="flex flex-col h-full bg-background">
       {/* Welcome message when no messages exist (except default) */}
       {messages.length === 1 && (
-        <SuggestedPrompts 
-          handleSuggestedPrompt={handleSuggestedPrompt}
-          prompts={suggestedPrompts}
-        />
+        <div className="flex-1 flex items-center justify-center">
+          <SuggestedPrompts 
+            handleSuggestedPrompt={handleSuggestedPrompt}
+            prompts={suggestedPrompts}
+          />
+        </div>
       )}
       
       {/* Chat messages */}
       {messages.length > 1 && (
-        <ScrollArea className="flex-1 pt-4 px-2 md:px-4">
+        <ScrollArea className="flex-1 pt-4 px-2 md:px-4 pb-4">
           <div className="max-w-3xl mx-auto space-y-6 pb-4">
             {messages.map((msg) => (
               <ChatMessage 
@@ -57,8 +59,8 @@ const AIChat: React.FC = () => {
         </ScrollArea>
       )}
       
-      {/* Input form */}
-      <div className="border-t border-border bg-background/95 backdrop-blur-sm py-3 px-3 md:px-4">
+      {/* Input form - ensure it stays at the bottom with proper spacing */}
+      <div className="border-t border-border bg-background/95 backdrop-blur-sm py-3 px-3 md:px-4 mt-auto">
         <ChatInput
           input={input}
           setInput={setInput}

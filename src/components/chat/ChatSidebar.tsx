@@ -17,7 +17,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   SidebarFooter
 } from '@/components/ui/sidebar';
 
@@ -58,11 +57,9 @@ const ChatSidebar = () => {
           </div>
           <h1 className="text-lg font-semibold">CarFix AI</h1>
         </div>
-        {/* Removed SidebarTrigger from header since we now have a persistent one in the main content */}
       </SidebarHeader>
       
       <SidebarContent>
-        {/* Main Navigation (simplified) */}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -84,7 +81,6 @@ const ChatSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
         
-        {/* Projects Section - with improved visual separation */}
         <SidebarGroup className="mt-4 pt-2 border-t border-border">
           <div className="flex items-center">
             <SidebarGroupLabel>Projects</SidebarGroupLabel>
@@ -112,7 +108,6 @@ const ChatSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
         
-        {/* Chat History Section - New */}
         <SidebarGroup className="mt-4 pt-2 border-t border-border">
           <SidebarGroupLabel>Chat History</SidebarGroupLabel>
           <SidebarGroupContent>

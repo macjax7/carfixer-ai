@@ -8,7 +8,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 const Chat: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-background">
-      <Header title="CarFix AI" showBackButton={false} showMenu={false} showNotifications={false} />
+      {/* Remove the header completely since we have the logo in the sidebar */}
       
       <SidebarProvider>
         <div className="flex flex-1 w-full overflow-hidden">
