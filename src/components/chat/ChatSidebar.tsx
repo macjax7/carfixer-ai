@@ -1,12 +1,12 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  Car, Wrench, Home, Settings, 
-  BarChart2, PlusCircle, FolderPlus
+  Car, Wrench, PlusCircle, FolderPlus,
+  MessageSquare, Clock
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import {
   Sidebar,
   SidebarContent,
@@ -25,33 +25,28 @@ const ChatSidebar = () => {
   const location = useLocation();
   const { user } = useAuth();
   
+  // Simplified navigation items (removed Home, Diagnostics, Parts & Repairs)
   const primaryNavItems = [
-    {
-      title: "Home",
-      path: "/chat",
-      icon: Home,
-    },
     {
       title: "My Vehicles",
       path: "/vehicles",
       icon: Car,
     },
-    {
-      title: "Diagnostics",
-      path: "/scan",
-      icon: BarChart2,
-    },
-    {
-      title: "Parts & Repairs",
-      path: "#",
-      icon: Wrench,
-    },
   ];
   
+  // Example projects (unchanged)
   const userProjects = [
     { title: "Honda Civic Issues", path: "#" },
     { title: "Truck Maintenance", path: "#" },
     { title: "DIY Repair Notes", path: "#" },
+  ];
+
+  // Example chat history (new)
+  const chatHistory = [
+    { title: "Check Engine Light P0420", timestamp: "2h ago", path: "#" },
+    { title: "Battery Replacement Options", timestamp: "Yesterday", path: "#" },
+    { title: "Brake Fluid Change", timestamp: "3d ago", path: "#" },
+    { title: "Transmission Warning Signs", timestamp: "1w ago", path: "#" },
   ];
 
   return (
@@ -69,9 +64,8 @@ const ChatSidebar = () => {
       </SidebarHeader>
       
       <SidebarContent>
-        {/* Main Navigation */}
+        {/* Main Navigation (simplified) */}
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {primaryNavItems.map((item) => (
@@ -92,8 +86,8 @@ const ChatSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
         
-        {/* Projects/Saved Content */}
-        <SidebarGroup>
+        {/* Projects Section - with improved visual separation */}
+        <SidebarGroup className="mt-4 pt-2 border-t border-border">
           <div className="flex items-center">
             <SidebarGroupLabel>Projects</SidebarGroupLabel>
             <Button variant="ghost" size="icon" className="ml-auto mr-2 h-7 w-7">
@@ -114,9 +108,33 @@ const ChatSidebar = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton>
                   <PlusCircle className="h-4 w-4" />
-                  <span>New Project</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        
+        {/* Chat History Section - New */}
+        <SidebarGroup className="mt-4 pt-2 border-t border-border">
+          <SidebarGroupLabel>Chat History</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {chatHistory.map((chat, index) => (
+                <SidebarMenuItem key={index}>
+                  <SidebarMenuButton asChild>
+                    <Link to={chat.path} className="flex flex-col items-start">
+                      <span className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                        <span className="truncate">{chat.title}</span>
+                      </span>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1 pl-6">
+                        <Clock className="h-3 w-3" />
+                        {chat.timestamp}
+                      </span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -134,7 +152,7 @@ const ChatSidebar = () => {
           </div>
           <Link to="/profile" className="ml-auto">
             <Button variant="ghost" size="icon">
-              <Settings className="h-4 w-4" />
+              <Wrench className="h-4 w-4" />
             </Button>
           </Link>
         </div>

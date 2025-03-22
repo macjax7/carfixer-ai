@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Menu, Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 
 interface HeaderProps {
   title?: string;
@@ -13,11 +13,10 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({
   title = 'CarFix',
   showBackButton = false,
-  showMenu = true,
-  showNotifications = true,
+  showMenu = false,
+  showNotifications = false,
 }) => {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleBack = () => {
     navigate(-1);
@@ -41,23 +40,7 @@ const Header: React.FC<HeaderProps> = ({
         </div>
         
         <div className="flex items-center space-x-3">
-          {showNotifications && (
-            <button 
-              className="p-1 rounded-full hover:bg-secondary transition-colors"
-              aria-label="Notifications"
-            >
-              <Bell className="h-5 w-5" />
-            </button>
-          )}
-          
-          {showMenu && (
-            <button 
-              className="p-1 rounded-full hover:bg-secondary transition-colors"
-              aria-label="Menu"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-          )}
+          {/* Menu and notification icons have been removed as requested */}
         </div>
       </div>
     </header>
