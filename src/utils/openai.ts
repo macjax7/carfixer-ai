@@ -58,6 +58,82 @@ export async function analyzeImage(imageUrl: string, prompt?: string) {
 }
 
 /**
+ * Get diagnostic information for a DTC code or symptoms
+ */
+export async function getDiagnosticInfo(params: { 
+  dtcCode?: string; 
+  vehicleInfo?: any; 
+  symptoms?: string[];
+  noStart?: boolean;
+}) {
+  try {
+    const { data, error } = await supabase.functions.invoke('openai', {
+      body: {
+        action: 'diagnostic',
+        data: params
+      }
+    });
+
+    if (error) throw new Error(error.message);
+    return data.diagnostic;
+  } catch (error) {
+    console.error('Error getting diagnostic information:', error);
+    throw error;
+  }
+}
+
+/**
+ * Look up part information
+ */
+export async function lookupPart(params: {
+  partName: string;
+  vehicleInfo?: any;
+  partNumber?: string;
+  oem?: boolean;
+  aftermarket?: boolean;
+}) {
+  try {
+    const { data, error } = await supabase.functions.invoke('openai', {
+      body: {
+        action: 'part-lookup',
+        data: params
+      }
+    });
+
+    if (error) throw new Error(error.message);
+    return data.parts;
+  } catch (error) {
+    console.error('Error looking up part:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get repair guidance
+ */
+export async function getRepairGuidance(params: {
+  repairType: string;
+  vehicleInfo?: any;
+  partName?: string;
+  dtcCode?: string;
+}) {
+  try {
+    const { data, error } = await supabase.functions.invoke('openai', {
+      body: {
+        action: 'repair-guidance',
+        data: params
+      }
+    });
+
+    if (error) throw new Error(error.message);
+    return data.guidance;
+  } catch (error) {
+    console.error('Error getting repair guidance:', error);
+    throw error;
+  }
+}
+
+/**
  * Custom hook to use the OpenAI API with vehicle context
  */
 export function useOpenAI() {
@@ -75,8 +151,45 @@ export function useOpenAI() {
     return analyzeImage(imageUrl, prompt);
   };
   
+  const getDiagnostics = async (params: {
+    dtcCode?: string;
+    symptoms?: string[];
+    noStart?: boolean;
+  }) => {
+    return getDiagnosticInfo({
+      ...params,
+      vehicleInfo: selectedVehicle
+    });
+  };
+  
+  const findParts = async (params: {
+    partName: string;
+    partNumber?: string;
+    oem?: boolean;
+    aftermarket?: boolean;
+  }) => {
+    return lookupPart({
+      ...params,
+      vehicleInfo: selectedVehicle
+    });
+  };
+  
+  const getRepairSteps = async (params: {
+    repairType: string;
+    partName?: string;
+    dtcCode?: string;
+  }) => {
+    return getRepairGuidance({
+      ...params,
+      vehicleInfo: selectedVehicle
+    });
+  };
+  
   return {
     chatWithAI,
-    identifyPart
+    identifyPart,
+    getDiagnostics,
+    findParts,
+    getRepairSteps
   };
 }
