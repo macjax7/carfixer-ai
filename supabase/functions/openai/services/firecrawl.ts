@@ -29,6 +29,7 @@ export class FirecrawlService {
         const requestBody = {
           url,
           limit: 1, // We only need the listing page itself
+          followRedirects: true, // Follow redirects for URL shorteners
           scrapeOptions: {
             formats: ['markdown', 'html'], // Get content in both markdown and HTML format
             // Enhanced selectors targeting common vehicle listing elements across different sites
@@ -36,17 +37,17 @@ export class FirecrawlService {
               // Vehicle details containers
               '.vehicle-details', '.listing-details', '.vehicle-info', '.vdp-content', '.vdp-details',
               // Facebook Marketplace selectors
-              '[data-testid="marketplace_pdp_container"]', '.x1qjc9v5', '.x9f619',
+              '[data-testid="marketplace_pdp_container"]', '.x1qjc9v5', '.x9f619', '[data-pagelet="MainFeed"]',
               // Craigslist selectors
-              '#postingbody', '.attrgroup', '.mapAndAttrs',
+              '#postingbody', '.attrgroup', '.mapAndAttrs', '[id^="titletextonly"]',
               // CarGurus selectors
-              '.cg-listing-key-details', '.cg-listing-attributes', '.cg-listing-description',
+              '.cg-listing-key-details', '.cg-listing-attributes', '.cg-listing-description', '.vin-value',
               // AutoTrader selectors
-              '.first-price', '.about-section', '.vehicle-info',
+              '.first-price', '.about-section', '.vehicle-info', '.vehicle-brief', '.vehicle-details',
               // Generic selectors
-              '.price', '.mileage', '.vin', '.description',
+              '.price', '.mileage', '.vin', '.description', '#vehicle-price',
               // Fallback to broader content if specific selectors fail
-              'article', 'main', '#content', '.content'
+              'article', 'main', '#content', '.content', 'body'
             ].join(', '),
             followLinks: false,
             waitUntil: 'networkidle0', // Wait until network is idle for more JS-heavy sites
@@ -126,6 +127,16 @@ export class FirecrawlService {
           if (!result || !result.pages || !Array.isArray(result.pages)) {
             console.warn('Unexpected response structure from Firecrawl API');
             console.log('Response structure:', JSON.stringify(result).slice(0, 200) + '...');
+          }
+          
+          // Check for empty content which might indicate URL was inaccessible
+          if (result?.pages?.length === 0 || 
+              (result?.pages?.[0]?.html === "" && result?.pages?.[0]?.markdown === "")) {
+            console.warn('Firecrawl returned empty content - URL may be inaccessible');
+            return {
+              success: false,
+              error: 'Unable to access page content. The URL may be invalid, blocked, or requires authentication.'
+            };
           }
           
           return {

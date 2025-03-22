@@ -65,29 +65,76 @@ export class ListingExtractorService {
             // Add debugging info
             console.log('Extracted vehicle data:', JSON.stringify(vehicleData, null, 2));
             
+            // If extracted data is too sparse, treat as an extraction failure
+            if (!vehicleData.make && !vehicleData.model && !vehicleData.year && !vehicleData.vin) {
+              console.warn('Extraction yielded insufficient vehicle data, treating as failure');
+              return {
+                success: true,
+                data: {
+                  ...vehicleData,
+                  url: normalizedUrl,
+                  extractionWarning: true,
+                  unreliableExtraction: true,
+                  errorMessage: 'Could not extract sufficient vehicle information from the provided link'
+                }
+              };
+            }
+            
             return {
               success: true,
-              data: vehicleData
+              data: {
+                ...vehicleData,
+                url: normalizedUrl,
+                platform
+              }
             };
           } else {
-            console.warn('Firecrawl extraction failed, falling back to simulation:', crawlResult.error);
+            console.warn('Firecrawl extraction failed:', crawlResult.error);
+            return {
+              success: false,
+              error: crawlResult.error || 'Failed to extract data from vehicle listing URL',
+              data: {
+                unreliableExtraction: true,
+                url: normalizedUrl,
+                platform,
+                errorMessage: 'Could not access vehicle listing information'
+              }
+            };
           }
         } catch (error) {
           console.error('Error with Firecrawl service:', error);
-          console.log('Falling back to simulated data extraction');
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error extracting vehicle data',
+            data: {
+              unreliableExtraction: true,
+              url: normalizedUrl,
+              errorMessage: 'Error extracting vehicle data from the listing'
+            }
+          };
         }
       } else {
-        console.log('Firecrawl service not available, using simulation mode');
+        console.log('Firecrawl service not available, returning error');
+        return {
+          success: false,
+          error: 'Web scraping service not available',
+          data: {
+            unreliableExtraction: true,
+            url: normalizedUrl,
+            errorMessage: 'Vehicle listing extraction service is unavailable'
+          }
+        };
       }
-      
-      // Fallback: Use OpenAI to simulate data extraction
-      console.log('Using OpenAI to simulate data extraction for URL:', normalizedUrl);
-      return this.dataSimulator.simulateDataExtraction(normalizedUrl, platform);
     } catch (error) {
       console.error('Error extracting listing data:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error in listing extraction'
+        error: error instanceof Error ? error.message : 'Unknown error in listing extraction',
+        data: {
+          unreliableExtraction: true,
+          url: url,
+          errorMessage: 'Error processing vehicle listing URL'
+        }
       };
     }
   }

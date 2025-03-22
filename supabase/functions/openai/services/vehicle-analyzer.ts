@@ -12,9 +12,21 @@ export class VehicleAnalyzerService {
     try {
       // Validate the input data to ensure we have basic required information
       const validationErrors = this.validateVehicleData(vehicleData);
+      
+      // If missing critical data, mark extraction as unreliable
       if (validationErrors.length > 0) {
         console.warn('Vehicle data validation failed:', validationErrors);
         console.warn('Incomplete vehicle data for analysis:', vehicleData);
+        
+        // If missing critical fields (year+make+model or VIN), return error
+        if (!((vehicleData.year && vehicleData.make && vehicleData.model) || vehicleData.vin)) {
+          console.error('Missing critical vehicle identification data');
+          return {
+            unreliableExtraction: true,
+            validationErrors,
+            errorMessage: "Could not reliably identify the vehicle from the provided link"
+          };
+        }
       }
 
       // Build a comprehensive prompt with all available vehicle data
@@ -28,13 +40,19 @@ ${vehicleData.mileage ? `- Mileage: ${vehicleData.mileage} miles` : '- Mileage: 
 ${vehicleData.vin ? `- VIN: ${vehicleData.vin}` : '- VIN: Not provided'}
 ${vehicleData.description ? `- Description: "${vehicleData.description}"` : '- Description: Not provided'}
 
-Important: Base your analysis ONLY on the details provided above for this specific listing. Do not substitute information about different vehicles.
+CRITICAL INSTRUCTIONS:
+- Base your analysis ONLY on the details provided above for this specific listing.
+- DO NOT substitute information about different vehicles.
+- DO NOT make up information that is not provided.
+- If certain information is missing, clearly state that it's limited by the data available.
+- If you cannot provide a meaningful analysis due to insufficient data, state this limitation in your response.
+- Avoid generic statements that could apply to any vehicle - be specific to this exact listing.
 
 Based on the available information, provide a thorough analysis covering:
 
-1. Reliability: Evaluate the specific model year's reliability rating, common issues, and overall durability. If the year is unknown, discuss the model's general reliability across recent years.
+1. Reliability: Evaluate the specific model year's reliability rating, common issues, and overall durability. If the year is unknown, discuss the model's general reliability across recent years. If not enough vehicle data is provided, state that reliability assessment requires specific vehicle information.
 
-2. Market Value: Assess whether the price is fair based on current market conditions, comparable listings, and factors like mileage and condition. Explain your reasoning with specific market insights.
+2. Market Value: Assess whether the price is fair based on current market conditions, comparable listings, and factors like mileage and condition. If pricing data is missing, explain that a value assessment cannot be made without pricing information.
 
 3. Maintenance Needs: Detail what maintenance would likely be needed at this mileage (or based on the vehicle's age if mileage is unknown). Include both routine maintenance and model-specific concerns.
 
@@ -42,7 +60,7 @@ Based on the available information, provide a thorough analysis covering:
 
 5. Recommendation: Provide a clear recommendation on whether someone should purchase this vehicle, with specific reasoning based on all the above factors.
 
-Format your response as a JSON object with these 5 keys. Each value should be a detailed paragraph (100-200 words each) providing substantive analysis. If certain information is missing from the listing, make reasonable assumptions based on what is known about the vehicle and note those assumptions.
+Format your response as a JSON object with these 5 keys. Each value should be a detailed paragraph providing substantive analysis. If certain information is missing from the listing, acknowledge those limitations rather than making assumptions.
 `;
 
       console.log('Sending vehicle analysis prompt to OpenAI');
@@ -58,11 +76,11 @@ Format your response as a JSON object with these 5 keys. Each value should be a 
           messages: [
             { 
               role: 'system', 
-              content: 'You are an expert automotive analyst specializing in used car evaluations. Provide detailed, fact-based analyses of vehicle listings with comprehensive insights that would help potential buyers make informed decisions. Always tie your analysis directly to the specific vehicle details provided, without making up or substituting information not present in the prompt.' 
+              content: 'You are an expert automotive analyst specializing in used car evaluations. You MUST only provide analysis based on explicitly provided vehicle details. Never invent or substitute information not present in the listing. If critical information is missing, acknowledge these limitations and explain how they impact your analysis. Your priority is accuracy, not comprehensiveness when data is insufficient.' 
             },
             { role: 'user', content: promptText }
           ],
-          temperature: 0.3,
+          temperature: 0.2, // Lower temperature for more factual, less creative responses
           response_format: { type: "json_object" } // Request JSON format explicitly
         }),
       });
@@ -89,9 +107,9 @@ Format your response as a JSON object with these 5 keys. Each value should be a 
         if (missingFields.length > 0) {
           console.warn(`Analysis missing fields: ${missingFields.join(', ')}`);
           
-          // Add placeholder content for any missing fields
+          // Add placeholder content for any missing fields that clearly indicates limitations
           missingFields.forEach(field => {
-            analysisData[field] = this.getPlaceholderContentForField(field, vehicleData);
+            analysisData[field] = this.getLimitationsContentForField(field, vehicleData);
           });
         }
         
@@ -109,12 +127,20 @@ Format your response as a JSON object with these 5 keys. Each value should be a 
       
       console.log('Analysis data generated successfully');
       
-      return analysisData;
+      // Add validation flags to the response
+      return {
+        ...analysisData,
+        dataValidation: {
+          hasErrors: validationErrors.length > 0,
+          errors: validationErrors,
+          isReliable: validationErrors.length === 0 || 
+                     ((vehicleData.year && vehicleData.make && vehicleData.model) || vehicleData.vin)
+        }
+      };
     } catch (error) {
       console.error('Error analyzing vehicle listing:', error);
-      // Provide fallback analysis with placeholders that clearly indicate this is fallback content
-      // but make the content specific to the provided vehicle if possible
-      return this.generateFallbackAnalysis(vehicleData);
+      // Provide error analysis that clearly indicates the issue
+      return this.generateErrorAnalysis(vehicleData, error);
     }
   }
   
@@ -127,8 +153,9 @@ Format your response as a JSON object with these 5 keys. Each value should be a 
     // Check for minimum required fields
     if (!vehicleData.make) errors.push('Missing vehicle make');
     if (!vehicleData.model) errors.push('Missing vehicle model');
+    if (!vehicleData.year) errors.push('Missing vehicle year');
     
-    // Additional validation
+    // Additional validation for data quality
     if (vehicleData.year && (isNaN(Number(vehicleData.year)) || Number(vehicleData.year) < 1900 || Number(vehicleData.year) > new Date().getFullYear() + 1)) {
       errors.push(`Invalid year: ${vehicleData.year}`);
     }
@@ -141,52 +168,60 @@ Format your response as a JSON object with these 5 keys. Each value should be a 
       errors.push(`Invalid mileage: ${vehicleData.mileage}`);
     }
     
+    // VIN validation (basic length check)
+    if (vehicleData.vin && (typeof vehicleData.vin !== 'string' || vehicleData.vin.length !== 17)) {
+      errors.push(`Invalid VIN format: ${vehicleData.vin}`);
+    }
+    
     return errors;
   }
   
   /**
-   * Generate fallback analysis when OpenAI analysis fails
+   * Generate analysis that clearly indicates an error occurred
    */
-  private generateFallbackAnalysis(vehicleData: any): any {
-    const vehicleDesc = this.getVehicleDescription(vehicleData);
+  private generateErrorAnalysis(vehicleData: any, error: any): any {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     return {
-      reliability: `Based on available information about ${vehicleDesc}, typical reliability ratings suggest mixed performance. Without specific details, it's recommended to research common issues for this make and model before purchasing. Consider requesting maintenance records from the seller to understand the vehicle's service history better.`,
+      reliability: `Unable to provide reliability analysis due to data extraction issues: ${errorMessage}. Please verify the vehicle details manually or try a different listing.`,
       
-      marketValue: `For a ${vehicleDesc}${vehicleData.mileage ? ` with ${vehicleData.mileage.toLocaleString()} miles` : ''}${vehicleData.price ? ` priced at $${vehicleData.price.toLocaleString()}` : ''}, market value analysis requires comparison with similar listings in your local area. Check Kelley Blue Book or Edmunds for estimated values based on condition, mileage, and features. The current used car market varies significantly by location and demand.`,
+      marketValue: `Market value analysis is unavailable due to data extraction issues: ${errorMessage}. To get an accurate market value assessment, please provide more specific vehicle details.`,
       
-      maintenanceNeeds: `${vehicleDesc}${vehicleData.mileage ? ` with ${vehicleData.mileage.toLocaleString()} miles` : ''} likely requires regular maintenance including oil changes every 5,000-7,500 miles, brake inspections, fluid checks, and tire rotations. ${vehicleData.make ? `${vehicleData.make} vehicles in this age range` : 'Higher mileage vehicles'} may need timing belt/chain service, suspension components inspection, and transmission service. A pre-purchase inspection is recommended.`,
+      maintenanceNeeds: `Maintenance needs analysis is unavailable due to data extraction issues: ${errorMessage}. For maintenance information, please provide the vehicle's make, model, year, and mileage.`,
       
-      redFlags: `When inspecting this ${vehicleDesc}, pay special attention to signs of previous accidents, uneven panel gaps, mismatched paint, unusual sounds during test drives, and hesitation during acceleration. ${vehicleData.make && vehicleData.model ? `Common issues for ${vehicleData.make} ${vehicleData.model} models include (research specific to this model recommended)` : 'Every used vehicle requires careful inspection'}. Consider getting a comprehensive pre-purchase inspection from a trusted mechanic.`,
+      redFlags: `Red flags analysis is unavailable due to data extraction issues: ${errorMessage}. Please verify that the listing URL is valid and accessible.`,
       
-      recommendation: `Before making a decision on this ${vehicleDesc}, arrange a thorough test drive and professional inspection. ${vehicleData.make && vehicleData.model ? `Research this specific ${vehicleData.make} ${vehicleData.model}'s common issues` : 'Research this vehicle model\'s common issues'}, verify the vehicle history report, and compare the price with similar listings in your area. These steps will help you make an informed purchase decision.`
+      recommendation: `I cannot provide a recommendation due to data extraction issues: ${errorMessage}. Please try again with a different listing URL or provide the vehicle details manually.`,
+      
+      error: true,
+      errorDetails: errorMessage
     };
   }
   
   /**
-   * Get placeholder content for a missing field
+   * Get content that clearly indicates limitations due to missing data
    */
-  private getPlaceholderContentForField(field: string, vehicleData: any): string {
+  private getLimitationsContentForField(field: string, vehicleData: any): string {
     const vehicleDesc = this.getVehicleDescription(vehicleData);
     
     switch (field) {
       case 'reliability':
-        return `Based on available information about ${vehicleDesc}, typical reliability ratings suggest average to above-average performance. Without more specific details, researching common issues for this make and model before purchasing is recommended. Consider requesting maintenance records from the seller.`;
+        return `Limited reliability analysis for ${vehicleDesc}: Not enough specific data was provided to give a detailed reliability assessment. For an accurate reliability analysis, I would need the exact make, model, and year of the vehicle.`;
       
       case 'marketValue':
-        return `For a ${vehicleDesc}${vehicleData.mileage ? ` with ${vehicleData.mileage.toLocaleString()} miles` : ''}${vehicleData.price ? ` priced at $${vehicleData.price.toLocaleString()}` : ''}, current market values suggest this is within the expected range. However, local market conditions can vary, so comparing with similar listings in your area is recommended.`;
+        return `Limited market value analysis for ${vehicleDesc}: ${!vehicleData.price ? 'No price information was provided. ' : ''}${!vehicleData.mileage ? 'No mileage information was provided. ' : ''}Without complete pricing and vehicle condition details, I cannot accurately assess the market value. Please provide more specific information for a proper market analysis.`;
       
       case 'maintenanceNeeds':
-        return `${vehicleDesc}${vehicleData.mileage ? ` with ${vehicleData.mileage.toLocaleString()} miles` : ''} will likely require regular maintenance including oil changes, brake service, and fluid checks. Higher mileage vehicles typically need more attention to suspension, transmission, and cooling systems.`;
+        return `Limited maintenance needs analysis for ${vehicleDesc}: ${!vehicleData.mileage ? 'No mileage information was provided. ' : ''}Without specific details about the vehicle's history and current condition, I can only provide general maintenance recommendations. Please provide more information for specific maintenance guidance.`;
       
       case 'redFlags':
-        return `When inspecting this ${vehicleDesc}, look for signs of previous accidents, uneven panel gaps, mismatched paint, and mechanical issues during the test drive. A professional inspection is highly recommended before purchase.`;
+        return `Limited red flags analysis for ${vehicleDesc}: Without complete listing details, I cannot identify specific concerns. Generally, you should be cautious about listings with limited information, no photos, vague descriptions, or pricing that seems too good to be true. Always inspect the vehicle in person and consider a professional inspection.`;
       
       case 'recommendation':
-        return `Based on the available information for this ${vehicleDesc}, a thorough inspection and test drive are essential before making a decision. Verify the vehicle history report and consider having a professional mechanic evaluate the vehicle's condition.`;
+        return `Cannot provide a recommendation for ${vehicleDesc}: There is insufficient information to make a responsible recommendation about this vehicle. I recommend gathering more specific details about this vehicle, including a vehicle history report, service records, and a professional inspection before making a purchase decision.`;
       
       default:
-        return `Additional information about this ${vehicleDesc} would be helpful for a more complete analysis.`;
+        return `Limited analysis available: Insufficient data was provided to analyze this aspect of the vehicle listing.`;
     }
   }
   
@@ -200,6 +235,14 @@ Format your response as a JSON object with these 5 keys. Each value should be a 
     if (vehicleData.make) desc += `${vehicleData.make} `;
     if (vehicleData.model) desc += `${vehicleData.model}`;
     
-    return desc.trim() || 'vehicle';
+    if (desc.trim()) {
+      return desc.trim();
+    }
+    
+    if (vehicleData.vin) {
+      return `vehicle with VIN ${vehicleData.vin}`;
+    }
+    
+    return 'the vehicle in this listing';
   }
 }
