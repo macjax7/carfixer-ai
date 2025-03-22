@@ -1,7 +1,9 @@
 
 import { corsHeaders, createSuccessResponse, createErrorResponse } from '../utils.ts';
+import { FirecrawlService } from '../services/firecrawl.ts';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
 
 export async function handleVehicleListing(data: any) {
   try {
@@ -13,14 +15,11 @@ export async function handleVehicleListing(data: any) {
     
     console.log('Analyzing vehicle listing:', url);
     
-    // In a real implementation, we would scrape the listing page here
-    // For the demo, we'll simulate extracting data using GPT-4o
-
-    // First, simulate extracting basic data from the URL
+    // Extract data from the listing URL using Firecrawl
     const extractedData = await extractListingData(url);
     
     if (!extractedData.success) {
-      throw new Error('Failed to extract data from listing URL');
+      throw new Error('Failed to extract data from listing URL: ' + extractedData.error);
     }
     
     // Then, perform AI analysis on the extracted data
@@ -41,10 +40,123 @@ async function extractListingData(url: string) {
   try {
     // Identify the platform from the URL
     const platform = identifyPlatform(url);
+    console.log('Identified platform:', platform);
     
-    // In a production environment, you would use a web scraper to extract data
-    // For now, we'll use OpenAI to extract simulated data
+    if (firecrawlApiKey) {
+      try {
+        // Use Firecrawl service to extract data from the webpage if available
+        console.log('Attempting to extract listing data with Firecrawl');
+        const firecrawlService = new FirecrawlService(firecrawlApiKey);
+        const crawlResult = await firecrawlService.crawlUrl(url);
+        
+        if (crawlResult.success) {
+          console.log('Successfully extracted data with Firecrawl');
+          
+          // Process the crawled data to extract vehicle information
+          const vehicleData = processFirecrawlData(crawlResult.data, platform);
+          return {
+            success: true,
+            data: vehicleData
+          };
+        } else {
+          console.warn('Firecrawl extraction failed, falling back to simulation:', crawlResult.error);
+        }
+      } catch (error) {
+        console.error('Error with Firecrawl service:', error);
+        console.log('Falling back to simulated data extraction');
+      }
+    }
     
+    // Fallback: Use OpenAI to simulate data extraction
+    console.log('Using OpenAI to simulate data extraction');
+    return simulateDataExtraction(url, platform);
+  } catch (error) {
+    console.error('Error extracting listing data:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+function processFirecrawlData(crawlData: any, platform: string): any {
+  try {
+    console.log('Processing Firecrawl data for', platform);
+    
+    // Extract texts from the page content
+    const pageText = crawlData?.pages?.[0]?.content?.markdown || '';
+    
+    // Use OpenAI to extract structured vehicle data from the crawled text
+    return extractVehicleDataFromText(pageText, platform);
+  } catch (error) {
+    console.error('Error processing Firecrawl data:', error);
+    throw new Error('Unable to process the crawled webpage data');
+  }
+}
+
+async function extractVehicleDataFromText(text: string, platform: string): Promise<any> {
+  try {
+    const promptText = `
+Extract vehicle information from this ${platform} listing:
+
+${text}
+
+Extract and format as JSON with these fields:
+- make (string): Car manufacturer
+- model (string): Car model
+- year (number): Production year
+- price (number): Asking price in USD without currency symbols or commas
+- mileage (number): Mileage in miles without commas
+- vin (string, optional): VIN if available
+- description (string): Seller's description, trimmed if needed
+- imageUrl (string, optional): URL to main image if found
+
+Return ONLY the JSON with these fields, nothing else. If a field is not found in the text, omit it from the JSON.
+`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You extract structured vehicle listing data from text. Respond with valid JSON only.' },
+          { role: 'user', content: promptText }
+        ],
+        temperature: 0.2,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const result = await response.json();
+    const textContent = result.choices[0].message.content;
+    
+    // Extract JSON from the response
+    const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Could not extract JSON from OpenAI response');
+    }
+    
+    const data = JSON.parse(jsonMatch[0]);
+    console.log('Extracted vehicle data:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('Error extracting vehicle data from text:', error);
+    throw error;
+  }
+}
+
+async function simulateDataExtraction(url: string, platform: string) {
+  try {
     const promptText = `
 Extract vehicle information from this listing URL: ${url}
 Assume this is a ${platform} listing. Based on the URL structure and your knowledge of car listings, please create a plausible JSON representation of what data might be in this listing.
@@ -92,7 +204,7 @@ Just respond with the JSON, no explanations.
       data
     };
   } catch (error) {
-    console.error('Error extracting listing data:', error);
+    console.error('Error simulating listing data extraction:', error);
     return {
       success: false,
       error: error.message
