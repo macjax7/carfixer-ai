@@ -21,7 +21,7 @@ interface VehicleContextType {
   selectVehicle: (id: string) => void;
 }
 
-const VehicleContext = createContext<VehicleContextType | undefined>(undefined);
+export const VehicleContext = createContext<VehicleContextType | undefined>(undefined);
 
 export const useVehicles = () => {
   const context = useContext(VehicleContext);
