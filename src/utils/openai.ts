@@ -38,7 +38,7 @@ export async function sendChatMessage(messages: ChatMessage[], includeVehicleCon
 /**
  * Analyze an image using OpenAI's vision capabilities
  */
-export async function analyzeImage(imageUrl: string, prompt?: string) {
+export async function analyzeImage(imageUrl: string, prompt?: string, vehicleInfo = null) {
   try {
     const { data, error } = await supabase.functions.invoke('openai', {
       body: {
@@ -46,7 +46,8 @@ export async function analyzeImage(imageUrl: string, prompt?: string) {
         action: 'analyze',
         data: {
           image: imageUrl,
-          prompt
+          prompt,
+          vehicleInfo
         }
       }
     });
@@ -139,6 +140,39 @@ export async function getRepairGuidance(params: {
 }
 
 /**
+ * Convert speech to text using AI
+ */
+export async function speechToText(audioBlob: Blob) {
+  try {
+    // Convert blob to base64
+    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      reader.onloadend = async () => {
+        try {
+          const base64data = (reader.result as string).split(',')[1];
+          
+          const { data, error } = await supabase.functions.invoke('voice-to-text', {
+            body: {
+              audio: base64data
+            }
+          });
+          
+          if (error) throw new Error(error.message);
+          resolve(data.text);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(audioBlob);
+    });
+  } catch (error) {
+    console.error('Error converting speech to text:', error);
+    throw error;
+  }
+}
+
+/**
  * Decode a VIN number to get vehicle details
  */
 export async function decodeVIN(vin: string) {
@@ -195,7 +229,7 @@ export function useOpenAI() {
       selectedVehicle ? `This is from a ${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}.` : ''
     }`;
     
-    return analyzeImage(imageUrl, prompt);
+    return analyzeImage(imageUrl, prompt, selectedVehicle);
   };
   
   const getDiagnostics = async (params: {
@@ -240,6 +274,11 @@ export function useOpenAI() {
     return getOBDSensorData();
   };
   
+  // Add the speechToText function to the hook
+  const convertSpeechToText = async (audioBlob: Blob) => {
+    return speechToText(audioBlob);
+  };
+  
   return {
     chatWithAI,
     identifyPart,
@@ -247,6 +286,7 @@ export function useOpenAI() {
     findParts,
     getRepairSteps,
     decodeVehicleVIN,
-    getOBDData
+    getOBDData,
+    speechToText: convertSpeechToText
   };
 }

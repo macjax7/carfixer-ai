@@ -13,8 +13,12 @@ export async function handleChatRequest(data: any) {
     
     let systemPrompt = 'You are CarFix AI, an automotive diagnostic assistant. Provide helpful, accurate advice about vehicle problems, maintenance, and repairs. Always be clear when a repair requires professional help.';
     
+    // Updated to include strict focus on the specific vehicle mentioned
+    systemPrompt += ' IMPORTANT: Focus ONLY on the specific vehicle the user is asking about. Do NOT provide general advice or mention other vehicles in your responses. If vehicle information is provided, tailor your answer exclusively to that specific make, model, and year.';
+    
     if (includeVehicleContext && vehicleInfo) {
       systemPrompt += ` The user's vehicle is a ${vehicleInfo.year || ''} ${vehicleInfo.make || ''} ${vehicleInfo.model || ''}.`;
+      systemPrompt += ' Your answer must be exclusively focused on this specific vehicle. Do not mention or compare with other vehicles.';
     }
 
     const requestMessages = [
