@@ -5,21 +5,38 @@ const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 export async function handleChatRequest(data: any) {
   try {
-    const { messages, includeVehicleContext = false, vehicleInfo = {} } = data;
+    const { messages, includeVehicleContext = false, vehicleInfo = {}, messageHistory = [] } = data;
     
     if (!messages || messages.length === 0) {
       throw new Error('No messages provided for chat request');
     }
     
-    // Modified system prompt to allow answering about any vehicle mentioned by the user
+    // Check if this is the first message or a very generic question
+    const userMessage = messages[messages.length - 1].content;
+    
+    // Check if the user has mentioned a vehicle in their current query or previous messages
+    const hasVehicleMention = checkForVehicleMention(userMessage, messageHistory);
+    
+    // Check if the user is asking about a specific repair procedure or diagnostic
+    const isRepairOrDiagnosticQuery = checkForRepairOrDiagnosticQuery(userMessage);
+    
+    // If repair or diagnostic query with no vehicle mention, prompt for vehicle
+    if (isRepairOrDiagnosticQuery && !hasVehicleMention && !vehicleInfo?.make) {
+      return createSuccessResponse({
+        message: generateVehiclePrompt(),
+        requestVehicleInfo: true
+      });
+    }
+    
+    // Modified system prompt to be more cautious about assuming vehicle context
     let systemPrompt = 'You are CarFix AI, an automotive diagnostic assistant. Provide helpful, accurate advice about vehicle problems, maintenance, and repairs. Always be clear when a repair requires professional help.';
     
     // Updated to encourage focusing on the specific vehicle mentioned in the query, not just saved vehicles
-    systemPrompt += ' IMPORTANT: Focus on the specific vehicle the user is asking about in their query. Provide detailed, accurate information for the exact make, model, and year mentioned in the user\'s message. Do not restrict your answers to only vehicles saved in the user\'s profile.';
+    systemPrompt += ' IMPORTANT: Focus on the specific vehicle the user is asking about in their query. If the user has not specified a vehicle and you need vehicle-specific information to provide an accurate answer, politely ask which vehicle they are working on.';
     
-    // If user has a selected vehicle in their profile, mention it but don't restrict answers to only that vehicle
+    // Only include the user's selected vehicle as context if relevant, but don't assume it's the one they're asking about
     if (includeVehicleContext && vehicleInfo && Object.keys(vehicleInfo).length > 0) {
-      systemPrompt += ` The user's currently selected vehicle is a ${vehicleInfo.year || ''} ${vehicleInfo.make || ''} ${vehicleInfo.model || ''}, but you should still provide assistance for any vehicle they ask about in their message.`;
+      systemPrompt += ` The user's currently selected vehicle is a ${vehicleInfo.year || ''} ${vehicleInfo.make || ''} ${vehicleInfo.model || ''}, but only reference this if they haven't specified another vehicle in their query.`;
     }
 
     const requestMessages = [
@@ -62,4 +79,73 @@ export async function handleChatRequest(data: any) {
     console.error('Error in chat handler:', error);
     return createErrorResponse(error);
   }
+}
+
+// Helper functions
+
+// Check if the user has mentioned a vehicle in their messages
+function checkForVehicleMention(currentMessage: string, messageHistory: string[] = []): boolean {
+  // Common car makes
+  const carMakes = [
+    'toyota', 'honda', 'ford', 'chevrolet', 'chevy', 'nissan', 'hyundai', 'kia', 
+    'subaru', 'bmw', 'mercedes', 'audi', 'lexus', 'acura', 'mazda', 'volkswagen', 
+    'vw', 'jeep', 'ram', 'dodge', 'chrysler', 'buick', 'cadillac', 'gmc'
+  ];
+  
+  // Check for year patterns (like "2018" or "'18")
+  const yearPattern = /\b(19|20)\d{2}\b|'\d{2}\b/i;
+  
+  // Check for make/model combinations
+  const makeModelPattern = new RegExp(`\\b(${carMakes.join('|')})\\s+[a-z0-9]+\\b`, 'i');
+  
+  // Check current message
+  if (yearPattern.test(currentMessage) || makeModelPattern.test(currentMessage)) {
+    return true;
+  }
+  
+  // Check message history
+  for (const message of messageHistory) {
+    if (yearPattern.test(message) || makeModelPattern.test(message)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+// Check if the query is about a repair or diagnostic procedure
+function checkForRepairOrDiagnosticQuery(message: string): boolean {
+  const repairTerms = [
+    'fix', 'repair', 'replace', 'install', 'remove', 'change', 'maintenance',
+    'how to', 'steps', 'procedure', 'guide', 'instructions',
+    'broken', 'issue', 'problem', 'check', 'diagnose', 'troubleshoot'
+  ];
+  
+  const partTerms = [
+    'brake', 'engine', 'transmission', 'tire', 'wheel', 'battery', 'starter',
+    'alternator', 'radiator', 'coolant', 'oil', 'filter', 'spark plug',
+    'ignition', 'sensor', 'pump', 'belt', 'hose', 'light', 'fuse'
+  ];
+  
+  // Check for repair terms
+  const repairPattern = new RegExp(`\\b(${repairTerms.join('|')})\\b`, 'i');
+  
+  // Check for part terms
+  const partPattern = new RegExp(`\\b(${partTerms.join('|')})\\b`, 'i');
+  
+  // If message contains both a repair term and a part term, it's likely a repair query
+  return repairPattern.test(message) && partPattern.test(message);
+}
+
+// Generate a random vehicle prompt
+function generateVehiclePrompt(): string {
+  const prompts = [
+    "Which vehicle are you working on? I can provide more specific advice if you share the year, make, and model.",
+    "I'd like to help with that. What's the year, make, and model of your vehicle so I can give you the most accurate information?",
+    "To give you the best guidance, could you tell me which vehicle you're asking about? The year, make, and model would be helpful.",
+    "For me to provide specific instructions, I'll need to know what vehicle you're working with. Can you share the year, make, and model?",
+    "Different vehicles have different procedures. What's the year, make, and model of the vehicle you're working on?"
+  ];
+  
+  return prompts[Math.floor(Math.random() * prompts.length)];
 }

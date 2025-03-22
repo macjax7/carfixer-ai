@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { useVehicles } from '@/context/VehicleContext';
 
@@ -10,7 +9,12 @@ export type ChatMessage = {
 /**
  * Send a message to the OpenAI API for chat completion
  */
-export async function sendChatMessage(messages: ChatMessage[], includeVehicleContext = true, vehicleInfo = null) {
+export async function sendChatMessage(
+  messages: ChatMessage[], 
+  includeVehicleContext = true, 
+  vehicleInfo = null,
+  messageHistory: string[] = []
+) {
   try {
     // Filter messages to only include the required fields for the API
     const apiMessages = messages.map(({ role, content }) => ({ role, content }));
@@ -22,13 +26,14 @@ export async function sendChatMessage(messages: ChatMessage[], includeVehicleCon
         data: {
           messages: apiMessages,
           includeVehicleContext,
-          vehicleInfo
+          vehicleInfo,
+          messageHistory
         }
       }
     });
 
     if (error) throw new Error(error.message);
-    return data.message;
+    return data;
   } catch (error) {
     console.error('Error sending chat message:', error);
     throw error;
@@ -220,8 +225,18 @@ export async function getOBDSensorData() {
 export function useOpenAI() {
   const { selectedVehicle } = useVehicles();
   
-  const chatWithAI = async (messages: ChatMessage[], includeVehicleContext = true) => {
-    return sendChatMessage(messages, includeVehicleContext, selectedVehicle);
+  const chatWithAI = async (
+    messages: ChatMessage[], 
+    includeVehicleContext = true,
+    vehicleOverride = null,
+    messageHistory: string[] = []
+  ) => {
+    return sendChatMessage(
+      messages, 
+      includeVehicleContext, 
+      vehicleOverride || selectedVehicle,
+      messageHistory
+    );
   };
   
   const identifyPart = async (imageUrl: string, customPrompt?: string) => {

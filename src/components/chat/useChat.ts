@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useOpenAI, ChatMessage } from '@/utils/openai';
 import { Message } from './types';
+import { useVehicles } from '@/hooks/use-vehicles';
 
 export const useChat = () => {
   const [messages, setMessages] = useState<Message[]>([
@@ -16,8 +17,11 @@ export const useChat = () => {
   
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [messageHistory, setMessageHistory] = useState<string[]>([]);
+  const [hasAskedForVehicle, setHasAskedForVehicle] = useState(false);
   const { toast } = useToast();
   const { chatWithAI } = useOpenAI();
+  const { selectedVehicle } = useVehicles();
   
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +37,7 @@ export const useChat = () => {
     };
     
     setMessages(prevMessages => [...prevMessages, userMessage]);
+    setMessageHistory(prev => [...prev, input]); // Add to message history
     setInput('');
     setIsLoading(true);
     
@@ -46,13 +51,18 @@ export const useChat = () => {
           content: msg.text
         }));
       
-      // Call the OpenAI API
-      const aiResponse = await chatWithAI(apiMessages);
+      // Call the OpenAI API with message history for context
+      const aiResponse = await chatWithAI(apiMessages, true, selectedVehicle, messageHistory);
+      
+      // Check if the response is requesting vehicle information
+      if (typeof aiResponse === 'object' && aiResponse.requestVehicleInfo) {
+        setHasAskedForVehicle(true);
+      }
       
       const aiMessage: Message = {
         id: Date.now().toString(),
         sender: 'ai',
-        text: aiResponse,
+        text: typeof aiResponse === 'object' ? aiResponse.message : aiResponse,
         timestamp: new Date()
       };
       
@@ -103,6 +113,7 @@ export const useChat = () => {
     handleSendMessage,
     handleImageUpload,
     handleSuggestedPrompt,
-    suggestedPrompts
+    suggestedPrompts,
+    hasAskedForVehicle
   };
 };
