@@ -9,6 +9,7 @@ import { handlePartLookup } from './handlers/part-lookup.ts';
 import { handleRepairGuidance } from './handlers/repair.ts';
 import { handleVehicleInfo } from './handlers/vehicle-info.ts';
 import { handleUserProfile } from './handlers/user-profile.ts';
+import { handleVehicleListing } from './handlers/vehicle-listing.ts';
 
 /**
  * Main API Gateway for CarFix AI services
@@ -30,7 +31,12 @@ serve(async (req) => {
         throw new Error('Auth service endpoints not implemented in this function');
       
       case 'vehicle':
-        return handleVehicleInfo(action, data);
+        switch (action) {
+          case 'listing-analysis':
+            return handleVehicleListing(data);
+          default:
+            return handleVehicleInfo(action, data);
+        }
       
       case 'diagnostic':
         switch (action) {
@@ -83,6 +89,8 @@ serve(async (req) => {
               return handlePartLookup(data);
             case 'repair-guidance':
               return handleRepairGuidance(data);
+            case 'analyze-listing':
+              return handleVehicleListing(data);
             default:
               throw new Error(`Invalid legacy action: ${action}`);
           }

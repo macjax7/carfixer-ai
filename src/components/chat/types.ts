@@ -10,4 +10,22 @@ export interface Message {
     location: string;
     diagramUrl: string;
   };
+  vehicleListingAnalysis?: {
+    url: string;
+    make?: string;
+    model?: string;
+    year?: number;
+    mileage?: number;
+    price?: number;
+    vin?: string;
+    description?: string;
+    imageUrl?: string;
+    analysis: {
+      reliability: string;
+      marketValue: string;
+      maintenanceNeeds: string;
+      redFlags: string;
+      recommendation: string;
+    };
+  };
 }

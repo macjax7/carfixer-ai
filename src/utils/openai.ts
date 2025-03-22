@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { useVehicles } from '@/context/VehicleContext';
 
@@ -61,6 +62,27 @@ export async function analyzeImage(imageUrl: string, prompt?: string, vehicleInf
     return data.analysis;
   } catch (error) {
     console.error('Error analyzing image:', error);
+    throw error;
+  }
+}
+
+/**
+ * Analyze a vehicle listing URL
+ */
+export async function analyzeVehicleListing(url: string) {
+  try {
+    const { data, error } = await supabase.functions.invoke('openai', {
+      body: {
+        service: 'vehicle',
+        action: 'listing-analysis',
+        data: { url }
+      }
+    });
+
+    if (error) throw new Error(error.message);
+    return data;
+  } catch (error) {
+    console.error('Error analyzing vehicle listing:', error);
     throw error;
   }
 }
@@ -247,6 +269,10 @@ export function useOpenAI() {
     return analyzeImage(imageUrl, prompt, selectedVehicle);
   };
   
+  const analyzeListing = async (url: string) => {
+    return analyzeVehicleListing(url);
+  };
+  
   const getDiagnostics = async (params: {
     dtcCode?: string;
     symptoms?: string[];
@@ -297,6 +323,7 @@ export function useOpenAI() {
   return {
     chatWithAI,
     identifyPart,
+    analyzeListing,
     getDiagnostics,
     findParts,
     getRepairSteps,

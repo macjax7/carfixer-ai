@@ -16,6 +16,7 @@ const AIChat: React.FC = () => {
     isLoading,
     handleSendMessage,
     handleImageUpload,
+    handleListingAnalysis,
     handleSuggestedPrompt,
     suggestedPrompts,
     hasAskedForVehicle
@@ -84,6 +85,7 @@ const AIChat: React.FC = () => {
                 timestamp={msg.timestamp}
                 image={msg.image}
                 componentDiagram={msg.componentDiagram}
+                vehicleListingAnalysis={msg.vehicleListingAnalysis}
               />
             ))}
             
@@ -104,6 +106,7 @@ const AIChat: React.FC = () => {
           setInput={setInput}
           handleSendMessage={handleSendMessage}
           handleImageUpload={handleImageUpload}
+          handleListingAnalysis={handleListingAnalysis}
           isLoading={isLoading}
         />
       </div>

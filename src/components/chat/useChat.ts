@@ -21,7 +21,7 @@ export const useChat = () => {
   const [messageHistory, setMessageHistory] = useState<string[]>([]);
   const [hasAskedForVehicle, setHasAskedForVehicle] = useState(false);
   const { toast } = useToast();
-  const { chatWithAI, identifyPart } = useOpenAI();
+  const { chatWithAI, identifyPart, analyzeListing } = useOpenAI();
   const { selectedVehicle } = useVehicles();
   
   // Helper function to detect OBD-II codes in a message
@@ -161,6 +161,64 @@ export const useChat = () => {
       setIsLoading(false);
     }
   };
+  
+  const handleListingAnalysis = async (url: string) => {
+    if (isLoading) return;
+    
+    // Create a message for the user indicating they've shared a listing URL
+    const userMessage: Message = {
+      id: nanoid(),
+      sender: 'user',
+      text: `Can you analyze this vehicle listing? ${url}`,
+      timestamp: new Date()
+    };
+    
+    setMessages(prevMessages => [...prevMessages, userMessage]);
+    setInput('');
+    setIsLoading(true);
+    
+    try {
+      // Call the API to analyze the vehicle listing
+      const listingData = await analyzeListing(url);
+      
+      // Create AI response with the vehicle listing analysis
+      const aiMessage: Message = {
+        id: nanoid(),
+        sender: 'ai',
+        text: "I've analyzed this vehicle listing for you. Here's what I found:",
+        timestamp: new Date(),
+        vehicleListingAnalysis: {
+          url,
+          ...listingData
+        }
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Error analyzing vehicle listing:', error);
+      
+      let errorMessage = "Sorry, I couldn't analyze that vehicle listing. Please try again with a different URL.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+      
+      // Add an error message from the AI
+      setMessages(prev => [...prev, {
+        id: nanoid(),
+        sender: 'ai',
+        text: "I couldn't analyze that vehicle listing. The URL may be invalid or not from a supported platform. Try pasting a direct link to a vehicle listing from platforms like Craigslist, Facebook Marketplace, CarGurus, AutoTrader, etc.",
+        timestamp: new Date()
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSuggestedPrompt = (prompt: string) => {
     setInput(prompt);
@@ -174,7 +232,7 @@ export const useChat = () => {
     "How do I change brake pads?",
     "What does the check engine light mean?",
     "Can you help identify a car part from a photo?",
-    "Explain code P0171 on a Toyota Camry"
+    "Analyze a vehicle listing for me"
   ];
 
   return {
@@ -184,6 +242,7 @@ export const useChat = () => {
     isLoading,
     handleSendMessage,
     handleImageUpload,
+    handleListingAnalysis,
     handleSuggestedPrompt,
     suggestedPrompts,
     hasAskedForVehicle
