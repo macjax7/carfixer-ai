@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { nanoid } from 'nanoid';
 import { Message } from '@/components/chat/types';
+import { ChatMessage } from '@/utils/openai';
 
 export const useChatMessages = () => {
   const [messages, setMessages] = useState<Message[]>([
@@ -46,12 +47,12 @@ export const useChatMessages = () => {
     return aiMessage;
   };
   
-  const getMessagesForAPI = (userMessage: Message) => {
+  const getMessagesForAPI = (userMessage: Message): ChatMessage[] => {
     return messages
       .filter(msg => msg.id !== '1') // Filter out the welcome message
       .concat(userMessage)
       .map(msg => ({
-        role: msg.sender === 'user' ? 'user' : 'assistant',
+        role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
         content: msg.text
       }));
   };

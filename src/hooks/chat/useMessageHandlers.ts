@@ -1,4 +1,3 @@
-
 import { FormEvent } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useOpenAI, ChatMessage } from '@/utils/openai';
@@ -27,7 +26,7 @@ export const useMessageHandlers = () => {
     
     try {
       // Prepare the messages array for the API
-      const apiMessages: ChatMessage[] = getMessagesForAPI(userMessage);
+      const apiMessages = getMessagesForAPI(userMessage);
       
       // Check if the query contains a DTC code
       const containsCode = containsDTCCode(input);
