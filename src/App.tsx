@@ -14,6 +14,7 @@ import Vehicles from "./pages/Vehicles";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
+import Settings from "./pages/Settings";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,11 @@ const App = () => (
                   <Route path="/vehicles" element={
                     <ProtectedRoute>
                       <Vehicles />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/settings" element={
+                    <ProtectedRoute>
+                      <Settings />
                     </ProtectedRoute>
                   } />
                   <Route path="*" element={<NotFound />} />

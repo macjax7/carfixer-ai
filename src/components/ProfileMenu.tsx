@@ -57,6 +57,10 @@ const ProfileMenu = () => {
     }
   };
 
+  const navigateToSettings = () => {
+    navigate('/settings');
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -77,7 +81,7 @@ const ProfileMenu = () => {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={navigateToSettings}>
             <Settings className="mr-2 h-4 w-4" />
             <span>Settings</span>
           </DropdownMenuItem>
