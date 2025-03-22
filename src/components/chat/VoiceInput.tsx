@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
-import { convertSpeechToText } from '@/utils/openai';
+import { useOpenAI } from '@/utils/openai';
 import { toast } from '../ui/use-toast';
 
 const VoiceInput = ({ onTranscription, disabled = false }) => {
@@ -10,6 +10,7 @@ const VoiceInput = ({ onTranscription, disabled = false }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const { speechToText } = useOpenAI();
 
   useEffect(() => {
     return () => {
@@ -64,7 +65,7 @@ const VoiceInput = ({ onTranscription, disabled = false }) => {
 
   const processAudioBlob = async (audioBlob) => {
     try {
-      const text = await convertSpeechToText(audioBlob);
+      const text = await speechToText(audioBlob);
       if (text) {
         onTranscription(text);
       }
