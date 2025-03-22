@@ -40,3 +40,47 @@
 .read-the-docs {
   color: #888;
 }
+
+/* CarFix specific colors */
+:root {
+  --carfix-50: 210, 100%, 95%;
+  --carfix-100: 210, 100%, 90%;
+  --carfix-200: 210, 100%, 80%;
+  --carfix-300: 210, 100%, 70%;
+  --carfix-400: 210, 100%, 60%;
+  --carfix-500: 210, 100%, 50%;
+  --carfix-600: 210, 100%, 40%;
+  --carfix-700: 210, 100%, 30%;
+  --carfix-800: 210, 100%, 20%;
+  --carfix-900: 210, 100%, 10%;
+  
+  /* Sidebar specific variables */
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 222.2 47.4% 11.2%;
+  --sidebar-border: 214.3 31.8% 91.4%;
+  --sidebar-accent: 210 40% 96.1%;
+  --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+  --sidebar-ring: 215 20.2% 65.1%;
+}
+
+.dark {
+  --sidebar: 222.2 84% 4.9%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-border: 217.2 32.6% 17.5%;
+  --sidebar-accent: 217.2 32.6% 17.5%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-ring: 212.7 26.8% 83.9%;
+}
+
+/* Sidebar styles */
+.sidebar-nav-item {
+  @apply flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors;
+}
+
+.sidebar-nav-item.active {
+  @apply bg-secondary text-secondary-foreground;
+}
+
+.sidebar-nav-item:not(.active) {
+  @apply text-muted-foreground hover:bg-secondary hover:text-secondary-foreground;
+}
