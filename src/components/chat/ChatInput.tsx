@@ -1,92 +1,85 @@
 
-import React, { useRef } from 'react';
+import React, { useState, FormEvent } from 'react';
 import { Send, Image, Mic } from 'lucide-react';
-import { Textarea } from '../ui/textarea';
-import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
+import VoiceInput from './VoiceInput';
 
 interface ChatInputProps {
   input: string;
   setInput: (input: string) => void;
-  handleSendMessage: (e: React.FormEvent) => void;
-  handleImageUpload: () => void;
-  isLoading: boolean;
+  handleSendMessage: (e: FormEvent) => void;
+  handleImageUpload?: () => void;
+  isLoading?: boolean;
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ 
-  input, 
-  setInput, 
-  handleSendMessage, 
-  handleImageUpload, 
-  isLoading 
+const ChatInput: React.FC<ChatInputProps> = ({
+  input,
+  setInput,
+  handleSendMessage,
+  handleImageUpload,
+  isLoading = false,
 }) => {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Auto-resize textarea as user types
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
-    
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (input.trim() && !isLoading) {
+        handleSendMessage(e as unknown as FormEvent);
+      }
     }
   };
 
-  // Handle keyboard shortcut (Enter to send, Shift+Enter for new line)
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
-      e.preventDefault();
-      handleSendMessage(e);
-    }
+  const handleVoiceTranscription = (text: string) => {
+    setInput(text);
   };
 
   return (
-    <form onSubmit={handleSendMessage} className="max-w-3xl mx-auto relative">
-      <div className="flex items-end rounded-xl border border-input bg-background focus-within:ring-1 focus-within:ring-carfix-500 focus-within:border-carfix-500 overflow-hidden">
-        <button 
-          type="button"
-          onClick={handleImageUpload}
-          className="p-3 text-muted-foreground hover:text-foreground transition-colors self-end"
-          aria-label="Upload image"
-        >
-          <Image className="h-5 w-5" />
-        </button>
-        
+    <form onSubmit={handleSendMessage} className="relative max-w-3xl mx-auto">
+      <div className="relative border border-input rounded-lg shadow-sm">
         <Textarea
-          ref={textareaRef}
           value={input}
-          onChange={handleTextareaChange}
+          onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="Ask about your car problem..."
-          className="flex-1 max-h-[120px] border-0 focus-visible:ring-0 resize-none py-3 px-0"
-          rows={1}
+          placeholder="Ask me anything about your vehicle..."
+          className="min-h-12 max-h-40 resize-none py-3 pr-24 pl-3 rounded-lg"
+          disabled={isLoading}
         />
         
-        <button 
-          type="button"
-          className="p-3 text-muted-foreground hover:text-foreground transition-colors self-end mr-1"
-          aria-label="Voice input"
-        >
-          <Mic className="h-5 w-5" />
-        </button>
-        
-        <button 
-          type="submit"
-          disabled={!input.trim() || isLoading}
-          className={cn(
-            "p-2 rounded-lg mr-2 mb-2 transition-colors",
-            !input.trim() || isLoading
-              ? "bg-secondary text-muted-foreground"
-              : "bg-carfix-600 text-white hover:bg-carfix-700"
+        <div className="absolute right-2 bottom-1.5 flex items-center space-x-1">
+          {handleImageUpload && (
+            <button
+              type="button"
+              onClick={handleImageUpload}
+              className="p-2 rounded-full text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
+              disabled={isLoading}
+              aria-label="Upload image"
+            >
+              <Image className="h-5 w-5" />
+            </button>
           )}
-          aria-label="Send message"
-        >
-          <Send className="h-5 w-5" />
-        </button>
+          
+          <VoiceInput
+            onTranscription={handleVoiceTranscription}
+            disabled={isLoading}
+          />
+          
+          <button
+            type="submit"
+            className={`p-2 rounded-full ${
+              input.trim() && !isLoading
+                ? 'bg-carfix-600 text-white hover:bg-carfix-700'
+                : 'bg-muted text-muted-foreground'
+            } transition-colors`}
+            disabled={!input.trim() || isLoading}
+            aria-label="Send message"
+          >
+            <Send className="h-5 w-5" />
+          </button>
+        </div>
       </div>
-      
-      <p className="text-xs text-muted-foreground text-center mt-2">
-        CarFix AI may display inaccurate info. Always verify with manufacturer service manuals.
-      </p>
     </form>
   );
 };

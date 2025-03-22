@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { useVehicles } from '@/context/VehicleContext';
 
@@ -134,6 +133,25 @@ export async function getRepairGuidance(params: {
 }
 
 /**
+ * Convert speech to text using OpenAI's Whisper API
+ */
+export async function convertSpeechToText(audioBase64: string) {
+  try {
+    const { data, error } = await supabase.functions.invoke('voice-to-text', {
+      body: {
+        audio: audioBase64
+      }
+    });
+
+    if (error) throw new Error(error.message);
+    return data.text;
+  } catch (error) {
+    console.error('Error converting speech to text:', error);
+    throw error;
+  }
+}
+
+/**
  * Custom hook to use the OpenAI API with vehicle context
  */
 export function useOpenAI() {
@@ -185,11 +203,16 @@ export function useOpenAI() {
     });
   };
   
+  const speechToText = async (audioBase64: string) => {
+    return convertSpeechToText(audioBase64);
+  };
+  
   return {
     chatWithAI,
     identifyPart,
     getDiagnostics,
     findParts,
-    getRepairSteps
+    getRepairSteps,
+    speechToText
   };
 }
