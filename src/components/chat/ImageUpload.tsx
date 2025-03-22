@@ -1,7 +1,7 @@
 
 import React, { useRef, useState } from 'react';
 import { Image, X } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface ImageUploadProps {
   onImageSelected: (file: File) => void;
@@ -52,9 +52,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     setPreviewUrl(URL.createObjectURL(file));
     onImageSelected(file);
     
-    // Suggest a prompt if empty
-    onSuggestPrompt("Can you identify this car part?");
-    
     // Reset the file input so the same file can be selected again
     e.target.value = '';
   };
@@ -71,21 +68,19 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   return (
     <>
       {previewUrl && (
-        <div className="mb-2 relative">
-          <div className="relative inline-block">
-            <img 
-              src={previewUrl} 
-              alt="Selected" 
-              className="h-20 rounded-md object-contain bg-secondary/30 border border-border"
-            />
-            <button
-              type="button"
-              onClick={removeSelectedImage}
-              className="absolute -top-2 -right-2 bg-background rounded-full p-1 shadow-sm border border-border"
-            >
-              <X className="h-4 w-4 text-muted-foreground" />
-            </button>
-          </div>
+        <div className="relative inline-block">
+          <img 
+            src={previewUrl} 
+            alt="Selected" 
+            className="h-20 rounded-md object-contain bg-secondary/30 border border-border"
+          />
+          <button
+            type="button"
+            onClick={removeSelectedImage}
+            className="absolute -top-2 -right-2 bg-background rounded-full p-1 shadow-sm border border-border"
+          >
+            <X className="h-4 w-4 text-muted-foreground" />
+          </button>
         </div>
       )}
       
@@ -98,15 +93,17 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         disabled={disabled}
       />
       
-      <button
-        type="button"
-        onClick={openFilePicker}
-        className="p-2 rounded-full text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
-        disabled={disabled}
-        aria-label="Upload image"
-      >
-        <Image className="h-5 w-5" />
-      </button>
+      {!previewUrl && (
+        <button
+          type="button"
+          onClick={openFilePicker}
+          className="p-2 rounded-full text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
+          disabled={disabled}
+          aria-label="Upload image"
+        >
+          <Image className="h-5 w-5" />
+        </button>
+      )}
     </>
   );
 };

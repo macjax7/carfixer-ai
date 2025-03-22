@@ -35,12 +35,14 @@ const ChatActions: React.FC<ChatActionsProps> = ({
         disabled={isLoading} 
       />
       
-      <ImageUpload
-        onImageSelected={onImageSelected}
-        onImageRemoved={onImageRemoved}
-        onSuggestPrompt={onSuggestPrompt}
-        disabled={isLoading}
-      />
+      {!hasSelectedImage && (
+        <ImageUpload
+          onImageSelected={onImageSelected}
+          onImageRemoved={onImageRemoved}
+          onSuggestPrompt={onSuggestPrompt}
+          disabled={isLoading}
+        />
+      )}
       
       <VoiceInput
         onTranscription={onVoiceTranscription}

@@ -3,7 +3,6 @@ import React, { useState, FormEvent } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import ImageUpload from './ImageUpload';
 import ChatActions from './ChatActions';
-import UrlAnalyzer from './UrlAnalyzer';
 
 interface ChatInputProps {
   input: string;
@@ -23,7 +22,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
   isLoading = false,
 }) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [showUrlInput, setShowUrlInput] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
@@ -58,7 +56,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const handleUrlSubmit = (url: string) => {
     if (handleListingAnalysis) {
       handleListingAnalysis(url);
-      setShowUrlInput(false);
     }
   };
 
@@ -71,25 +68,18 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  if (showUrlInput) {
-    return (
-      <form onSubmit={handleSendMessage} className="relative max-w-3xl mx-auto">
-        <UrlAnalyzer
-          onUrlSubmit={handleUrlSubmit}
-          disabled={isLoading}
-        />
-      </form>
-    );
-  }
-
   return (
     <form onSubmit={handleSendMessage} className="relative max-w-3xl mx-auto">
-      <ImageUpload
-        onImageSelected={handleImageSelected}
-        onImageRemoved={handleImageRemoved}
-        onSuggestPrompt={setInput}
-        disabled={isLoading}
-      />
+      {selectedImage && (
+        <div className="mb-2 relative">
+          <ImageUpload
+            onImageSelected={handleImageSelected}
+            onImageRemoved={handleImageRemoved}
+            onSuggestPrompt={setInput}
+            disabled={isLoading}
+          />
+        </div>
+      )}
       
       <div className="relative border border-input rounded-lg shadow-sm">
         <Textarea
