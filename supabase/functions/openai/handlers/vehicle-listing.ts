@@ -29,7 +29,7 @@ export async function handleVehicleListing(data: any) {
         unreliableExtraction: true,
         error: extractedData.error,
         url,
-        errorMessage: 'Could not extract vehicle information from the provided link. The link may require authentication or the listing format is not supported.',
+        errorMessage: extractedData.data.errorMessage || 'Could not extract vehicle information from the provided link.',
         ...extractedData.data
       });
     }
@@ -46,6 +46,24 @@ export async function handleVehicleListing(data: any) {
           maintenanceNeeds: "Maintenance needs cannot be determined without specific vehicle information, which I was unable to extract from the provided link.",
           redFlags: "I noticed a potential concern: I was unable to extract the vehicle details from this listing URL. This could mean the URL is invalid, requires authentication, or the listing has been removed.",
           recommendation: "I recommend sharing a different vehicle listing URL or manually providing the vehicle details (make, model, year, mileage, and price) for analysis."
+        }
+      });
+    }
+    
+    // Verify essential data before analysis
+    if (!extractedData.data.make || !extractedData.data.model || !extractedData.data.year) {
+      console.warn('Missing essential vehicle data for analysis');
+      
+      return createSuccessResponse({
+        ...extractedData.data,
+        extractionWarning: true,
+        errorMessage: 'Some essential vehicle details could not be extracted from the listing.',
+        analysis: {
+          reliability: "I couldn't extract complete vehicle information to provide a reliable analysis.",
+          marketValue: "Market value assessment requires complete vehicle details that weren't available in this listing.",
+          maintenanceNeeds: "I need more vehicle details to provide maintenance information.",
+          redFlags: "The listing appears to be missing essential vehicle information which is a concern.",
+          recommendation: "I recommend finding a more detailed listing or manually providing the missing vehicle details for a complete analysis."
         }
       });
     }

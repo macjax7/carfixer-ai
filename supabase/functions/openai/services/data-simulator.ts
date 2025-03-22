@@ -1,6 +1,6 @@
 
 /**
- * Service for simulating data extraction when direct extraction is not possible
+ * Service for handling data extraction failures
  */
 export class DataSimulatorService {
   private openAIApiKey: string;
@@ -10,19 +10,19 @@ export class DataSimulatorService {
   }
   
   /**
-   * Instead of simulating data, return a clear error when extraction fails
+   * Return a clear error when extraction fails without simulating data
    */
   async simulateDataExtraction(url: string, platform: string) {
-    console.log('Data extraction failed, returning extraction error instead of simulating data');
+    console.log('Data extraction failed, returning extraction error');
     
     return {
       success: false,
       error: 'Unable to extract vehicle information from the provided URL',
       data: {
         unreliableExtraction: true,
-        extractionError: true,
+        extractionFailed: true,
         url: url,
-        errorMessage: 'Could not extract vehicle information from the provided link. The link may be invalid, require authentication, or the listing format is not supported.'
+        errorMessage: 'Could not extract vehicle information from the provided link. The URL may be invalid, require authentication, or the listing format is not supported.'
       }
     };
   }

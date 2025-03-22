@@ -33,14 +33,47 @@ const UrlAnalyzer: React.FC<UrlAnalyzerProps> = ({
     }
   };
 
+  const isSupportedDomain = (url: string) => {
+    const supportedDomains = [
+      'craigslist.org',
+      'facebook.com',
+      'cargurus.com',
+      'edmunds.com',
+      'autotrader.com',
+      'cars.com',
+      'truecar.com',
+      'carmax.com',
+      'ebay.com',
+      'marketplace.facebook.com',
+      'fb.com'
+    ];
+    
+    try {
+      const hostname = new URL(url).hostname;
+      return supportedDomains.some(domain => hostname.includes(domain));
+    } catch {
+      return false;
+    }
+  };
+
   const submitUrl = () => {
     if (!urlInput.trim() || disabled) return;
     
-    // Simple URL validation
+    // URL validation
     if (!isValidUrl(urlInput)) {
       toast({
         title: "Invalid URL",
         description: "Please enter a valid URL",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Domain validation
+    if (!isSupportedDomain(urlInput)) {
+      toast({
+        title: "Unsupported Website",
+        description: "Please provide a URL from a supported vehicle listing platform (Craigslist, Facebook Marketplace, CarGurus, AutoTrader, etc.)",
         variant: "destructive"
       });
       return;
