@@ -23,6 +23,13 @@ export const useChat = () => {
   const { chatWithAI } = useOpenAI();
   const { selectedVehicle } = useVehicles();
   
+  // Helper function to detect OBD-II codes in a message
+  const containsDTCCode = (message: string): boolean => {
+    // Pattern for OBD-II codes: P, B, C, or U followed by 4 digits
+    const dtcPattern = /\b[PBCU][0-9]{4}\b/i;
+    return dtcPattern.test(message);
+  };
+  
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -50,6 +57,9 @@ export const useChat = () => {
           role: msg.sender === 'user' ? 'user' : 'assistant',
           content: msg.text
         }));
+      
+      // Check if the query contains a DTC code
+      const containsCode = containsDTCCode(input);
       
       // Call the OpenAI API with message history for context
       const aiResponse = await chatWithAI(apiMessages, true, selectedVehicle, messageHistory);
@@ -98,11 +108,14 @@ export const useChat = () => {
     setInput(prompt);
   };
   
+  // Adding more car-related suggested prompts including OBD code examples
   const suggestedPrompts = [
     "What could cause a P0300 code?",
+    "My check engine light is on with code P0420",
     "My engine is overheating",
     "How do I change brake pads?",
-    "What does the check engine light mean?"
+    "What does the check engine light mean?",
+    "Explain code P0171 on a Toyota Camry"
   ];
 
   return {

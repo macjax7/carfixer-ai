@@ -20,8 +20,12 @@ export async function handleChatRequest(data: any) {
     // Check if the user is asking about a specific repair procedure or diagnostic
     const isRepairOrDiagnosticQuery = checkForRepairOrDiagnosticQuery(userMessage);
     
+    // Check for OBD-II code patterns in the message
+    const dtcCodes = extractDTCCodes(userMessage);
+    const hasDTCQuery = dtcCodes.length > 0;
+    
     // If repair or diagnostic query with no vehicle mention, prompt for vehicle
-    if (isRepairOrDiagnosticQuery && !hasVehicleMention && !vehicleInfo?.make) {
+    if ((isRepairOrDiagnosticQuery || hasDTCQuery) && !hasVehicleMention && !vehicleInfo?.make) {
       return createSuccessResponse({
         message: generateVehiclePrompt(),
         requestVehicleInfo: true
@@ -34,9 +38,17 @@ export async function handleChatRequest(data: any) {
     // Updated to encourage focusing on the specific vehicle mentioned in the query, not just saved vehicles
     systemPrompt += ' IMPORTANT: Focus on the specific vehicle the user is asking about in their query. If the user has not specified a vehicle and you need vehicle-specific information to provide an accurate answer, politely ask which vehicle they are working on.';
     
+    // Enhanced instructions for OBD codes
+    systemPrompt += ' When you identify OBD-II diagnostic trouble codes (like P0300, B1234, C0123, U0123) in the user\'s message, provide comprehensive analysis including: 1) Code meaning specific to their vehicle, 2) Affected components, 3) Common causes in order of likelihood, 4) Diagnostic steps in order of simplicity, 5) Repair difficulty, 6) Estimated repair costs, 7) Related codes that often appear together, and 8) Preventative measures.';
+    
     // Only include the user's selected vehicle as context if relevant, but don't assume it's the one they're asking about
     if (includeVehicleContext && vehicleInfo && Object.keys(vehicleInfo).length > 0) {
       systemPrompt += ` The user's currently selected vehicle is a ${vehicleInfo.year || ''} ${vehicleInfo.make || ''} ${vehicleInfo.model || ''}, but only reference this if they haven't specified another vehicle in their query.`;
+    }
+
+    // If the user is asking about DTCs, add the codes to the system prompt
+    if (hasDTCQuery) {
+      systemPrompt += ` The user is asking about the following diagnostic trouble code(s): ${dtcCodes.join(', ')}. Provide detailed analysis for each.`;
     }
 
     const requestMessages = [
@@ -51,7 +63,7 @@ export async function handleChatRequest(data: any) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: hasDTCQuery ? 'gpt-4o' : 'gpt-4o-mini',
         messages: requestMessages,
         temperature: 0.7,
       }),
@@ -135,6 +147,16 @@ function checkForRepairOrDiagnosticQuery(message: string): boolean {
   
   // If message contains both a repair term and a part term, it's likely a repair query
   return repairPattern.test(message) && partPattern.test(message);
+}
+
+// Extract OBD-II codes from user message
+function extractDTCCodes(message: string): string[] {
+  // Pattern for OBD-II codes: P, B, C, or U followed by 4 digits
+  const dtcPattern = /\b[PBCU][0-9]{4}\b/gi;
+  const matches = message.match(dtcPattern) || [];
+  
+  // Return unique codes only
+  return [...new Set(matches.map(code => code.toUpperCase()))];
 }
 
 // Generate a random vehicle prompt

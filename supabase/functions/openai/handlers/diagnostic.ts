@@ -12,12 +12,15 @@ export async function handleDiagnosticRequest(data: any) {
     // Add instructions to focus on the specifically mentioned vehicle
     systemPrompt += ' IMPORTANT: Focus on the specific vehicle mentioned in the user\'s query. Provide detailed information tailored to the exact make, model, and year they ask about. Avoid generic advice that isn\'t relevant to their specific vehicle.';
     
+    // Enhanced diagnostic capabilities for OBD-II codes
+    systemPrompt += ' When analyzing diagnostic trouble codes (DTCs), provide comprehensive analysis including: 1) Detailed code meaning specific to the vehicle, 2) Affected components and systems, 3) Common causes in order of likelihood for this specific make/model/year, 4) Diagnostic steps in order of simplicity and cost-effectiveness, 5) Repair difficulty rating (1-5), 6) Estimated repair costs (DIY vs professional), 7) Related codes that often appear together, and 8) Preventative measures to avoid future occurrences.';
+    
     // Build a comprehensive context for the AI
     let userPrompt = '';
     
     if (dtcCode) {
       userPrompt += `Please explain diagnostic trouble code ${dtcCode} in detail for the vehicle information provided. `;
-      userPrompt += 'Include: 1) What this code means for this specific vehicle, 2) The affected system in this vehicle, 3) Common causes for this specific make/model, 4) Diagnostic steps tailored to this vehicle, 5) Repair difficulty level for this vehicle, and 6) Estimated repair costs for DIY vs. professional repair.';
+      userPrompt += 'Include: 1) What this code means for this specific vehicle, 2) The affected system in this vehicle, 3) Common causes for this specific make/model, 4) Diagnostic steps tailored to this vehicle, 5) Repair difficulty level for this vehicle, 6) Estimated repair costs for DIY vs. professional repair, 7) Related codes that might appear with this one, and 8) How to prevent this issue in the future.';
     } else if (noStart) {
       userPrompt += 'My vehicle will not start. ';
       if (symptoms.length > 0) {
