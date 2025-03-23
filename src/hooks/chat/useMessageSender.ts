@@ -6,6 +6,7 @@ import { useMessageInput } from './useMessageInput';
 import { useCodeDetection } from './useCodeDetection';
 import { useOpenAI } from '@/utils/openai';
 import { useVehicles } from '@/hooks/use-vehicles';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useMessageSender = () => {
   const { toast } = useToast();
@@ -18,17 +19,35 @@ export const useMessageSender = () => {
   const handleSendMessage = async (e: FormEvent) => {
     e.preventDefault();
     
-    if (!input.trim() || isLoading) return;
+    console.log("handleSendMessage called with input:", input);
+    if (!input.trim() || isLoading) {
+      console.log("Input is empty or loading is in progress, returning");
+      return;
+    }
     
     const userMessage = addUserMessage(input);
+    console.log("User message added:", userMessage);
     setInput('');
     setIsLoading(true);
     
     try {
-      console.log("Sending message to AI:", input);
+      console.log("Preparing to send message to AI:", input);
+      
+      // Verify Supabase connection
+      const { data: connectionTest, error: connectionError } = await supabase.from('_dummy_query').select('*').limit(1).maybeSingle();
+      if (connectionError) {
+        console.error("Supabase connection issue:", connectionError);
+        if (connectionError.message.includes("relation") && connectionError.message.includes("does not exist")) {
+          console.log("The error is expected since _dummy_query doesn't exist, but confirms we can connect to Supabase");
+        } else {
+          throw new Error(`Supabase connection issue: ${connectionError.message}`);
+        }
+      }
+      
       const apiMessages = getMessagesForAPI(userMessage);
       const containsCode = containsDTCCode(input);
       
+      console.log("Calling OpenAI API with messages:", apiMessages);
       const aiResponse = await chatWithAI(apiMessages, true, selectedVehicle, messageHistory);
       console.log("Received AI response:", aiResponse);
       
@@ -42,9 +61,8 @@ export const useMessageSender = () => {
       
       let errorMessage = "Sorry, I couldn't process your request. Please try again.";
       if (error instanceof Error) {
-        if (error.message.includes('OpenAI API error')) {
-          errorMessage = error.message;
-        }
+        errorMessage = error.message;
+        console.error('Detailed error information:', error);
       }
       
       toast({
