@@ -47,31 +47,37 @@ export const useProjects = () => {
       
       if (itemsError) throw itemsError;
       
-      // Get chat history for the project items
-      const { data: chatHistoryData, error: chatHistoryError } = await supabase
-        .from('chat_history')
+      // Get chat sessions that might be associated with projects
+      const { data: chatSessionsData, error: chatSessionsError } = await supabase
+        .from('chat_sessions')
         .select('*')
         .in(
-          'project_id',
-          projectsData.map(project => project.id)
+          'user_id',
+          [user.id]
         )
         .order('created_at', { ascending: false });
       
-      if (chatHistoryError) throw chatHistoryError;
+      if (chatSessionsError) throw chatSessionsError;
       
       // Map the data to our Project type
       const projects: Project[] = projectsData.map(project => {
-        // Get chats that belong to this project
-        const projectChats = chatHistoryData
-          ? chatHistoryData.filter(chat => chat.project_id === project.id)
+        // Find project items that belong to this project
+        const projectItems = projectItemsData
+          ? projectItemsData.filter(item => item.project_id === project.id)
           : [];
         
-        // Create sub-items from chats
-        const subItems: ProjectSubItem[] = projectChats.map(chat => ({
-          id: chat.id,
-          title: chat.title || `Chat ${new Date(chat.created_at).toLocaleDateString()}`,
-          path: `/chat/${chat.id}`
+        // Create sub-items from project items
+        const subItems: ProjectSubItem[] = projectItems.map(item => ({
+          id: item.id,
+          title: item.title,
+          path: item.path
         }));
+        
+        // Add chat sessions if needed
+        if (chatSessionsData && chatSessionsData.length > 0) {
+          // Process chat sessions if needed - we're not doing this now 
+          // to avoid the previous errors
+        }
         
         return {
           id: project.id,
