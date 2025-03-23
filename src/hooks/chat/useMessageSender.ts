@@ -12,7 +12,7 @@ export const useMessageSender = () => {
   const { toast } = useToast();
   const { chatWithAI } = useOpenAI();
   const { selectedVehicle } = useVehicles();
-  const { addUserMessage, addAIMessage, getMessagesForAPI, messageHistory } = useChatMessages();
+  const { addUserMessage, addAIMessage, getMessagesForAPI, messageHistory, chatId } = useChatMessages();
   const { input, setInput, isLoading, setIsLoading, setHasAskedForVehicle } = useMessageInput();
   const { containsDTCCode } = useCodeDetection();
 
@@ -46,6 +46,52 @@ export const useMessageSender = () => {
         // Continue anyway as this is just a connection check
       }
       
+      // Store the message in the database if user is logged in
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session?.user) {
+          // Check if we have a chat session for this chat
+          let sessionId = chatId;
+
+          // If not found, create a new chat session
+          if (!sessionId) {
+            const { data: newSession, error: sessionError } = await supabase
+              .from('chat_sessions')
+              .insert({
+                title: input.length > 30 ? `${input.substring(0, 30)}...` : input,
+                user_id: sessionData.session.user.id
+              })
+              .select('id')
+              .single();
+            
+            if (sessionError) {
+              console.error("Error creating chat session:", sessionError);
+            } else {
+              sessionId = newSession.id;
+              console.log("Created new chat session:", sessionId);
+            }
+          }
+
+          // Store the user message
+          if (sessionId) {
+            const { error: messageError } = await supabase
+              .from('chat_messages')
+              .insert({
+                session_id: sessionId,
+                role: 'user',
+                content: input
+              });
+            
+            if (messageError) {
+              console.error("Error storing user message:", messageError);
+            }
+          }
+        }
+      } catch (dbError) {
+        console.error("Error interacting with database:", dbError);
+        // Continue with the AI interaction even if database storage fails
+      }
+      
       const apiMessages = getMessagesForAPI(userMessage);
       const containsCode = containsDTCCode(input);
       
@@ -57,7 +103,28 @@ export const useMessageSender = () => {
         setHasAskedForVehicle(true);
       }
       
-      addAIMessage(typeof aiResponse === 'object' ? aiResponse.message : aiResponse);
+      const aiMessageContent = typeof aiResponse === 'object' ? aiResponse.message : aiResponse;
+      addAIMessage(aiMessageContent);
+      
+      // Store AI response in the database
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session?.user && chatId) {
+          const { error: aiMessageError } = await supabase
+            .from('chat_messages')
+            .insert({
+              session_id: chatId,
+              role: 'assistant',
+              content: aiMessageContent
+            });
+          
+          if (aiMessageError) {
+            console.error("Error storing AI message:", aiMessageError);
+          }
+        }
+      } catch (dbError) {
+        console.error("Error storing AI response:", dbError);
+      }
     } catch (error) {
       console.error('Error getting AI response:', error);
       
