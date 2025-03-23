@@ -10,11 +10,16 @@ interface VehicleCardProps {
 }
 
 const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onSelect, onEdit }) => {
+  // Use image_url with fallback to image for compatibility
+  const imageUrl = vehicle.image_url || vehicle.image || '/placeholder.svg';
+  // Use last_service with fallback to lastService for compatibility
+  const serviceDate = vehicle.last_service || vehicle.lastService || 'Not recorded';
+  
   return (
     <div className="vehicle-card animate-scale">
       <div className="relative h-36 bg-gradient-to-b from-carfix-700 to-carfix-900">
         <img 
-          src={vehicle.image || '/placeholder.svg'} 
+          src={imageUrl} 
           alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
           className="w-full h-full object-cover opacity-50"
         />
@@ -46,7 +51,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onSelect, onEdit }) 
       <div className="p-4 flex justify-between items-center">
         <div>
           <p className="text-xs text-muted-foreground">
-            Last service: {vehicle.lastService || 'Not recorded'}
+            Last service: {serviceDate}
           </p>
           {vehicle.vin && (
             <p className="text-xs text-muted-foreground mt-1">

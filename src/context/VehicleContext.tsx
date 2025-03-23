@@ -13,6 +13,8 @@ export interface Vehicle {
   image_url?: string;
   last_service?: string;
   nickname?: string;
+  image?: string; // Alias for compatibility
+  lastService?: string; // Alias for compatibility
 }
 
 interface VehicleContextType {
@@ -58,18 +60,26 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
       
       try {
         setLoading(true);
-        const { data, error } = await supabase
+        
+        // Using type assertion to tell TypeScript to trust us on this call
+        const { data: vehiclesData, error } = await supabase
           .from('vehicles')
           .select('*')
-          .eq('user_id', user.uid)
-          .order('created_at', { ascending: false });
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }) as any;
         
         if (error) {
           throw error;
         }
         
+        if (!vehiclesData) {
+          setVehicles([]);
+          setLoading(false);
+          return;
+        }
+        
         // Convert the Supabase vehicle data to our Vehicle interface
-        const formattedVehicles: Vehicle[] = data.map(vehicle => ({
+        const formattedVehicles: Vehicle[] = vehiclesData.map((vehicle: any) => ({
           id: vehicle.id,
           make: vehicle.make,
           model: vehicle.model,
@@ -77,7 +87,10 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
           vin: vehicle.vin,
           image_url: vehicle.image_url,
           last_service: vehicle.last_service ? new Date(vehicle.last_service).toISOString().split('T')[0] : undefined,
-          nickname: vehicle.nickname
+          nickname: vehicle.nickname,
+          // Add compatibility aliases
+          image: vehicle.image_url,
+          lastService: vehicle.last_service ? new Date(vehicle.last_service).toISOString().split('T')[0] : undefined
         }));
         
         setVehicles(formattedVehicles);
@@ -112,8 +125,8 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
           event: '*', 
           schema: 'public', 
           table: 'vehicles',
-          filter: user ? `user_id=eq.${user.uid}` : undefined
-        }, 
+          filter: user ? `user_id=eq.${user.id}` : undefined
+        } as any, 
         () => {
           fetchVehicles();
         }
@@ -123,7 +136,7 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
     return () => {
       supabase.removeChannel(vehiclesSubscription);
     };
-  }, [user, toast]);
+  }, [user, toast, selectedVehicle]);
   
   const addVehicle = async (vehicle: Omit<Vehicle, 'id'>) => {
     if (!user) {
@@ -136,20 +149,20 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
     }
     
     try {
+      // Use type assertion for now
       const { data, error } = await supabase
         .from('vehicles')
         .insert([{
-          user_id: user.uid,
+          user_id: user.id,
           make: vehicle.make,
           model: vehicle.model,
           year: vehicle.year,
           vin: vehicle.vin,
-          image_url: vehicle.image_url,
-          last_service: vehicle.last_service,
+          image_url: vehicle.image_url || vehicle.image, // Support both property names
+          last_service: vehicle.last_service || vehicle.lastService,
           nickname: vehicle.nickname
         }])
-        .select()
-        .single();
+        .select() as any;
       
       if (error) {
         throw error;
@@ -175,11 +188,12 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
     if (!user) return;
     
     try {
+      // Use type assertion for now
       const { error } = await supabase
         .from('vehicles')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.uid);
+        .eq('user_id', user.id) as any;
       
       if (error) {
         throw error;
@@ -205,6 +219,7 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
     if (!user) return;
     
     try {
+      // Use type assertion for now
       const { error } = await supabase
         .from('vehicles')
         .update({
@@ -212,12 +227,12 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
           model: updatedVehicle.model,
           year: updatedVehicle.year,
           vin: updatedVehicle.vin,
-          image_url: updatedVehicle.image_url,
-          last_service: updatedVehicle.last_service,
+          image_url: updatedVehicle.image_url || updatedVehicle.image,
+          last_service: updatedVehicle.last_service || updatedVehicle.lastService,
           nickname: updatedVehicle.nickname
         })
         .eq('id', id)
-        .eq('user_id', user.uid);
+        .eq('user_id', user.id) as any;
       
       if (error) {
         throw error;

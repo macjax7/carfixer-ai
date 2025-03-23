@@ -61,13 +61,18 @@ const ProfileMenu = () => {
     navigate('/settings');
   };
 
+  // Get user display name with fallbacks
+  const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
+  const userEmail = user?.email || '';
+  const userInitial = displayName.charAt(0).toUpperCase();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="flex items-center">
           <Avatar className="h-8 w-8 cursor-pointer">
             <AvatarFallback>
-              {user?.email?.charAt(0).toUpperCase() || 'U'}
+              {userInitial}
             </AvatarFallback>
           </Avatar>
         </button>
@@ -75,8 +80,8 @@ const ProfileMenu = () => {
       <DropdownMenuContent className="w-56" align="end">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user?.displayName || 'User'}</p>
-            <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+            <p className="text-sm font-medium leading-none">{displayName}</p>
+            <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

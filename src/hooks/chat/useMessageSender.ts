@@ -1,153 +1,164 @@
 
-import { FormEvent } from 'react';
-import { useToast } from '@/components/ui/use-toast';
-import { useChatMessages } from './useChatMessages';
-import { useMessageInput } from './useMessageInput';
-import { useCodeDetection } from './useCodeDetection';
-import { useOpenAI } from '@/utils/openai';
-import { useVehicles } from '@/hooks/use-vehicles';
+import { useChat } from "./useChat";
+import { useChatMessages } from "./useChatMessages";
+import { useState, useCallback } from "react";
+import { nanoid } from "nanoid";
+import { Message } from "@/components/chat/types";
+import { useImageHandler } from "./useImageHandler";
+import { useListingHandler } from "./useListingHandler";
+import { useCodeDetection } from "./useCodeDetection";
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 export const useMessageSender = () => {
-  const { toast } = useToast();
-  const { chatWithAI } = useOpenAI();
-  const { selectedVehicle } = useVehicles();
-  const { addUserMessage, addAIMessage, getMessagesForAPI, messageHistory, chatId } = useChatMessages();
-  const { input, setInput, isLoading, setIsLoading, setHasAskedForVehicle } = useMessageInput();
-  const { containsDTCCode } = useCodeDetection();
+  const { sendToChatService } = useChat();
+  const { addMessage, chatId, setChatId } = useChatMessages();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { processImage } = useImageHandler();
+  const { processListing } = useListingHandler();
+  const { processCodeType } = useCodeDetection();
+  const { user } = useAuth();
 
-  const handleSendMessage = async (e: FormEvent) => {
-    if (e && typeof e.preventDefault === 'function') {
-      e.preventDefault();
+  const createMessage = useCallback((text: string, sender: 'user' | 'ai', image?: string): Message => {
+    return {
+      id: nanoid(),
+      sender,
+      text,
+      timestamp: new Date(),
+      image,
+    };
+  }, []);
+
+  const addToChatHistory = useCallback(async (
+    newChatId: string, 
+    message: Message, 
+    role: 'user' | 'assistant'
+  ) => {
+    if (user) {
+      try {
+        await supabase
+          .from('chat_messages')
+          .insert({
+            session_id: newChatId,
+            content: message.text,
+            role: role,
+            image_url: message.image
+          });
+      } catch (error) {
+        console.error('Error saving message to database:', error);
+      }
     }
+  }, [user]);
+
+  const processAndSendMessage = useCallback(async (text: string, image?: string) => {
+    if (!text.trim() && !image) return;
     
-    console.log("handleSendMessage called with input:", input);
-    if (!input.trim() || isLoading) {
-      console.log("Input is empty or loading is in progress, returning");
-      return;
-    }
-    
-    const userMessage = addUserMessage(input);
-    console.log("User message added:", userMessage);
-    setInput('');
-    setIsLoading(true);
+    setIsProcessing(true);
     
     try {
-      console.log("Preparing to send message to AI:", input);
+      // Create message ID for this interaction
+      const userMessage = createMessage(text, 'user', image);
       
-      // Verify Supabase connection without querying a specific table
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error("Supabase connection issue:", error);
-          throw new Error(`Supabase connection issue: ${error.message}`);
-        }
-        console.log("Supabase connection verified");
-      } catch (connectionError) {
-        console.error("Error checking Supabase connection:", connectionError);
-        // Continue anyway as this is just a connection check
-      }
-      
-      // Store the message in the database if user is logged in
-      try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (sessionData.session?.user) {
-          // Check if we have a chat session for this chat
-          let sessionId = chatId;
-
-          // If not found, create a new chat session
-          if (!sessionId) {
-            const { data: newSession, error: sessionError } = await supabase
+      // Create or ensure chat ID exists
+      const newChatId = chatId || nanoid();
+      if (!chatId) {
+        setChatId(newChatId);
+        
+        // Create chat session in database
+        if (user) {
+          try {
+            await supabase
               .from('chat_sessions')
               .insert({
-                title: input.length > 30 ? `${input.substring(0, 30)}...` : input,
-                user_id: sessionData.session.user.id
-              })
-              .select('id')
-              .single();
-            
-            if (sessionError) {
-              console.error("Error creating chat session:", sessionError);
-            } else {
-              sessionId = newSession.id;
-              console.log("Created new chat session:", sessionId);
-            }
-          }
-
-          // Store the user message
-          if (sessionId) {
-            const { error: messageError } = await supabase
-              .from('chat_messages')
-              .insert({
-                session_id: sessionId,
-                role: 'user',
-                content: input
+                id: newChatId,
+                user_id: user.id,
+                title: text.substring(0, 30) + (text.length > 30 ? '...' : '')
               });
-            
-            if (messageError) {
-              console.error("Error storing user message:", messageError);
-            }
+          } catch (error) {
+            console.error('Error creating chat session:', error);
           }
         }
-      } catch (dbError) {
-        console.error("Error interacting with database:", dbError);
-        // Continue with the AI interaction even if database storage fails
       }
       
-      const apiMessages = getMessagesForAPI(userMessage);
-      const containsCode = containsDTCCode(input);
+      // Add user message to the chat
+      addMessage(userMessage);
       
-      console.log("Calling OpenAI API with messages:", apiMessages);
-      const aiResponse = await chatWithAI(apiMessages, true, selectedVehicle, messageHistory);
-      console.log("Received AI response:", aiResponse);
+      // Save user message to database
+      await addToChatHistory(newChatId, userMessage, 'user');
       
-      if (typeof aiResponse === 'object' && aiResponse.requestVehicleInfo) {
-        setHasAskedForVehicle(true);
-      }
+      // Determine the message type (image analysis, URL, or regular text)
+      let aiResponseText = '';
+      let aiMessageExtra = {};
       
-      const aiMessageContent = typeof aiResponse === 'object' ? aiResponse.message : aiResponse;
-      addAIMessage(aiMessageContent);
-      
-      // Store AI response in the database
-      try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (sessionData.session?.user && chatId) {
-          const { error: aiMessageError } = await supabase
-            .from('chat_messages')
-            .insert({
-              session_id: chatId,
-              role: 'assistant',
-              content: aiMessageContent
-            });
-          
-          if (aiMessageError) {
-            console.error("Error storing AI message:", aiMessageError);
-          }
+      if (image) {
+        // Process image-based query
+        const imageResult = await processImage(image, text, newChatId);
+        aiResponseText = imageResult.text;
+        if (imageResult.componentDiagram) {
+          aiMessageExtra = { componentDiagram: imageResult.componentDiagram };
         }
-      } catch (dbError) {
-        console.error("Error storing AI response:", dbError);
+      } else if (/https?:\/\/[^\s]+/.test(text)) {
+        // Process URL-based query
+        try {
+          const urlResults = await processListing(text);
+          if (urlResults.vehicleListingAnalysis) {
+            aiResponseText = urlResults.text;
+            aiMessageExtra = { vehicleListingAnalysis: urlResults.vehicleListingAnalysis };
+          } else {
+            // If it's not a vehicle listing, just process as a normal query
+            aiResponseText = await sendToChatService(text, newChatId);
+          }
+        } catch (error) {
+          console.error("Error processing URL:", error);
+          aiResponseText = await sendToChatService(text, newChatId);
+        }
+      } else {
+        // Process code detection for diagnostic codes
+        const codeType = processCodeType(text);
+        if (codeType) {
+          aiResponseText = await sendToChatService(text, newChatId, codeType);
+        } else {
+          // Process normal text query
+          aiResponseText = await sendToChatService(text, newChatId);
+        }
       }
+      
+      // Create the AI response message
+      const aiMessage = createMessage(aiResponseText, 'ai');
+      
+      // Add any extra data to the message
+      Object.assign(aiMessage, aiMessageExtra);
+      
+      // Add AI response to the chat
+      addMessage(aiMessage);
+      
+      // Save AI message to database
+      await addToChatHistory(newChatId, aiMessage, 'assistant');
+      
+      return aiMessage;
     } catch (error) {
-      console.error('Error getting AI response:', error);
+      console.error("Error processing message:", error);
       
-      let errorMessage = "Sorry, I couldn't process your request. Please try again.";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-        console.error('Detailed error information:', error);
+      // Show error message
+      const errorMessage = createMessage(
+        "I'm sorry, I encountered an error processing your request. Please try again.",
+        'ai'
+      );
+      addMessage(errorMessage);
+      
+      // Save error message to database
+      if (chatId) {
+        await addToChatHistory(chatId, errorMessage, 'assistant');
       }
       
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
-      
-      // Add appropriate error message to the chat
-      addAIMessage("I'm sorry, I encountered an error processing your request. Please try again.");
+      return errorMessage;
     } finally {
-      setIsLoading(false);
+      setIsProcessing(false);
     }
-  };
+  }, [createMessage, addMessage, chatId, setChatId, processImage, processListing, processCodeType, sendToChatService, user, addToChatHistory]);
 
-  return { handleSendMessage };
+  return {
+    processAndSendMessage,
+    isProcessing
+  };
 };

@@ -1,8 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { requestNotificationPermission, setupMessageListener } from '../services/firebase';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { requestNotificationPermission, setupMessageListener } from '../services/firebase';
 
 interface NotificationContextType {
   hasPermission: boolean;

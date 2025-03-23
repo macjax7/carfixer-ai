@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signUp, updateUserProfile } from '../services/firebase';
+import { signUp } from '../services/firebase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Header from '@/components/Header';
+import { supabase } from '@/integrations/supabase/client';
 
 const SignUp: React.FC = () => {
   const [displayName, setDisplayName] = useState('');
@@ -61,17 +62,22 @@ const SignUp: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Create the user
-      const userCredential = await signUp(email, password);
-      
-      // Update the user profile with display name
-      await updateUserProfile(userCredential.user, {
-        displayName,
+      // Create the user with Supabase (includes user metadata)
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: displayName,
+          }
+        }
       });
+      
+      if (error) throw error;
       
       toast({
         title: "Success",
-        description: "Your account has been created successfully"
+        description: "Your account has been created successfully. Please check your email for confirmation."
       });
       
       navigate('/');
@@ -79,12 +85,8 @@ const SignUp: React.FC = () => {
       console.error('Sign up error:', error);
       
       let errorMessage = "Failed to sign up. Please try again.";
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "This email is already in use";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "Invalid email address";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = "Password is too weak";
+      if (error.message) {
+        errorMessage = error.message;
       }
       
       toast({

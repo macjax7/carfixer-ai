@@ -6,14 +6,14 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 
 interface ProjectSubItem {
-  id: number;
+  id: number | string;
   title: string;
   path: string;
 }
 
 interface SidebarProjectItemProps {
   project: {
-    id: string;
+    id: string | number;
     title: string;
     path: string;
     subItems: ProjectSubItem[];
