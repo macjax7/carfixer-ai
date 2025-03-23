@@ -139,6 +139,9 @@ export const useMessageSender = () => {
         description: errorMessage,
         variant: "destructive"
       });
+      
+      // Add appropriate error message to the chat
+      addAIMessage("I'm sorry, I encountered an error processing your request. Please try again.");
     } finally {
       setIsLoading(false);
     }

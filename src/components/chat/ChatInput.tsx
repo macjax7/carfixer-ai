@@ -64,16 +64,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
       handleImageUpload(selectedImage);
       setSelectedImage(null);
     } else if (input.trim()) {
-      // Create a form submission event and explicitly call handleSendMessage
-      const formElement = document.createElement('form');
-      const submitEvent = new SubmitEvent('submit', { 
-        bubbles: true, 
-        cancelable: true,
-        submitter: formElement 
-      });
-      
-      // Call the handler directly with the event
-      handleSendMessage(submitEvent as unknown as FormEvent);
+      // Create a synthetic event and pass it to handleSendMessage
+      const event = new Event('submit', { bubbles: true, cancelable: true }) as unknown as FormEvent;
+      handleSendMessage(event);
     }
   };
 
