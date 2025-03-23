@@ -51,11 +51,7 @@ const ChatActions: React.FC<ChatActionsProps> = ({
       
       <button
         type="button"
-        onClick={() => {
-          if ((input.trim() || hasSelectedImage) && !isLoading) {
-            onSubmit();
-          }
-        }}
+        onClick={onSubmit}
         className={`p-2 rounded-full ${
           (input.trim() || hasSelectedImage) && !isLoading
             ? 'bg-carfix-600 text-white hover:bg-carfix-700'

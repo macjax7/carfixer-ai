@@ -1,4 +1,3 @@
-
 import { FormEvent } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useChatMessages } from './useChatMessages';
@@ -16,8 +15,8 @@ export const useMessageSender = () => {
   const { input, setInput, isLoading, setIsLoading, setHasAskedForVehicle } = useMessageInput();
   const { containsDTCCode } = useCodeDetection();
 
-  const handleSendMessage = async (e: FormEvent) => {
-    if (e && e.preventDefault) {
+  const handleSendMessage = async (e?: FormEvent) => {
+    if (e && typeof e.preventDefault === 'function') {
       e.preventDefault();
     }
     

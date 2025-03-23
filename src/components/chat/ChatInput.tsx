@@ -64,21 +64,21 @@ const ChatInput: React.FC<ChatInputProps> = ({
       handleImageUpload(selectedImage);
       setSelectedImage(null);
     } else if (input.trim()) {
-      // Call handleSendMessage directly with a fake event
-      const fakeEvent = {
-        preventDefault: () => {},
-      } as FormEvent;
-      handleSendMessage(fakeEvent);
+      // Create a simple form event
+      const event = new Event('submit') as unknown as FormEvent;
+      handleSendMessage(event);
+    }
+  };
+
+  const handleFormSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if ((input.trim() || selectedImage) && !isLoading) {
+      submitMessage();
     }
   };
 
   return (
-    <form onSubmit={(e) => {
-      e.preventDefault();
-      if ((input.trim() || selectedImage) && !isLoading) {
-        submitMessage();
-      }
-    }} className="relative max-w-3xl mx-auto">
+    <form onSubmit={handleFormSubmit} className="relative max-w-3xl mx-auto">
       {selectedImage && (
         <div className="mb-2 relative">
           <ImageUpload
