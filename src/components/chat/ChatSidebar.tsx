@@ -44,7 +44,7 @@ const ChatSidebar = () => {
   } = useSidebarState();
 
   return (
-    <Sidebar defaultOpen={false}>
+    <Sidebar>
       <UISidebarHeader className="p-0">
         <SidebarHeader 
           isSearching={isSearching}

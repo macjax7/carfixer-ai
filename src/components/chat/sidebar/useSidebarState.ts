@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { useChat } from '@/hooks/chat/useChat';
 import { useToast } from '@/components/ui/use-toast';
+import { useSidebar } from '@/components/ui/sidebar';
 
 interface ProjectSubItem {
   id: number;
@@ -26,6 +26,12 @@ export interface ChatHistoryItem {
 export const useSidebarState = () => {
   const { handleNewChat, canCreateNewChat } = useChat();
   const { toast } = useToast();
+  const { setOpen } = useSidebar();
+  
+  // Set sidebar to collapsed on initial load
+  useEffect(() => {
+    setOpen(false);
+  }, [setOpen]);
   
   // State for collapsible sections - set to false (collapsed) by default
   const [projectsOpen, setProjectsOpen] = useState(false);
