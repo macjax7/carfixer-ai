@@ -1,6 +1,4 @@
 
-// Simplified temporary version to fix the TypeScript errors.
-// Later we need to implement the full Supabase integration for projects and chat history
 import { useState, useEffect } from 'react';
 import { useChat } from '@/hooks/chat/useChat';
 import { useToast } from '@/components/ui/use-toast';
@@ -51,41 +49,47 @@ export const useSidebarState = () => {
   const [newProjectName, setNewProjectName] = useState('');
   
   // Individual project states
-  const [projectStates, setProjectStates] = useState<Record<string, boolean>>({
-    "Honda Civic Issues": false,
-    "Truck Maintenance": false,
-    "DIY Repair Notes": false,
-  });
+  const [projectStates, setProjectStates] = useState<Record<string, boolean>>({});
   
-  // User projects and chats data
-  const [userProjects, setUserProjects] = useState<Project[]>([
-    { id: 1, title: "Honda Civic Issues", path: "#", subItems: [
-      { id: 11, title: "Engine Check", path: "#" },
-      { id: 12, title: "Transmission Issues", path: "#" },
-    ]},
-    { id: 2, title: "Truck Maintenance", path: "#", subItems: [
-      { id: 21, title: "Oil Change Schedule", path: "#" },
-      { id: 22, title: "Brake Inspection", path: "#" },
-    ]},
-    { id: 3, title: "DIY Repair Notes", path: "#", subItems: [
-      { id: 31, title: "Air Filter Replacement", path: "#" },
-      { id: 32, title: "Battery Guide", path: "#" },
-    ]},
-  ]);
-  
-  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([
-    { id: 1, title: "Check Engine Light P0420", timestamp: "2h ago", path: "#" },
-    { id: 2, title: "Battery Replacement Options", timestamp: "Yesterday", path: "#" },
-    { id: 3, title: "Brake Fluid Change", timestamp: "3d ago", path: "#" },
-    { id: 4, title: "Transmission Warning Signs", timestamp: "1w ago", path: "#" },
-  ]);
+  // User projects and chats data - initialize as empty
+  const [userProjects, setUserProjects] = useState<Project[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
   
   // We'll implement the actual Supabase data fetching in the future
-  // For now, let's just use the static mock data above
+  // For now, let's just use mock data for authenticated users only
   useEffect(() => {
     if (user) {
       // This is where we would load data from Supabase
       console.log("Would fetch projects and chat history for user:", user.id);
+      
+      // For now, set some mock data only for authenticated users
+      setUserProjects([
+        { id: 1, title: "Honda Civic Issues", path: "#", subItems: [
+          { id: 11, title: "Engine Check", path: "#" },
+          { id: 12, title: "Transmission Issues", path: "#" },
+        ]},
+        { id: 2, title: "Truck Maintenance", path: "#", subItems: [
+          { id: 21, title: "Oil Change Schedule", path: "#" },
+          { id: 22, title: "Brake Inspection", path: "#" },
+        ]},
+      ]);
+      
+      setChatHistory([
+        { id: 1, title: "Check Engine Light P0420", timestamp: "2h ago", path: "#" },
+        { id: 2, title: "Battery Replacement Options", timestamp: "Yesterday", path: "#" },
+      ]);
+      
+      // Initialize project states based on projects
+      const initialProjectStates: Record<string, boolean> = {};
+      userProjects.forEach(project => {
+        initialProjectStates[project.title] = false;
+      });
+      setProjectStates(initialProjectStates);
+    } else {
+      // Clear data for non-authenticated users
+      setUserProjects([]);
+      setChatHistory([]);
+      setProjectStates({});
     }
   }, [user]);
   
@@ -99,11 +103,30 @@ export const useSidebarState = () => {
   // Handle creating a new project
   const handleNewProjectButton = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the parent collapsible
+    
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to create projects",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setNewProjectDialogOpen(true);
   };
   
   // Create new project handler
   const createNewProject = () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to create projects",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (!newProjectName.trim()) {
       toast({
         title: "Error",
@@ -139,6 +162,15 @@ export const useSidebarState = () => {
   
   // Handle start new chat
   const handleNewChatClick = () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to save chats",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (canCreateNewChat) {
       handleNewChat();
     }
