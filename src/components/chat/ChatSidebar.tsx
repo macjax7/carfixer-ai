@@ -88,7 +88,7 @@ const ChatSidebar = () => {
         {user && (
           <div className="flex items-center">
             <div className="truncate">
-              <p className="text-sm font-medium truncate">{user.email || 'User'}</p>
+              <p className="text-sm font-medium text-muted-foreground truncate">{user.email || 'User'}</p>
             </div>
           </div>
         )}

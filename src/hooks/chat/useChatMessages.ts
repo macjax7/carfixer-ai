@@ -6,8 +6,8 @@ import { ChatMessage } from '@/utils/openai';
 
 export const useChatMessages = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  
   const [messageHistory, setMessageHistory] = useState<string[]>([]);
+  const [chatId, setChatId] = useState<string>(nanoid());
   
   const addUserMessage = (text: string, image?: string) => {
     const userMessage: Message = {
@@ -49,17 +49,18 @@ export const useChatMessages = () => {
       }));
   };
   
-  // Enhanced resetChat function to properly clear the chat
+  // Enhanced resetChat function that properly clears the chat and generates a new ID
   const resetChat = () => {
     // In a complete implementation, we would save the messages to history here
-    // For now, we'll just clear the current messages and history
     setMessages([]);
     setMessageHistory([]);
+    setChatId(nanoid()); // Generate a new chat ID for the new conversation
   };
   
   return {
     messages,
     messageHistory,
+    chatId,
     addUserMessage,
     addAIMessage,
     getMessagesForAPI,

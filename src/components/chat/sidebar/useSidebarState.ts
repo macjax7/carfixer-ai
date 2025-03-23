@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useChat } from '@/hooks/chat/useChat';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -16,7 +16,7 @@ interface Project {
   subItems: ProjectSubItem[];
 }
 
-interface ChatHistoryItem {
+export interface ChatHistoryItem {
   id: number;
   title: string;
   timestamp: string;
@@ -126,7 +126,9 @@ export const useSidebarState = () => {
   
   // Handle start new chat
   const handleNewChatClick = () => {
-    handleNewChat();
+    if (canCreateNewChat) {
+      handleNewChat();
+    }
   };
   
   // Toggle search mode

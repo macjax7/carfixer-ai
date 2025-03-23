@@ -15,7 +15,8 @@ export const useChat = () => {
     handleListingAnalysis,
     handleSuggestedPrompt,
     hasAskedForVehicle,
-    resetChat
+    resetChat,
+    saveCurrentChat
   } = useMessageHandlers();
   
   const { toast } = useToast();
@@ -27,8 +28,10 @@ export const useChat = () => {
   // Handle starting a new chat
   const handleNewChat = useCallback(() => {
     if (canCreateNewChat) {
-      // In a real app, this would save the current chat to history
-      // For now, just reset the current chat
+      // Save the current chat to history
+      saveCurrentChat();
+      
+      // Reset the current chat
       resetChat();
       
       toast({
@@ -36,7 +39,7 @@ export const useChat = () => {
         description: "Started a new chat session",
       });
     }
-  }, [canCreateNewChat, resetChat, toast]);
+  }, [canCreateNewChat, resetChat, saveCurrentChat, toast]);
   
   return {
     messages,

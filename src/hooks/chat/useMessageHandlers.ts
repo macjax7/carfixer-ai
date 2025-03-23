@@ -6,14 +6,43 @@ import { useVehicles } from '@/hooks/use-vehicles';
 import { useChatMessages } from './useChatMessages';
 import { useMessageInput } from './useMessageInput';
 import { useCodeDetection } from './useCodeDetection';
+import { useCallback } from 'react';
+import { ChatHistoryItem } from '@/components/chat/sidebar/SidebarChatHistory';
 
 export const useMessageHandlers = () => {
   const { toast } = useToast();
   const { chatWithAI, identifyPart, analyzeListing } = useOpenAI();
   const { selectedVehicle } = useVehicles();
-  const { messages, messageHistory, addUserMessage, addAIMessage, getMessagesForAPI, resetChat } = useChatMessages();
+  const { messages, messageHistory, chatId, addUserMessage, addAIMessage, getMessagesForAPI, resetChat } = useChatMessages();
   const { input, setInput, isLoading, setIsLoading, hasAskedForVehicle, setHasAskedForVehicle } = useMessageInput();
   const { containsDTCCode } = useCodeDetection();
+  
+  // Function to save the current chat to chat history
+  const saveCurrentChat = useCallback(() => {
+    if (messages.length === 0) return;
+    
+    // Get chat title from the first user message
+    const firstUserMessage = messages.find(m => m.sender === 'user');
+    if (!firstUserMessage) return;
+    
+    const title = firstUserMessage.text.length > 30 
+      ? firstUserMessage.text.substring(0, 30) + '...' 
+      : firstUserMessage.text;
+    
+    // In a real implementation, this would save to a database or local storage
+    // For now, we'll just trigger a save action that could be consumed elsewhere
+    const chatToSave: Omit<ChatHistoryItem, 'id'> = {
+      title,
+      timestamp: 'Just now',
+      path: `#/chat/${chatId}`
+    };
+    
+    // This would typically dispatch to a context or call an API
+    console.log('Saving chat to history:', chatToSave);
+    
+    // In a real app, you would use a context or state management library to actually save this
+    // For this demo, we'll just log it
+  }, [messages, chatId]);
   
   const handleSendMessage = async (e: FormEvent) => {
     e.preventDefault();
@@ -176,6 +205,7 @@ Try pasting a direct link to a vehicle listing from platforms like Craigslist, F
     handleListingAnalysis,
     handleSuggestedPrompt,
     hasAskedForVehicle,
-    resetChat
+    resetChat,
+    saveCurrentChat
   };
 };
