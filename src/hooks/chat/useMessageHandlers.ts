@@ -11,7 +11,7 @@ export const useMessageHandlers = () => {
   const { toast } = useToast();
   const { chatWithAI, identifyPart, analyzeListing } = useOpenAI();
   const { selectedVehicle } = useVehicles();
-  const { messages, messageHistory, addUserMessage, addAIMessage, getMessagesForAPI } = useChatMessages();
+  const { messages, messageHistory, addUserMessage, addAIMessage, getMessagesForAPI, currentSessionId, createChatSession } = useChatMessages();
   const { input, setInput, isLoading, setIsLoading, hasAskedForVehicle, setHasAskedForVehicle } = useMessageInput();
   const { containsDTCCode } = useCodeDetection();
   
@@ -21,7 +21,7 @@ export const useMessageHandlers = () => {
     if (!input.trim() || isLoading) return;
     
     // Add user message
-    const userMessage = addUserMessage(input);
+    const userMessage = await addUserMessage(input);
     setInput('');
     setIsLoading(true);
     
@@ -40,7 +40,7 @@ export const useMessageHandlers = () => {
         setHasAskedForVehicle(true);
       }
       
-      addAIMessage(typeof aiResponse === 'object' ? aiResponse.message : aiResponse);
+      await addAIMessage(typeof aiResponse === 'object' ? aiResponse.message : aiResponse);
     } catch (error) {
       console.error('Error getting AI response:', error);
       
@@ -68,7 +68,7 @@ export const useMessageHandlers = () => {
     
     // Create a message for the user indicating they've uploaded an image
     const userPrompt = input.trim() || "Can you identify this car part?";
-    const userMessage = addUserMessage(userPrompt, URL.createObjectURL(file));
+    const userMessage = await addUserMessage(userPrompt, URL.createObjectURL(file));
     
     setInput('');
     setIsLoading(true);
@@ -84,7 +84,7 @@ export const useMessageHandlers = () => {
       const imageUrl = URL.createObjectURL(file);
       const analysis = await identifyPart(imageUrl, prompt);
       
-      addAIMessage(analysis);
+      await addAIMessage(analysis);
     } catch (error) {
       console.error('Error analyzing image:', error);
       
@@ -100,7 +100,7 @@ export const useMessageHandlers = () => {
       });
       
       // Add an error message from the AI
-      addAIMessage("I couldn't analyze that image. Please try again with a clearer picture of the car part.");
+      await addAIMessage("I couldn't analyze that image. Please try again with a clearer picture of the car part.");
     } finally {
       setIsLoading(false);
     }
@@ -110,7 +110,7 @@ export const useMessageHandlers = () => {
     if (isLoading) return;
     
     // Create a message for the user indicating they've shared a listing URL
-    const userMessage = addUserMessage(`Can you analyze this vehicle listing? ${url}`);
+    const userMessage = await addUserMessage(`Can you analyze this vehicle listing? ${url}`);
     
     setInput('');
     setIsLoading(true);
@@ -123,7 +123,7 @@ export const useMessageHandlers = () => {
       if (listingData.extractionFailed || listingData.unreliableExtraction) {
         console.warn('Vehicle data extraction failed or was unreliable:', listingData);
         
-        addAIMessage(`I couldn't reliably extract information from this vehicle listing. ${listingData.errorMessage || 'The URL may be invalid, require authentication, or the listing format is not supported.'}
+        await addAIMessage(`I couldn't reliably extract information from this vehicle listing. ${listingData.errorMessage || 'The URL may be invalid, require authentication, or the listing format is not supported.'}
         
 If you'd like me to analyze a vehicle, you can:
 1. Try a different listing URL from a supported platform (CarGurus, Autotrader, Facebook Marketplace, Craigslist, etc.)
@@ -133,7 +133,7 @@ If you'd like me to analyze a vehicle, you can:
       }
       
       // Create AI response with the vehicle listing analysis
-      addAIMessage("I've analyzed this vehicle listing for you. Here's what I found:", {
+      await addAIMessage("I've analyzed this vehicle listing for you. Here's what I found:", {
         vehicleListingAnalysis: {
           url,
           ...listingData
@@ -154,7 +154,7 @@ If you'd like me to analyze a vehicle, you can:
       });
       
       // Add an error message from the AI
-      addAIMessage(`I couldn't analyze that vehicle listing. ${error instanceof Error ? error.message : 'The URL may be invalid or not from a supported platform.'}
+      await addAIMessage(`I couldn't analyze that vehicle listing. ${error instanceof Error ? error.message : 'The URL may be invalid or not from a supported platform.'}
       
 Try pasting a direct link to a vehicle listing from platforms like Craigslist, Facebook Marketplace, CarGurus, AutoTrader, etc. Make sure the listing is publicly accessible and doesn't require login credentials to view.`);
     } finally {
@@ -175,6 +175,8 @@ Try pasting a direct link to a vehicle listing from platforms like Craigslist, F
     handleImageUpload,
     handleListingAnalysis,
     handleSuggestedPrompt,
-    hasAskedForVehicle
+    hasAskedForVehicle,
+    currentSessionId,
+    createChatSession
   };
 };
