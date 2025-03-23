@@ -77,11 +77,11 @@ const AIChat: React.FC = () => {
   };
   
   return (
-    <div className={`flex flex-col h-full bg-background pt-14 ${isEmptyChat ? 'justify-center' : ''}`}> {/* Added justify-center for empty state */}
-      {/* Welcome message when no messages exist - centered in empty state */}
+    <div className={`flex flex-col h-full bg-background pt-14 ${isEmptyChat ? 'justify-between' : ''}`}>
+      {/* Welcome message when no messages exist */}
       {isEmptyChat ? (
-        <div className="flex-1 flex flex-col items-center justify-center px-4 pb-24 animate-fade-in">
-          <h1 className="text-3xl font-bold text-foreground text-center bg-gradient-to-r from-carfix-500 to-carfix-700 bg-clip-text text-transparent mb-16">
+        <div className="flex-1 flex flex-col items-center justify-center px-4 animate-fade-in">
+          <h1 className="text-3xl font-bold text-foreground text-center bg-gradient-to-r from-carfix-500 to-carfix-700 bg-clip-text text-transparent mb-12">
             How can I help with your vehicle?
           </h1>
         </div>
@@ -117,7 +117,7 @@ const AIChat: React.FC = () => {
         className={`
           border-t border-border bg-background/95 backdrop-blur-sm py-3 px-3 md:px-4
           ${isEmptyChat 
-            ? 'absolute bottom-1/3 left-0 right-0 border-t-0 transition-all duration-300' 
+            ? 'border-t-0 transition-all duration-300 pb-10' 
             : 'mt-auto transition-all duration-300'
           }
         `}
