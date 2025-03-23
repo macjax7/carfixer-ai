@@ -5,7 +5,7 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarHeader,
+  SidebarHeader as UISidebarHeader,
 } from '@/components/ui/sidebar';
 
 // Import the sidebar components
@@ -45,7 +45,7 @@ const ChatSidebar = () => {
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-0">
+      <UISidebarHeader className="p-0">
         <SidebarHeader 
           isSearching={isSearching}
           searchQuery={searchQuery}
@@ -54,7 +54,7 @@ const ChatSidebar = () => {
           handleNewChatClick={handleNewChatClick}
           canCreateNewChat={canCreateNewChat}
         />
-      </SidebarHeader>
+      </UISidebarHeader>
       
       <SidebarContent>
         {searchQuery ? (
