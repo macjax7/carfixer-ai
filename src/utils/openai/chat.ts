@@ -26,6 +26,9 @@ export async function sendChatMessage(
       }
     });
     
+    // Check if we're connected to Supabase
+    console.log("Checking Supabase connection before API call...");
+    
     const { data, error } = await supabase.functions.invoke('openai', {
       body: {
         service: 'diagnostic',

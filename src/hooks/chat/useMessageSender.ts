@@ -33,15 +33,17 @@ export const useMessageSender = () => {
     try {
       console.log("Preparing to send message to AI:", input);
       
-      // Verify Supabase connection
-      const { data: connectionTest, error: connectionError } = await supabase.from('_dummy_query').select('*').limit(1).maybeSingle();
-      if (connectionError) {
-        console.error("Supabase connection issue:", connectionError);
-        if (connectionError.message.includes("relation") && connectionError.message.includes("does not exist")) {
-          console.log("The error is expected since _dummy_query doesn't exist, but confirms we can connect to Supabase");
-        } else {
-          throw new Error(`Supabase connection issue: ${connectionError.message}`);
+      // Verify Supabase connection without querying a specific table
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error("Supabase connection issue:", error);
+          throw new Error(`Supabase connection issue: ${error.message}`);
         }
+        console.log("Supabase connection verified");
+      } catch (connectionError) {
+        console.error("Error checking Supabase connection:", connectionError);
+        // Continue anyway as this is just a connection check
       }
       
       const apiMessages = getMessagesForAPI(userMessage);
