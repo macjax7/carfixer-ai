@@ -69,31 +69,16 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({
     }
   }, [isLeftArrowHovering, isRightArrowHovering, api]);
   
-  // Group prompts into two rows for more ChatGPT-like appearance
-  const firstRow = prompts.slice(0, Math.ceil(prompts.length / 2));
-  const secondRow = prompts.slice(Math.ceil(prompts.length / 2));
+  // Show only 3 prompts at a time in a single row
+  const visiblePrompts = prompts.slice(0, 3);
   
   return (
     <div className="flex flex-col gap-3 items-center justify-center w-full animate-fade-in">
-      {/* Row 1 */}
+      {/* Show only a single row with 3 prompts */}
       <div className="flex flex-wrap gap-2 justify-center">
-        {firstRow.map((prompt, index) => (
+        {visiblePrompts.map((prompt, index) => (
           <Button
-            key={`row1-${index}`}
-            onClick={() => handleSuggestedPrompt(prompt)}
-            variant="outline"
-            className="text-sm h-auto py-2 px-4 bg-secondary/50 hover:bg-secondary/80 text-foreground rounded-full transition-all duration-200 border border-border/30 hover:border-border/60 whitespace-nowrap"
-          >
-            {prompt}
-          </Button>
-        ))}
-      </div>
-      
-      {/* Row 2 */}
-      <div className="flex flex-wrap gap-2 justify-center">
-        {secondRow.map((prompt, index) => (
-          <Button
-            key={`row2-${index}`}
+            key={index}
             onClick={() => handleSuggestedPrompt(prompt)}
             variant="outline"
             className="text-sm h-auto py-2 px-4 bg-secondary/50 hover:bg-secondary/80 text-foreground rounded-full transition-all duration-200 border border-border/30 hover:border-border/60 whitespace-nowrap"
