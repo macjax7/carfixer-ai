@@ -24,7 +24,8 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({
   const [isHovering, setIsHovering] = useState(false);
   const [isLeftArrowHovering, setIsLeftArrowHovering] = useState(false);
   const [isRightArrowHovering, setIsRightArrowHovering] = useState(false);
-  const autoplayRef = useRef<AutoplayPlugin | null>(null);
+  // Fix: Use 'any' type instead of trying to use AutoplayPlugin as a type
+  const autoplayRef = useRef<any>(null);
   const [api, setApi] = useState<any>(null);
   
   // Configure autoplay plugin with slow default speed
