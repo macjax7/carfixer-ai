@@ -77,7 +77,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <form onSubmit={handleFormSubmit} className="relative max-w-3xl mx-auto">
+    <form onSubmit={handleFormSubmit} className="relative max-w-3xl mx-auto transition-all duration-300 animate-fade-in">
       {selectedImage && (
         <div className="mb-2 relative">
           <ImageUpload

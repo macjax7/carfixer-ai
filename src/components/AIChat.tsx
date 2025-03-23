@@ -31,6 +31,9 @@ const AIChat: React.FC = () => {
   const { vehicles, selectedVehicle } = useVehicles();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
+  // Chat state - empty or has messages
+  const isEmptyChat = messages.length === 0 && !isLoading;
+  
   // Load specific chat if chatId is provided in URL
   useEffect(() => {
     if (chatId && chatId !== chatIdLoaded) {
@@ -74,19 +77,17 @@ const AIChat: React.FC = () => {
   };
   
   return (
-    <div className="flex flex-col h-full bg-background pt-14"> {/* Added pt-14 to account for header */}
-      {/* Welcome message when no messages exist */}
-      {messages.length === 0 && (
-        <div className="flex-1 flex flex-col items-center justify-center">
+    <div className={`flex flex-col h-full bg-background pt-14 ${isEmptyChat ? 'justify-center' : ''}`}> {/* Added justify-center for empty state */}
+      {/* Welcome message when no messages exist - centered in empty state */}
+      {isEmptyChat ? (
+        <div className="flex-1 flex flex-col items-center justify-center px-4 pb-24 animate-fade-in">
           <SuggestedPrompts 
             handleSuggestedPrompt={handleSuggestedPrompt}
             prompts={suggestedPrompts}
           />
         </div>
-      )}
-      
-      {/* Chat messages */}
-      {messages.length > 0 && (
+      ) : (
+        /* Chat messages - show when there are messages */
         <ScrollArea className="flex-1 pt-4 px-2 md:px-4 pb-4">
           <div className={`max-w-3xl mx-auto space-y-6 pb-4 ${state === 'collapsed' ? 'lg:mx-auto' : 'lg:ml-0 lg:mr-auto'}`}>
             {messages.map((msg) => (
@@ -112,8 +113,16 @@ const AIChat: React.FC = () => {
         </ScrollArea>
       )}
       
-      {/* Input form - ensure it stays at the bottom with proper spacing */}
-      <div className="border-t border-border bg-background/95 backdrop-blur-sm py-3 px-3 md:px-4 mt-auto">
+      {/* Input form - positioned conditionally based on chat state */}
+      <div 
+        className={`
+          border-t border-border bg-background/95 backdrop-blur-sm py-3 px-3 md:px-4
+          ${isEmptyChat 
+            ? 'absolute bottom-12 left-0 right-0 border-t-0 transition-all duration-300' 
+            : 'mt-auto transition-all duration-300'
+          }
+        `}
+      >
         <div className={`max-w-3xl ${state === 'collapsed' ? 'mx-auto' : 'lg:ml-0 lg:mr-auto'}`}>
           <ChatInput
             input={input}
