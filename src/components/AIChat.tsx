@@ -81,10 +81,9 @@ const AIChat: React.FC = () => {
       {/* Welcome message when no messages exist - centered in empty state */}
       {isEmptyChat ? (
         <div className="flex-1 flex flex-col items-center justify-center px-4 pb-24 animate-fade-in">
-          <SuggestedPrompts 
-            handleSuggestedPrompt={handleSuggestedPrompt}
-            prompts={suggestedPrompts}
-          />
+          <h1 className="text-3xl font-bold text-foreground text-center bg-gradient-to-r from-carfix-500 to-carfix-700 bg-clip-text text-transparent mb-16">
+            How can I help with your vehicle?
+          </h1>
         </div>
       ) : (
         /* Chat messages - show when there are messages */
@@ -132,6 +131,16 @@ const AIChat: React.FC = () => {
             handleListingAnalysis={handleListingAnalysis}
             isLoading={isLoading}
           />
+          
+          {/* Show suggested prompts below the input in empty chat state */}
+          {isEmptyChat && (
+            <div className="mt-6">
+              <SuggestedPrompts 
+                handleSuggestedPrompt={handleSuggestedPrompt}
+                prompts={suggestedPrompts}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
