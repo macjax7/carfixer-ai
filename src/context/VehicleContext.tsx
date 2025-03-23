@@ -1,5 +1,8 @@
 
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from './AuthContext';
 
 export interface Vehicle {
   id: string;
@@ -7,18 +10,19 @@ export interface Vehicle {
   model: string;
   year: number;
   vin?: string;
-  image?: string;
-  lastService?: string;
+  image_url?: string;
+  last_service?: string;
   nickname?: string;
 }
 
 interface VehicleContextType {
   vehicles: Vehicle[];
   selectedVehicle: Vehicle | null;
-  addVehicle: (vehicle: Omit<Vehicle, 'id'>) => void;
-  removeVehicle: (id: string) => void;
-  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => void;
+  addVehicle: (vehicle: Omit<Vehicle, 'id'>) => Promise<void>;
+  removeVehicle: (id: string) => Promise<void>;
+  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => Promise<void>;
   selectVehicle: (id: string) => void;
+  loading: boolean;
 }
 
 export const VehicleContext = createContext<VehicleContextType | undefined>(undefined);
@@ -36,54 +40,202 @@ interface VehicleProviderProps {
 }
 
 export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) => {
-  // Sample vehicle data
-  const [vehicles, setVehicles] = useState<Vehicle[]>([
-    {
-      id: '1',
-      make: 'Toyota',
-      model: 'Camry',
-      year: 2018,
-      vin: '4T1BF1FK5HU123456',
-      image: '/placeholder.svg',
-      lastService: '2023-09-15',
-      nickname: 'Daily Driver'
-    },
-    {
-      id: '2',
-      make: 'Honda',
-      model: 'CR-V',
-      year: 2020,
-      vin: '5J6RW2H85LA123456',
-      image: '/placeholder.svg',
-      lastService: '2023-11-03',
-      nickname: 'Family SUV'
-    }
-  ]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const { user } = useAuth();
   
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(vehicles[0]);
-  
-  const addVehicle = (vehicle: Omit<Vehicle, 'id'>) => {
-    const newVehicle = {
-      ...vehicle,
-      id: Date.now().toString(),
+  // Fetch vehicles from Supabase when user changes
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      if (!user) {
+        setVehicles([]);
+        setSelectedVehicle(null);
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('vehicles')
+          .select('*')
+          .eq('user_id', user.uid)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Convert the Supabase vehicle data to our Vehicle interface
+        const formattedVehicles: Vehicle[] = data.map(vehicle => ({
+          id: vehicle.id,
+          make: vehicle.make,
+          model: vehicle.model,
+          year: vehicle.year,
+          vin: vehicle.vin,
+          image_url: vehicle.image_url,
+          last_service: vehicle.last_service ? new Date(vehicle.last_service).toISOString().split('T')[0] : undefined,
+          nickname: vehicle.nickname
+        }));
+        
+        setVehicles(formattedVehicles);
+        
+        // Set the first vehicle as selected if there is one and no current selection
+        if (formattedVehicles.length > 0 && !selectedVehicle) {
+          setSelectedVehicle(formattedVehicles[0]);
+        } else if (selectedVehicle) {
+          // Update selected vehicle if it exists in the new list
+          const updatedSelected = formattedVehicles.find(v => v.id === selectedVehicle.id);
+          setSelectedVehicle(updatedSelected || (formattedVehicles.length > 0 ? formattedVehicles[0] : null));
+        }
+      } catch (error) {
+        console.error('Error fetching vehicles:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load your vehicles. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
     };
-    setVehicles([...vehicles, newVehicle]);
-  };
+    
+    fetchVehicles();
+    
+    // Setup subscription for real-time updates
+    const vehiclesSubscription = supabase
+      .channel('vehicles-changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'vehicles',
+          filter: user ? `user_id=eq.${user.uid}` : undefined
+        }, 
+        () => {
+          fetchVehicles();
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(vehiclesSubscription);
+    };
+  }, [user, toast]);
   
-  const removeVehicle = (id: string) => {
-    setVehicles(vehicles.filter(v => v.id !== id));
-    if (selectedVehicle?.id === id) {
-      setSelectedVehicle(vehicles.length > 1 ? vehicles.find(v => v.id !== id) || null : null);
+  const addVehicle = async (vehicle: Omit<Vehicle, 'id'>) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to add a vehicle",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('vehicles')
+        .insert([{
+          user_id: user.uid,
+          make: vehicle.make,
+          model: vehicle.model,
+          year: vehicle.year,
+          vin: vehicle.vin,
+          image_url: vehicle.image_url,
+          last_service: vehicle.last_service,
+          nickname: vehicle.nickname
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Vehicle Added",
+        description: `${vehicle.make} ${vehicle.model} has been added to your vehicles`
+      });
+      
+      // Local state update handled by the subscription
+    } catch (error) {
+      console.error('Error adding vehicle:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add vehicle. Please try again.",
+        variant: "destructive"
+      });
     }
   };
   
-  const updateVehicle = (id: string, updatedVehicle: Partial<Vehicle>) => {
-    setVehicles(vehicles.map(vehicle => 
-      vehicle.id === id ? { ...vehicle, ...updatedVehicle } : vehicle
-    ));
+  const removeVehicle = async (id: string) => {
+    if (!user) return;
     
-    if (selectedVehicle?.id === id) {
-      setSelectedVehicle(prev => prev ? { ...prev, ...updatedVehicle } : null);
+    try {
+      const { error } = await supabase
+        .from('vehicles')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.uid);
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Vehicle Removed",
+        description: "Vehicle has been removed from your account"
+      });
+      
+      // Local state update handled by the subscription
+    } catch (error) {
+      console.error('Error removing vehicle:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove vehicle. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const updateVehicle = async (id: string, updatedVehicle: Partial<Vehicle>) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('vehicles')
+        .update({
+          make: updatedVehicle.make,
+          model: updatedVehicle.model,
+          year: updatedVehicle.year,
+          vin: updatedVehicle.vin,
+          image_url: updatedVehicle.image_url,
+          last_service: updatedVehicle.last_service,
+          nickname: updatedVehicle.nickname
+        })
+        .eq('id', id)
+        .eq('user_id', user.uid);
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Vehicle Updated",
+        description: "Vehicle information has been updated"
+      });
+      
+      // Local state update handled by the subscription
+    } catch (error) {
+      console.error('Error updating vehicle:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update vehicle. Please try again.",
+        variant: "destructive"
+      });
     }
   };
   
@@ -99,7 +251,8 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
       addVehicle,
       removeVehicle,
       updateVehicle,
-      selectVehicle
+      selectVehicle,
+      loading
     }}>
       {children}
     </VehicleContext.Provider>

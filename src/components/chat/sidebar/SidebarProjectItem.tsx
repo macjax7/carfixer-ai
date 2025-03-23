@@ -13,7 +13,7 @@ interface ProjectSubItem {
 
 interface SidebarProjectItemProps {
   project: {
-    id: number;
+    id: string;
     title: string;
     path: string;
     subItems: ProjectSubItem[];

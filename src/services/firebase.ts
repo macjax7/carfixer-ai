@@ -1,96 +1,39 @@
 
-import { initializeApp } from "firebase/app";
-import { 
-  getAuth, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  updateProfile,
-  User
-} from "firebase/auth";
-import { 
-  getMessaging, 
-  getToken, 
-  onMessage 
-} from "firebase/messaging";
-import { firebaseConfig } from "../config/firebase";
+// This file now redirects to Supabase auth instead of Firebase
+import { supabase } from '@/integrations/supabase/client';
 
-// Initialize Firebase - ensure we only initialize once
-let app;
-try {
-  app = initializeApp(firebaseConfig);
-} catch (error: any) {
-  if (error.code !== 'app/duplicate-app') {
-    throw error;
-  }
-  // If we already have an app instance, use the existing one
-  const apps = (window as any).firebase?.apps;
-  app = apps && apps.length ? apps[0] : initializeApp(firebaseConfig);
-}
-
-export const auth = getAuth(app);
-
-// Initialize Firebase Cloud Messaging
-let messaging: any = null;
-if (typeof window !== 'undefined' && 'Notification' in window) {
-  try {
-    messaging = getMessaging(app);
-  } catch (error) {
-    console.error("Firebase messaging failed to initialize:", error);
-  }
-}
-
-// Authentication functions
+// Redirecting Firebase auth functions to Supabase
 export const signUp = async (email: string, password: string) => {
-  return createUserWithEmailAndPassword(auth, email, password);
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+  
+  if (error) throw error;
+  return data;
 };
 
 export const signIn = async (email: string, password: string) => {
-  return signInWithEmailAndPassword(auth, email, password);
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  
+  if (error) throw error;
+  return data;
 };
 
 export const signOut = async () => {
-  return firebaseSignOut(auth);
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
 };
 
-export const updateUserProfile = async (user: User, data: any) => {
-  return updateProfile(user, data);
-};
-
-// Notifications functions
-export const requestNotificationPermission = async () => {
-  if (!messaging) return null;
-  
-  try {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      console.log('Notification permission denied');
-      return null;
-    }
-    
-    // Get registration token for FCM
-    const token = await getToken(messaging, {
-      vapidKey: 'BEuO-zZiit_zQExDQoSSuOHc0KHp5fHS0Ge16PkDY2DQ-kFc25dKGrQWgGR3liSEg8tAFPXYlVXwBoD7NgjZaUQ'
-    });
-    
-    return token;
-  } catch (error) {
-    console.error('Error requesting notification permission:', error);
-    return null;
-  }
-};
-
-// Listen for FCM messages when app is in foreground
-export const setupMessageListener = (callback: (payload: any) => void) => {
-  if (!messaging) return () => {};
-  
-  return onMessage(messaging, (payload) => {
-    callback(payload);
+export const onAuthChange = (callback: (user: any) => void) => {
+  // Subscribe to auth changes
+  const { data } = supabase.auth.onAuthStateChange((event, session) => {
+    callback(session?.user || null);
   });
-};
-
-// Listen for auth state changes
-export const onAuthChange = (callback: (user: User | null) => void) => {
-  return onAuthStateChanged(auth, callback);
+  
+  // Return unsubscribe function
+  return data.subscription.unsubscribe;
 };
