@@ -59,7 +59,7 @@ export const updateUserProfile = async (user: any, profile: { displayName?: stri
   return user;
 };
 
-// Notification functions (stubs for now as we'll use a different approach)
+// Notification functions
 export const requestNotificationPermission = async () => {
   if (!('Notification' in window)) {
     console.warn('This browser does not support notifications');
@@ -80,7 +80,6 @@ export const requestNotificationPermission = async () => {
 
 export const setupMessageListener = (callback: (payload: any) => void) => {
   // This is a stub function for compatibility
-  // In a real app, you'd implement WebPush or a similar service
   console.log('Setting up mock notification listener');
   return () => {
     console.log('Mock notification listener unsubscribed');

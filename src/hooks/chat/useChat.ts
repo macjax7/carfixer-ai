@@ -1,10 +1,11 @@
 
-import { useMessageHandlers } from './useMessageHandlers';
-import { useSuggestedPrompts } from './useSuggestedPrompts';
 import { useCallback } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { useMessageHandlers } from './useMessageHandlers';
+import { useSuggestedPrompts } from './useSuggestedPrompts';
 
 export const useChat = () => {
+  const messageHandlers = useMessageHandlers();
   const {
     messages,
     input,
@@ -17,7 +18,7 @@ export const useChat = () => {
     hasAskedForVehicle,
     resetChat,
     saveCurrentChat
-  } = useMessageHandlers();
+  } = messageHandlers;
   
   const { toast } = useToast();
   const { suggestedPrompts } = useSuggestedPrompts();
@@ -40,6 +41,9 @@ export const useChat = () => {
       });
     }
   }, [canCreateNewChat, resetChat, saveCurrentChat, toast]);
+
+  // We don't need to call other hooks in this hook
+  // Just pass the result of messageHandlers
   
   return {
     messages,

@@ -61,12 +61,12 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
       try {
         setLoading(true);
         
-        // Using type assertion to tell TypeScript to trust us on this call
+        // Use type casting for now until types are properly defined
         const { data: vehiclesData, error } = await supabase
           .from('vehicles')
           .select('*')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false }) as any;
+          .order('created_at', { ascending: false });
         
         if (error) {
           throw error;
@@ -162,7 +162,7 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
           last_service: vehicle.last_service || vehicle.lastService,
           nickname: vehicle.nickname
         }])
-        .select() as any;
+        .select();
       
       if (error) {
         throw error;
@@ -193,7 +193,7 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
         .from('vehicles')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id) as any;
+        .eq('user_id', user.id);
       
       if (error) {
         throw error;
@@ -232,7 +232,7 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
           nickname: updatedVehicle.nickname
         })
         .eq('id', id)
-        .eq('user_id', user.id) as any;
+        .eq('user_id', user.id);
       
       if (error) {
         throw error;

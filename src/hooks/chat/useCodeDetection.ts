@@ -1,15 +1,20 @@
 
-/**
- * Helper functions for detecting OBD-II codes in messages
- */
 export const useCodeDetection = () => {
-  // Pattern for OBD-II codes: P, B, C, or U followed by 4 digits
   const containsDTCCode = (message: string): boolean => {
-    const dtcPattern = /\b[PBCU][0-9]{4}\b/i;
+    // Common OBD-II code patterns
+    const dtcPattern = /[PB][0-9][0-9][0-9][0-9]/i;
     return dtcPattern.test(message);
   };
-  
+
+  const processCodeType = (message: string): string | null => {
+    if (containsDTCCode(message)) {
+      return 'diagnostic';
+    }
+    return null;
+  };
+
   return {
-    containsDTCCode
+    containsDTCCode,
+    processCodeType
   };
 };

@@ -39,3 +39,17 @@ export type UserWithCustomAttributes = {
   displayName?: string;
   uid?: string; // Compatibility with Firebase API
 };
+
+// This type augmentation enables using the database tables in a type-safe way
+// without having to modify the generated types.ts file
+declare module '@supabase/supabase-js' {
+  interface SupabaseClient {
+    from<T extends keyof Database['public']['Tables']>(
+      table: T
+    ): PostgrestQueryBuilder<
+      Database['public'],
+      Database['public']['Tables'][T]['Row'],
+      T
+    >;
+  }
+}

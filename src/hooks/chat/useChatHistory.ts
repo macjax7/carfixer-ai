@@ -1,13 +1,12 @@
 
 import { useCallback } from 'react';
 import { useChatMessages } from './useChatMessages';
-import { ChatHistoryItem } from '@/components/chat/sidebar/useSidebarState';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 
 export const useChatHistory = () => {
-  const { messages, chatId, resetChat } = useChatMessages();
+  const { messages, chatId, resetChat: resetChatMessages } = useChatMessages();
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -46,6 +45,10 @@ export const useChatHistory = () => {
       });
     }
   }, [messages, chatId, user, toast]);
+  
+  const resetChat = useCallback(() => {
+    resetChatMessages();
+  }, [resetChatMessages]);
   
   return {
     saveCurrentChat,

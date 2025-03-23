@@ -61,7 +61,7 @@ export const useChatMessages = () => {
           if (chatMessages && chatMessages.length > 0) {
             const formattedMessages = chatMessages.map(msg => ({
               id: msg.id,
-              sender: msg.role as 'user' | 'ai',
+              sender: msg.role === 'user' ? 'user' as const : 'ai' as const,
               text: msg.content,
               timestamp: new Date(msg.created_at),
               image: msg.image_url
@@ -108,7 +108,7 @@ export const useChatMessages = () => {
             if (payload.new && payload.new.session_id === chatId) {
               const newMsg = {
                 id: payload.new.id,
-                sender: payload.new.role as 'user' | 'ai',
+                sender: payload.new.role === 'user' ? 'user' as const : 'ai' as const,
                 text: payload.new.content,
                 timestamp: new Date(payload.new.created_at),
                 image: payload.new.image_url
@@ -254,6 +254,13 @@ export const useChatMessages = () => {
     setChatId(nanoid()); // Generate a new chat ID for the new conversation
   };
   
+  const addMessage = (message: Message) => {
+    setMessages(prev => [...prev, message]);
+    if (message.sender === 'user') {
+      setMessageHistory(prev => [...prev, message.text]);
+    }
+  };
+  
   return {
     messages,
     messageHistory,
@@ -262,6 +269,8 @@ export const useChatMessages = () => {
     addUserMessage,
     addAIMessage,
     getMessagesForAPI,
-    resetChat
+    resetChat,
+    addMessage,
+    setChatId
   };
 };

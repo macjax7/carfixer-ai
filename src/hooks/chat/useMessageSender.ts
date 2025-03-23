@@ -1,33 +1,19 @@
 
-import { useChat } from "./useChat";
-import { useChatMessages } from "./useChatMessages";
 import { useState, useCallback } from "react";
 import { nanoid } from "nanoid";
 import { Message } from "@/components/chat/types";
-import { useImageHandler } from "./useImageHandler";
-import { useListingHandler } from "./useListingHandler";
-import { useCodeDetection } from "./useCodeDetection";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { useChatMessages } from "./useChatMessages";
+import { useOpenAI } from "@/utils/openai";
 
 export const useMessageSender = () => {
-  const { sendToChatService } = useChat();
-  const { addMessage, chatId, setChatId } = useChatMessages();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const { processImage } = useImageHandler();
-  const { processListing } = useListingHandler();
-  const { processCodeType } = useCodeDetection();
   const { user } = useAuth();
-
-  const createMessage = useCallback((text: string, sender: 'user' | 'ai', image?: string): Message => {
-    return {
-      id: nanoid(),
-      sender,
-      text,
-      timestamp: new Date(),
-      image,
-    };
-  }, []);
+  const { addUserMessage, addAIMessage, chatId, setChatId } = useChatMessages();
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Use the OpenAI utility directly
+  const { sendMessage: sendToChatService, analyzeListing, identifyPart, detectCodeType } = useOpenAI();
 
   const addToChatHistory = useCallback(async (
     newChatId: string, 
@@ -56,9 +42,6 @@ export const useMessageSender = () => {
     setIsProcessing(true);
     
     try {
-      // Create message ID for this interaction
-      const userMessage = createMessage(text, 'user', image);
-      
       // Create or ensure chat ID exists
       const newChatId = chatId || nanoid();
       if (!chatId) {
@@ -81,10 +64,7 @@ export const useMessageSender = () => {
       }
       
       // Add user message to the chat
-      addMessage(userMessage);
-      
-      // Save user message to database
-      await addToChatHistory(newChatId, userMessage, 'user');
+      const userMessage = await addUserMessage(text, image);
       
       // Determine the message type (image analysis, URL, or regular text)
       let aiResponseText = '';
@@ -92,15 +72,20 @@ export const useMessageSender = () => {
       
       if (image) {
         // Process image-based query
-        const imageResult = await processImage(image, text, newChatId);
-        aiResponseText = imageResult.text;
-        if (imageResult.componentDiagram) {
-          aiMessageExtra = { componentDiagram: imageResult.componentDiagram };
+        try {
+          const imageResult = await identifyPart(image, text);
+          aiResponseText = imageResult.text;
+          if (imageResult.componentDiagram) {
+            aiMessageExtra = { componentDiagram: imageResult.componentDiagram };
+          }
+        } catch (error) {
+          console.error("Error processing image:", error);
+          aiResponseText = "I'm sorry, I couldn't analyze that image properly. Could you try with a clearer picture?";
         }
       } else if (/https?:\/\/[^\s]+/.test(text)) {
         // Process URL-based query
         try {
-          const urlResults = await processListing(text);
+          const urlResults = await analyzeListing(text);
           if (urlResults.vehicleListingAnalysis) {
             aiResponseText = urlResults.text;
             aiMessageExtra = { vehicleListingAnalysis: urlResults.vehicleListingAnalysis };
@@ -114,7 +99,7 @@ export const useMessageSender = () => {
         }
       } else {
         // Process code detection for diagnostic codes
-        const codeType = processCodeType(text);
+        const codeType = detectCodeType ? detectCodeType(text) : null;
         if (codeType) {
           aiResponseText = await sendToChatService(text, newChatId, codeType);
         } else {
@@ -123,39 +108,23 @@ export const useMessageSender = () => {
         }
       }
       
-      // Create the AI response message
-      const aiMessage = createMessage(aiResponseText, 'ai');
-      
-      // Add any extra data to the message
-      Object.assign(aiMessage, aiMessageExtra);
-      
       // Add AI response to the chat
-      addMessage(aiMessage);
-      
-      // Save AI message to database
-      await addToChatHistory(newChatId, aiMessage, 'assistant');
+      const aiMessage = await addAIMessage(aiResponseText, aiMessageExtra);
       
       return aiMessage;
     } catch (error) {
       console.error("Error processing message:", error);
       
       // Show error message
-      const errorMessage = createMessage(
-        "I'm sorry, I encountered an error processing your request. Please try again.",
-        'ai'
+      const errorMessage = await addAIMessage(
+        "I'm sorry, I encountered an error processing your request. Please try again."
       );
-      addMessage(errorMessage);
-      
-      // Save error message to database
-      if (chatId) {
-        await addToChatHistory(chatId, errorMessage, 'assistant');
-      }
       
       return errorMessage;
     } finally {
       setIsProcessing(false);
     }
-  }, [createMessage, addMessage, chatId, setChatId, processImage, processListing, processCodeType, sendToChatService, user, addToChatHistory]);
+  }, [chatId, setChatId, user, addUserMessage, addAIMessage, sendToChatService, identifyPart, analyzeListing, detectCodeType]);
 
   return {
     processAndSendMessage,
