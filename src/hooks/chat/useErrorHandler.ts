@@ -48,8 +48,18 @@ export const useErrorHandler = () => {
     return "I apologize, but I encountered an error processing your request. Please try again.";
   };
 
+  const handleUIError = (error: any, message: string = "UI Error") => {
+    console.error(message, error);
+    toast({
+      variant: "destructive",
+      title: message,
+      description: "Something went wrong with the interface. Please refresh the page if this persists."
+    });
+  };
+
   return {
     handleChatError,
-    handleAIProcessingError
+    handleAIProcessingError,
+    handleUIError
   };
 };
