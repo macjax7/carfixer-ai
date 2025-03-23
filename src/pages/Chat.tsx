@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import AIChat from '../components/AIChat';
@@ -10,12 +11,14 @@ import { Button } from '@/components/ui/button';
 import ProfileMenu from '@/components/ProfileMenu';
 import { useChat } from '@/hooks/chat/useChat';
 
+// Create a header component for the chat page
 const ChatHeader = () => {
   const { state } = useSidebar();
   const { user } = useAuth();
   const { handleNewChat, canCreateNewChat } = useChat();
   const navigate = useNavigate();
   
+  // Only show these UI elements when the sidebar is collapsed
   if (state === 'collapsed') {
     return (
       <div className="absolute top-0 left-0 right-0 z-10 px-2 py-3 flex items-center justify-between bg-background/80 backdrop-blur-sm">
@@ -65,6 +68,7 @@ const ChatHeader = () => {
     );
   }
   
+  // When sidebar is expanded, show the CarFix AI logo and auth buttons
   return (
     <div className="absolute top-0 left-0 right-0 z-10 px-2 py-3 flex items-center justify-between bg-background/80 backdrop-blur-sm">
       <div className="flex items-center ml-4">
