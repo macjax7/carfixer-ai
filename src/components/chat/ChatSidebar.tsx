@@ -3,17 +3,13 @@ import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
   Sidebar,
-  SidebarContent,
-  SidebarFooter,
   SidebarHeader as UISidebarHeader,
 } from '@/components/ui/sidebar';
 
 // Import the sidebar components
-import NavigationSection from './sidebar/NavigationSection';
 import SidebarHeader from './sidebar/SidebarHeader';
-import SidebarProjects from './sidebar/SidebarProjects';
-import SidebarChatHistory from './sidebar/SidebarChatHistory';
-import SidebarSearchResults from './sidebar/SidebarSearchResults';
+import SidebarContentComponent from './sidebar/components/SidebarContent';
+import SidebarFooterComponent from './sidebar/components/SidebarFooter';
 import NewProjectDialog from './sidebar/NewProjectDialog';
 import { useSidebarState } from './sidebar/useSidebarState';
 
@@ -56,43 +52,21 @@ const ChatSidebar = () => {
         />
       </UISidebarHeader>
       
-      <SidebarContent>
-        {searchQuery ? (
-          <SidebarSearchResults 
-            searchQuery={searchQuery}
-            searchResults={searchResults}
-          />
-        ) : (
-          <>
-            <NavigationSection />
-            
-            <SidebarProjects 
-              projectsOpen={projectsOpen}
-              setProjectsOpen={setProjectsOpen}
-              userProjects={userProjects}
-              projectStates={projectStates}
-              toggleProject={toggleProject}
-              handleNewProjectButton={handleNewProjectButton}
-            />
-            
-            <SidebarChatHistory 
-              chatHistoryOpen={chatHistoryOpen}
-              setChatHistoryOpen={setChatHistoryOpen}
-              chatHistory={chatHistory}
-            />
-          </>
-        )}
-      </SidebarContent>
+      <SidebarContentComponent
+        searchQuery={searchQuery}
+        searchResults={searchResults}
+        projectsOpen={projectsOpen}
+        setProjectsOpen={setProjectsOpen}
+        chatHistoryOpen={chatHistoryOpen}
+        setChatHistoryOpen={setChatHistoryOpen}
+        userProjects={userProjects}
+        projectStates={projectStates}
+        toggleProject={toggleProject}
+        handleNewProjectButton={handleNewProjectButton}
+        chatHistory={chatHistory}
+      />
       
-      <SidebarFooter className="border-t p-4">
-        {user && (
-          <div className="flex items-center">
-            <div className="truncate">
-              <p className="text-sm font-medium text-muted-foreground truncate">{user.email || 'User'}</p>
-            </div>
-          </div>
-        )}
-      </SidebarFooter>
+      <SidebarFooterComponent user={user} />
       
       <NewProjectDialog 
         open={newProjectDialogOpen}

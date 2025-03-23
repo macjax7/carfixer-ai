@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
 export interface Vehicle {
@@ -21,6 +22,14 @@ interface VehicleContextType {
 }
 
 export const VehicleContext = createContext<VehicleContextType | undefined>(undefined);
+
+export const useVehicles = () => {
+  const context = useContext(VehicleContext);
+  if (context === undefined) {
+    throw new Error('useVehicles must be used within a VehicleProvider');
+  }
+  return context;
+};
 
 interface VehicleProviderProps {
   children: ReactNode;
