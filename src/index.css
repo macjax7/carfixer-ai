@@ -175,3 +175,12 @@
 .suggested-prompt-box {
   @apply text-sm px-3 py-2 bg-secondary/50 hover:bg-secondary/80 rounded-full text-left transition-colors duration-200 border border-border/30 hover:border-border/60 text-muted-foreground hover:text-foreground;
 }
+
+/* Chat container centering */
+.chat-container {
+  @apply w-full max-w-3xl mx-auto;
+}
+
+.chat-empty-state {
+  @apply flex flex-col items-center justify-center h-full max-w-2xl mx-auto px-4 text-center;
+}

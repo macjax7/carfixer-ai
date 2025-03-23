@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
   Sidebar,
   SidebarHeader as UISidebarHeader,
+  SidebarContent as UISidebarContent,
+  SidebarFooter as UISidebarFooter,
 } from '@/components/ui/sidebar';
 
 // Import the sidebar components
@@ -52,21 +54,25 @@ const ChatSidebar = () => {
         />
       </UISidebarHeader>
       
-      <SidebarContentComponent
-        searchQuery={searchQuery}
-        searchResults={searchResults}
-        projectsOpen={projectsOpen}
-        setProjectsOpen={setProjectsOpen}
-        chatHistoryOpen={chatHistoryOpen}
-        setChatHistoryOpen={setChatHistoryOpen}
-        userProjects={userProjects}
-        projectStates={projectStates}
-        toggleProject={toggleProject}
-        handleNewProjectButton={handleNewProjectButton}
-        chatHistory={chatHistory}
-      />
+      <UISidebarContent>
+        <SidebarContentComponent
+          searchQuery={searchQuery}
+          searchResults={searchResults}
+          projectsOpen={projectsOpen}
+          setProjectsOpen={setProjectsOpen}
+          chatHistoryOpen={chatHistoryOpen}
+          setChatHistoryOpen={setChatHistoryOpen}
+          userProjects={userProjects}
+          projectStates={projectStates}
+          toggleProject={toggleProject}
+          handleNewProjectButton={handleNewProjectButton}
+          chatHistory={chatHistory}
+        />
+      </UISidebarContent>
       
-      <SidebarFooterComponent user={user} />
+      <UISidebarFooter>
+        <SidebarFooterComponent user={user} />
+      </UISidebarFooter>
       
       <NewProjectDialog 
         open={newProjectDialogOpen}

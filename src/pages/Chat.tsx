@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import AIChat from '../components/AIChat';
@@ -104,14 +105,16 @@ const ChatHeader = () => {
 
 const Chat: React.FC = () => {
   return (
-    <div className="flex flex-col h-screen bg-background">
-      <SidebarProvider>
+    <div className="flex flex-col h-screen overflow-hidden bg-background">
+      <SidebarProvider defaultOpen={false}>
         <div className="flex flex-1 w-full overflow-hidden">
           <ChatSidebar />
           
-          <main className="flex-1 overflow-hidden relative">
+          <main className="flex-1 overflow-hidden relative flex flex-col items-center">
             <ChatHeader />
-            <AIChat />
+            <div className="w-full max-w-3xl mx-auto flex-1">
+              <AIChat />
+            </div>
           </main>
         </div>
       </SidebarProvider>

@@ -18,22 +18,20 @@ function App() {
       <AuthProvider>
         <ChatProvider>
           <VehicleProvider>
-            <SidebarProvider defaultOpen={false}>
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route 
-                  path="/chat/*" 
-                  element={
-                    <ProtectedRoute>
-                      <ChatPage />
-                    </ProtectedRoute>
-                  } 
-                />
-              </Routes>
-              <Toaster />
-            </SidebarProvider>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route 
+                path="/chat/*" 
+                element={
+                  <ProtectedRoute>
+                    <ChatPage />
+                  </ProtectedRoute>
+                } 
+              />
+            </Routes>
+            <Toaster />
           </VehicleProvider>
         </ChatProvider>
       </AuthProvider>
