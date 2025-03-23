@@ -1,14 +1,13 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
-import { ChatProvider } from './context/ChatContext';
+import { ChatProvider } from '@/context/ChatContext';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import HomePage from './pages/Home';
+import HomePage from '@/pages/Home';
 import ChatPage from '@/pages/Chat';
 import LoginPage from '@/pages/Login';
-import RegisterPage from './pages/Register';
-import ProtectedRoute from './components/auth/ProtectedRoute';
+import RegisterPage from '@/pages/Register';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Toaster } from '@/components/ui/toaster';
 
 function App() {
