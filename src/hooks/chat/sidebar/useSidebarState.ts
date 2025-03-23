@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from 'react';
 import { useChat } from '@/hooks/chat/useChat';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
@@ -14,7 +15,7 @@ export const useSidebarState = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Get projects state
+  // Get projects state - initialize to false (closed by default)
   const {
     projectsOpen,
     setProjectsOpen,
@@ -31,7 +32,7 @@ export const useSidebarState = () => {
     createNewProject
   } = useProjects();
   
-  // Get chat history state
+  // Get chat history state - initialize to false (closed by default)
   const {
     chatHistoryOpen,
     setChatHistoryOpen,

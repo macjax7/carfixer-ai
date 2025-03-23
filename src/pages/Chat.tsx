@@ -109,7 +109,7 @@ const ChatHeader = () => {
 const Chat: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-background">
-      <SidebarProvider>
+      <SidebarProvider defaultOpen={false}>
         <div className="flex flex-1 w-full overflow-hidden">
           <ChatSidebar />
           

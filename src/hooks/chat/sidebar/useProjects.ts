@@ -8,8 +8,8 @@ export const useProjects = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // Initialize projectsOpen based on whether user is authenticated
-  const [projectsOpen, setProjectsOpen] = useState(!!user);
+  // Initialize projectsOpen to false (closed by default)
+  const [projectsOpen, setProjectsOpen] = useState(false);
   const [userProjects, setUserProjects] = useState<Project[]>([]);
   const [projectStates, setProjectStates] = useState<ProjectState>({});
   

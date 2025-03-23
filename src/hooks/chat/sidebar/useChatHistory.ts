@@ -6,8 +6,8 @@ import { ChatHistoryItem } from './types';
 export const useChatHistory = () => {
   const { user } = useAuth();
   
-  // Initialize chatHistoryOpen based on whether user is authenticated
-  const [chatHistoryOpen, setChatHistoryOpen] = useState(!!user);
+  // Initialize chatHistoryOpen to false (closed by default)
+  const [chatHistoryOpen, setChatHistoryOpen] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
   
   // Close chat history section when there are no chats

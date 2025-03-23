@@ -7,6 +7,7 @@ import SuggestedPrompts from './chat/SuggestedPrompts';
 import LoadingIndicator from './chat/LoadingIndicator';
 import { useChat } from '@/hooks/chat/useChat';
 import { useVehicles } from '@/hooks/use-vehicles';
+import { useSidebar } from '@/components/ui/sidebar';
 
 const AIChat: React.FC = () => {
   const {
@@ -22,6 +23,7 @@ const AIChat: React.FC = () => {
     hasAskedForVehicle
   } = useChat();
   
+  const { state } = useSidebar();
   const { vehicles, selectedVehicle } = useVehicles();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -76,7 +78,7 @@ const AIChat: React.FC = () => {
       {/* Chat messages */}
       {messages.length > 0 && (
         <ScrollArea className="flex-1 pt-4 px-2 md:px-4 pb-4">
-          <div className="max-w-3xl mx-auto space-y-6 pb-4">
+          <div className={`max-w-3xl mx-auto space-y-6 pb-4 ${state === 'collapsed' ? 'lg:mx-auto' : 'lg:ml-0 lg:mr-auto'}`}>
             {messages.map((msg) => (
               <ChatMessage 
                 key={msg.id}
@@ -102,14 +104,16 @@ const AIChat: React.FC = () => {
       
       {/* Input form - ensure it stays at the bottom with proper spacing */}
       <div className="border-t border-border bg-background/95 backdrop-blur-sm py-3 px-3 md:px-4 mt-auto">
-        <ChatInput
-          input={input}
-          setInput={setInput}
-          handleSendMessage={handleSendMessage}
-          handleImageUpload={handleImageUpload}
-          handleListingAnalysis={handleListingAnalysis}
-          isLoading={isLoading}
-        />
+        <div className={`max-w-3xl ${state === 'collapsed' ? 'mx-auto' : 'lg:ml-0 lg:mr-auto'}`}>
+          <ChatInput
+            input={input}
+            setInput={setInput}
+            handleSendMessage={handleSendMessage}
+            handleImageUpload={handleImageUpload}
+            handleListingAnalysis={handleListingAnalysis}
+            isLoading={isLoading}
+          />
+        </div>
       </div>
     </div>
   );
