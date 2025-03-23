@@ -1,35 +1,12 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Folder, MessageSquare } from 'lucide-react';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-
-interface ProjectSubItem {
-  id: number;
-  title: string;
-  path: string;
-}
-
-interface Project {
-  id: number;
-  title: string;
-  path: string;
-  subItems: ProjectSubItem[];
-}
-
-interface ChatHistoryItem {
-  id: number;
-  title: string;
-  timestamp: string;
-  path: string;
-}
+import { Project, ChatHistoryItem, SearchResults } from '@/hooks/chat/sidebar/types';
 
 interface SidebarSearchResultsProps {
   searchQuery: string;
-  searchResults: {
-    projects: Project[];
-    chats: ChatHistoryItem[];
-  };
+  searchResults: SearchResults;
 }
 
 const SidebarSearchResults = ({ searchQuery, searchResults }: SidebarSearchResultsProps) => {

@@ -1,23 +1,12 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Folder, ChevronDown, ChevronRight } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-
-interface ProjectSubItem {
-  id: number | string;
-  title: string;
-  path: string;
-}
+import { Project } from '@/hooks/chat/sidebar/types';
 
 interface SidebarProjectItemProps {
-  project: {
-    id: string | number;
-    title: string;
-    path: string;
-    subItems: ProjectSubItem[];
-  };
+  project: Project;
   isOpen: boolean;
   onToggle: () => void;
 }

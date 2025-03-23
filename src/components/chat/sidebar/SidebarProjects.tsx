@@ -6,26 +6,13 @@ import { SidebarGroup, SidebarGroupContent, SidebarMenu } from '@/components/ui/
 import SidebarProjectItem from './SidebarProjectItem';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Project } from '@/hooks/chat/sidebar/types';
-
-interface ProjectSubItem {
-  id: number | string;
-  title: string;
-  path: string;
-}
-
-interface Project {
-  id: number | string;
-  title: string;
-  path: string;
-  subItems: ProjectSubItem[];
-}
+import { Project, ProjectState } from '@/hooks/chat/sidebar/types';
 
 interface SidebarProjectsProps {
   projectsOpen: boolean;
   setProjectsOpen: (open: boolean) => void;
   userProjects: Project[];
-  projectStates: Record<string, boolean>;
+  projectStates: ProjectState;
   toggleProject: (project: string) => void;
   handleNewProjectButton: (e: React.MouseEvent) => void;
 }
