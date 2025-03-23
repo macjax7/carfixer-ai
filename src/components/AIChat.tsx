@@ -118,7 +118,7 @@ const AIChat: React.FC = () => {
         className={`
           border-t border-border bg-background/95 backdrop-blur-sm py-3 px-3 md:px-4
           ${isEmptyChat 
-            ? 'absolute bottom-12 left-0 right-0 border-t-0 transition-all duration-300' 
+            ? 'absolute bottom-1/3 left-0 right-0 border-t-0 transition-all duration-300' 
             : 'mt-auto transition-all duration-300'
           }
         `}
