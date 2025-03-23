@@ -1,5 +1,4 @@
 
-import { useEffect } from 'react';
 import { useChat } from '@/hooks/chat/useChat';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useProjects } from './useProjects';
@@ -11,12 +10,7 @@ export { type ChatHistoryItem } from './types';
 
 export const useSidebarState = () => {
   const { handleNewChat, canCreateNewChat } = useChat();
-  const { setOpen } = useSidebar();
-  
-  // Set sidebar to collapsed on initial load
-  useEffect(() => {
-    setOpen(false);
-  }, [setOpen]);
+  const { state } = useSidebar();
   
   // Import state from other hooks
   const {
