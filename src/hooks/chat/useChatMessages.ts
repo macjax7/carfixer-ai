@@ -5,7 +5,14 @@ import { Message } from '@/components/chat/types';
 import { ChatMessage } from '@/utils/openai';
 
 export const useChatMessages = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      sender: 'ai',
+      text: "Hello! I'm your CarFix AI assistant. How can I help with your vehicle today?",
+      timestamp: new Date()
+    }
+  ]);
   
   const [messageHistory, setMessageHistory] = useState<string[]>([]);
   
@@ -42,6 +49,7 @@ export const useChatMessages = () => {
   
   const getMessagesForAPI = (userMessage: Message): ChatMessage[] => {
     return messages
+      .filter(msg => msg.id !== '1') // Filter out the welcome message
       .concat(userMessage)
       .map(msg => ({
         role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
@@ -49,17 +57,11 @@ export const useChatMessages = () => {
       }));
   };
   
-  const resetChat = () => {
-    setMessages([]);
-    setMessageHistory([]);
-  };
-  
   return {
     messages,
     messageHistory,
     addUserMessage,
     addAIMessage,
-    getMessagesForAPI,
-    resetChat
+    getMessagesForAPI
   };
 };

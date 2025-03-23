@@ -30,13 +30,18 @@ const App = () => (
               <Sonner />
               <BrowserRouter>
                 <Routes>
-                  {/* Chat page is accessible without authentication */}
-                  <Route path="/" element={<Chat />} />
+                  <Route path="/" element={
+                    <ProtectedRoute>
+                      <Chat />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<SignUp />} />
-                  <Route path="/chat" element={<Navigate to="/" replace />} />
-                  
-                  {/* These routes still require authentication */}
+                  <Route path="/chat" element={
+                    <ProtectedRoute>
+                      <Navigate to="/" replace />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/vehicles" element={
                     <ProtectedRoute>
                       <Vehicles />

@@ -62,10 +62,9 @@ const AIChat: React.FC = () => {
   
   return (
     <div className="flex flex-col h-full bg-background pt-14"> {/* Added pt-14 to account for header */}
-      {/* Welcome message when no messages exist */}
-      {messages.length === 0 && (
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <h1 className="text-2xl font-semibold mb-6">What can I help with?</h1>
+      {/* Welcome message when no messages exist (except default) */}
+      {messages.length === 1 && (
+        <div className="flex-1 flex items-center justify-center">
           <SuggestedPrompts 
             handleSuggestedPrompt={handleSuggestedPrompt}
             prompts={suggestedPrompts}
@@ -74,7 +73,7 @@ const AIChat: React.FC = () => {
       )}
       
       {/* Chat messages */}
-      {messages.length > 0 && (
+      {messages.length > 1 && (
         <ScrollArea className="flex-1 pt-4 px-2 md:px-4 pb-4">
           <div className="max-w-3xl mx-auto space-y-6 pb-4">
             {messages.map((msg) => (

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -13,7 +14,6 @@ import ProfileMenu from '@/components/ProfileMenu';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { useChat } from '@/hooks/chat/useChat';
 import {
   Dialog,
   DialogContent,
@@ -42,7 +42,6 @@ const ChatSidebar = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { state } = useSidebar();
-  const { handleNewChat } = useChat();
   const searchInputRef = useRef(null);
   
   // State for collapsible sections
@@ -99,7 +98,7 @@ const ChatSidebar = () => {
   };
   
   // Handle creating a new project
-  const handleNewProjectButton = (e) => {
+  const handleNewProject = (e) => {
     e.stopPropagation(); // Prevent triggering the parent collapsible
     setNewProjectDialogOpen(true);
   };
@@ -140,8 +139,9 @@ const ChatSidebar = () => {
   };
   
   // Handle start new chat
-  const handleNewChatClick = () => {
-    handleNewChat();
+  const handleNewChat = () => {
+    // Navigate to chat page with a new empty chat
+    navigate('/');
     toast({
       title: "New Chat",
       description: "Started a new chat session",
@@ -246,7 +246,7 @@ const ChatSidebar = () => {
               variant="outline"
               size="sm"
               className="flex items-center gap-1 h-8"
-              onClick={handleNewChatClick}
+              onClick={handleNewChat}
             >
               <PlusCircle className="h-4 w-4" />
               <span className="text-xs">New Chat</span>
@@ -257,6 +257,7 @@ const ChatSidebar = () => {
       
       <SidebarContent>
         {searchQuery ? (
+          // Display search results
           <div className="px-2 py-2">
             <div className="text-xs text-muted-foreground mb-2">
               Search results for "{searchQuery}"
@@ -320,6 +321,7 @@ const ChatSidebar = () => {
             )}
           </div>
         ) : (
+          // Display normal sidebar content
           <>
             <SidebarGroup>
               <SidebarGroupContent>
@@ -363,7 +365,7 @@ const ChatSidebar = () => {
                     variant="ghost" 
                     size="icon" 
                     className="h-7 w-7 mr-2" 
-                    onClick={handleNewProjectButton}
+                    onClick={handleNewProject}
                   >
                     <FolderPlus className="h-4 w-4" />
                   </Button>
@@ -462,6 +464,7 @@ const ChatSidebar = () => {
         </div>
       </SidebarFooter>
       
+      {/* New Project Dialog */}
       <Dialog open={newProjectDialogOpen} onOpenChange={setNewProjectDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
