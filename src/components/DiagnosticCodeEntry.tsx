@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useDiagnostics } from '../context/DiagnosticContext';
-import { useVehicles } from '../hooks/use-vehicles';
+import { useVehicles } from '../context/VehicleContext';
 import { Search, AlertCircle } from 'lucide-react';
 
 // Common OBD codes for demonstration

@@ -1,7 +1,6 @@
 
-import React from 'react';
-import { Vehicle } from '../context/VehicleContext';
-import { useVehicles } from '../hooks/use-vehicles';
+import React, { useState } from 'react';
+import { useVehicles, Vehicle } from '../context/VehicleContext';
 import VehicleCard from './VehicleCard';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
