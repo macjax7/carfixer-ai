@@ -24,7 +24,6 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({
   const [isHovering, setIsHovering] = useState(false);
   const [isLeftArrowHovering, setIsLeftArrowHovering] = useState(false);
   const [isRightArrowHovering, setIsRightArrowHovering] = useState(false);
-  // Fix: Use 'any' type instead of trying to use AutoplayPlugin as a type
   const autoplayRef = useRef<any>(null);
   const [api, setApi] = useState<any>(null);
   
@@ -34,6 +33,9 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({
     stopOnInteraction: false,
     rootNode: (emblaRoot: any) => emblaRoot.parentElement,
   };
+  
+  // Initialize the autoplay plugin
+  const autoplay = AutoplayPlugin(autoplayOptions);
   
   // Effect to handle autoplay pause/resume based on hover state
   useEffect(() => {
@@ -69,6 +71,15 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({
     }
   }, [isLeftArrowHovering, isRightArrowHovering, api]);
   
+  // Store a reference to the autoplay plugin when carousel is initialized
+  useEffect(() => {
+    if (api) {
+      const plugins = api.plugins();
+      // Find the autoplay plugin instance
+      autoplayRef.current = plugins.autoplay;
+    }
+  }, [api]);
+  
   return (
     <div 
       className="flex flex-col gap-3 items-center justify-center w-full animate-fade-in"
@@ -80,11 +91,7 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({
           align: 'start',
           loop: true,
         }}
-        plugins={[
-          AutoplayPlugin(autoplayOptions, (autoplay) => {
-            autoplayRef.current = autoplay;
-          }),
-        ]}
+        plugins={[autoplay]}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
         setApi={setApi}
