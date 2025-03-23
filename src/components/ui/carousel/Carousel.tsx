@@ -3,6 +3,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { CarouselProvider } from "./CarouselContext"
 import type { CarouselOptions, CarouselPlugin, CarouselApi } from "./useCarousel"
+import { useCarousel } from "./useCarousel"
 
 export interface CarouselProps extends React.HTMLAttributes<HTMLDivElement> {
   opts?: CarouselOptions
@@ -33,15 +34,9 @@ const Carousel = React.forwardRef<HTMLDivElement, CarouselProps>(
       >
         <div
           ref={ref}
-          onKeyDownCapture={(event) => {
-            // Moved to provider for better encapsulation, but still need ref
-            if (event.key === "ArrowLeft") {
-              event.preventDefault()
-              // Will be handled by the provider
-            } else if (event.key === "ArrowRight") {
-              event.preventDefault()
-              // Will be handled by the provider
-            }
+          onKeyDownCapture={(e) => {
+            const { handleKeyDown } = useCarousel();
+            handleKeyDown?.(e);
           }}
           className={cn("relative", className)}
           role="region"

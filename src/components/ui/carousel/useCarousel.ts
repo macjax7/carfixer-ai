@@ -8,7 +8,7 @@ export type CarouselOptions = UseCarouselParameters[0]
 export type CarouselPlugin = UseCarouselParameters[1]
 
 export interface CarouselContextProps {
-  carouselRef: React.RefObject<HTMLDivElement>
+  carouselRef: React.RefObject<HTMLDivElement> | any // Using any to accommodate EmblaViewportRefType
   api: CarouselApi
   scrollPrev: () => void
   scrollNext: () => void
@@ -18,6 +18,7 @@ export interface CarouselContextProps {
   opts?: CarouselOptions
   plugins?: CarouselPlugin
   setApi?: (api: CarouselApi) => void
+  handleKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void
 }
 
 export const useCarousel = () => {

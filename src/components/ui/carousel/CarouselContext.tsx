@@ -1,13 +1,13 @@
 
 import * as React from "react"
-import useEmblaCarousel from "embla-carousel-react"
+import useEmblaCarousel, { type UseEmblaCarouselType } from "embla-carousel-react"
 import { CarouselContext, type CarouselApi, type CarouselContextProps } from "./useCarousel"
 
 export interface CarouselProviderProps {
   children: React.ReactNode
   orientation?: "horizontal" | "vertical"
-  opts?: React.ComponentProps<typeof CarouselProvider>["opts"]
-  plugins?: React.ComponentProps<typeof CarouselProvider>["plugins"]
+  opts?: Parameters<typeof useEmblaCarousel>[0]
+  plugins?: Parameters<typeof useEmblaCarousel>[1]
   setApi?: (api: CarouselApi) => void
 }
 
