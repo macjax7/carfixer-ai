@@ -1,21 +1,19 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useChat } from '@/hooks/chat/useChat';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { useProjects } from './useProjects';
 import { useChatHistory } from './useChatHistory';
 import { useSearch } from './useSearch';
-import { useDataLoading } from './useDataLoading';
-
-export * from './types';
+import { Project, ChatHistoryItem, ProjectState } from './types';
 
 export const useSidebarState = () => {
   const { handleNewChat, canCreateNewChat } = useChat();
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Get projects state - initialize to false (closed by default)
+  // Get projects state 
   const {
     projectsOpen,
     setProjectsOpen,
@@ -29,10 +27,13 @@ export const useSidebarState = () => {
     setNewProjectName,
     toggleProject,
     handleNewProjectButton,
-    createNewProject
+    createNewProject,
+    deleteProject,
+    isLoading: isProjectsLoading,
+    fetchProjects
   } = useProjects();
   
-  // Get chat history state - initialize to false (closed by default)
+  // Get chat history state
   const {
     chatHistoryOpen,
     setChatHistoryOpen,
@@ -50,9 +51,6 @@ export const useSidebarState = () => {
     toggleSearch,
     handleSearch
   } = useSearch(userProjects, chatHistory);
-  
-  // Load user data
-  useDataLoading(setUserProjects, setChatHistory, setProjectStates);
   
   // Handle start new chat
   const handleNewChatClick = () => {
@@ -92,10 +90,13 @@ export const useSidebarState = () => {
     toggleProject,
     handleNewProjectButton,
     createNewProject,
+    deleteProject,
     handleNewChatClick,
     toggleSearch,
     handleSearch,
     canCreateNewChat,
-    isLoadingChatHistory
+    isLoadingChatHistory,
+    isProjectsLoading,
+    fetchProjects
   };
 };

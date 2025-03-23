@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { ChevronDown, ChevronRight, FolderPlus, LogIn, Folder } from 'lucide-react';
+import { ChevronDown, ChevronRight, FolderPlus, LogIn, Folder, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SidebarGroup, SidebarGroupContent, SidebarMenu } from '@/components/ui/sidebar';
@@ -15,6 +16,7 @@ interface SidebarProjectsProps {
   projectStates: ProjectState;
   toggleProject: (project: string) => void;
   handleNewProjectButton: (e: React.MouseEvent) => void;
+  isLoading?: boolean;
 }
 
 const SidebarProjects = ({
@@ -23,7 +25,8 @@ const SidebarProjects = ({
   userProjects,
   projectStates,
   toggleProject,
-  handleNewProjectButton
+  handleNewProjectButton,
+  isLoading = false
 }: SidebarProjectsProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -61,7 +64,12 @@ const SidebarProjects = ({
         <CollapsibleContent className="transition-all duration-200 ease-in-out">
           <SidebarGroupContent>
             {user ? (
-              userProjects.length > 0 ? (
+              isLoading ? (
+                <div className="p-3 text-center">
+                  <Loader2 className="h-6 w-6 mx-auto mb-2 animate-spin opacity-50" />
+                  <p className="text-sm text-muted-foreground">Loading projects...</p>
+                </div>
+              ) : userProjects.length > 0 ? (
                 <SidebarMenu>
                   {userProjects.map((project) => (
                     <SidebarProjectItem 
