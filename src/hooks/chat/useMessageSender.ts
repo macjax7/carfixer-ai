@@ -17,7 +17,9 @@ export const useMessageSender = () => {
   const { containsDTCCode } = useCodeDetection();
 
   const handleSendMessage = async (e: FormEvent) => {
-    e.preventDefault();
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
     
     console.log("handleSendMessage called with input:", input);
     if (!input.trim() || isLoading) {
