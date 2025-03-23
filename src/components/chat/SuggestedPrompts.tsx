@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { LightbulbIcon } from 'lucide-react';
 
 interface SuggestedPromptsProps {
   handleSuggestedPrompt: (prompt: string) => void;
@@ -14,15 +13,14 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({ handleSuggestedProm
         How can I help with your vehicle?
       </h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-xl">
         {prompts.map((prompt, index) => (
           <button
             key={index}
             onClick={() => handleSuggestedPrompt(prompt)}
-            className="suggested-prompt-box border border-border/60 shadow-sm hover:border-border/90 hover:shadow-md transition-all"
+            className="text-sm px-3 py-2 bg-secondary/50 hover:bg-secondary/80 text-muted-foreground hover:text-foreground rounded-full text-left transition-all duration-200 border border-border/30 hover:border-border/60"
           >
-            <LightbulbIcon className="h-5 w-5 mr-3 text-carfix-500 flex-shrink-0 mt-0.5" />
-            <span>{prompt}</span>
+            {prompt}
           </button>
         ))}
       </div>
