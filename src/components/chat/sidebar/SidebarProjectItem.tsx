@@ -11,9 +11,16 @@ interface SidebarProjectItemProps {
   isOpen: boolean;
   onToggle: () => void;
   onDelete?: () => void;
+  onSelectChat?: (chatId: string) => void;
 }
 
-const SidebarProjectItem = ({ project, isOpen, onToggle, onDelete }: SidebarProjectItemProps) => {
+const SidebarProjectItem = ({ 
+  project, 
+  isOpen, 
+  onToggle, 
+  onDelete,
+  onSelectChat 
+}: SidebarProjectItemProps) => {
   const hasSubItems = project.subItems && project.subItems.length > 0;
   
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -24,17 +31,25 @@ const SidebarProjectItem = ({ project, isOpen, onToggle, onDelete }: SidebarProj
     }
   };
   
+  const handleProjectClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onToggle();
+  };
+  
+  const handleChatItemClick = (e: React.MouseEvent, chatId: string) => {
+    e.preventDefault();
+    if (onSelectChat) {
+      onSelectChat(chatId);
+    }
+  };
+  
   return (
     <div>
       <SidebarMenuItem
-        onClick={hasSubItems ? onToggle : undefined}
-        className={`flex items-center justify-between group ${hasSubItems ? 'cursor-pointer' : ''}`}
+        onClick={handleProjectClick}
+        className="flex items-center justify-between group cursor-pointer"
       >
-        <Link 
-          to={project.path} 
-          className="flex-1 flex items-center"
-          onClick={e => hasSubItems && e.preventDefault()}
-        >
+        <div className="flex-1 flex items-center">
           {hasSubItems ? (
             isOpen ? 
               <ChevronDown className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" /> : 
@@ -43,7 +58,7 @@ const SidebarProjectItem = ({ project, isOpen, onToggle, onDelete }: SidebarProj
             <span className="w-5" />
           )}
           <span className="truncate">{project.title}</span>
-        </Link>
+        </div>
         
         {onDelete && (
           <Button
@@ -61,9 +76,13 @@ const SidebarProjectItem = ({ project, isOpen, onToggle, onDelete }: SidebarProj
         <SidebarMenuSub>
           {project.subItems.map((item) => (
             <SidebarMenuItem key={item.id} className="pl-7">
-              <Link to={item.path} className="truncate">
+              <a 
+                href="#" 
+                className="flex-1 truncate"
+                onClick={(e) => handleChatItemClick(e, item.id.toString())}
+              >
                 {item.title}
-              </Link>
+              </a>
             </SidebarMenuItem>
           ))}
         </SidebarMenuSub>

@@ -16,9 +16,14 @@ import SidebarChatHistory from './sidebar/SidebarChatHistory';
 import SidebarSearchResults from './sidebar/SidebarSearchResults';
 import NewProjectDialog from './sidebar/NewProjectDialog';
 import { useSidebarState } from '@/hooks/chat/sidebar/useSidebarState';
+import { useNavigate } from 'react-router-dom';
+import { useChat } from '@/hooks/chat/useChat';
 
 const ChatSidebar = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { loadChatById } = useChat();
+  
   const {
     projectsOpen,
     setProjectsOpen,
@@ -45,6 +50,11 @@ const ChatSidebar = () => {
     isProjectsLoading,
     deleteProject
   } = useSidebarState();
+
+  // Handle chat selection
+  const handleSelectChat = (chatId: string) => {
+    loadChatById(chatId);
+  };
 
   return (
     <Sidebar>
@@ -78,6 +88,7 @@ const ChatSidebar = () => {
               handleNewProjectButton={handleNewProjectButton}
               isLoading={isProjectsLoading}
               deleteProject={deleteProject}
+              onSelectChat={handleSelectChat}
             />
             
             <SidebarChatHistory 

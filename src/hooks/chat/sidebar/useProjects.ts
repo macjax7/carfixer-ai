@@ -47,15 +47,31 @@ export const useProjects = () => {
       
       if (itemsError) throw itemsError;
       
+      // Get chat history for the project items
+      const { data: chatHistoryData, error: chatHistoryError } = await supabase
+        .from('chat_history')
+        .select('*')
+        .in(
+          'project_id',
+          projectsData.map(project => project.id)
+        )
+        .order('created_at', { ascending: false });
+      
+      if (chatHistoryError) throw chatHistoryError;
+      
       // Map the data to our Project type
       const projects: Project[] = projectsData.map(project => {
-        const subItems: ProjectSubItem[] = projectItemsData
-          .filter(item => item.project_id === project.id)
-          .map(item => ({
-            id: item.id,
-            title: item.title,
-            path: item.path
-          }));
+        // Get chats that belong to this project
+        const projectChats = chatHistoryData
+          ? chatHistoryData.filter(chat => chat.project_id === project.id)
+          : [];
+        
+        // Create sub-items from chats
+        const subItems: ProjectSubItem[] = projectChats.map(chat => ({
+          id: chat.id,
+          title: chat.title || `Chat ${new Date(chat.created_at).toLocaleDateString()}`,
+          path: `/chat/${chat.id}`
+        }));
         
         return {
           id: project.id,
