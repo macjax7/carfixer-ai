@@ -32,9 +32,9 @@ const AIChat: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Chat state - empty or has messages
-  const isEmptyChat = messages.length === 0 && !isLoading;
+  const isEmptyChat = messages.length === 0;
   
-  // Load specific chat if chatId is provided in URL
+  // Load specific chat if chatId is provided in URL - but don't show loading state
   useEffect(() => {
     if (chatId && chatId !== chatIdLoaded) {
       loadChatById(chatId);
@@ -126,7 +126,8 @@ const AIChat: React.FC = () => {
               {/* Vehicle suggestions when AI has asked for vehicle info */}
               {hasAskedForVehicle && getVehicleSuggestions()}
               
-              {isLoading && <LoadingIndicator />}
+              {/* Only show loading indicator when actually sending a message, not during initial load */}
+              {isLoading && messages.length > 0 && <LoadingIndicator />}
               
               <div ref={messagesEndRef} />
             </div>

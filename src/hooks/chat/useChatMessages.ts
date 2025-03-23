@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { nanoid } from 'nanoid';
 import { Message } from '@/components/chat/types';
@@ -29,29 +28,29 @@ export const useChatMessages = (): UseChatMessagesResult => {
     setMessageHistory
   });
   
-  // Load initial messages
+  // Load initial messages - don't show loading state for homepage
   useEffect(() => {
+    let isMounted = true;
+    
     const loadMessages = async () => {
       try {
         const { data: session } = await supabase.auth.getSession();
         if (!session.session?.user) {
-          // If no user is logged in, just create a new chat ID
+          // If no user is logged in, just create a new chat ID without loading state
           setChatId(nanoid());
           return;
         }
         
-        setIsLoading(true);
-        
-        // Get the most recent chat session
+        // Only set loading if loading an existing chat, not for new session
         const chatSession = await fetchLastChatSession();
         
-        if (chatSession) {
+        if (chatSession && isMounted) {
           setChatId(chatSession.id);
           
           // Load messages for this session
           const chatMessages = await fetchChatMessages(chatSession.id);
           
-          if (chatMessages && chatMessages.length > 0) {
+          if (chatMessages && chatMessages.length > 0 && isMounted) {
             const formattedMessages = chatMessages.map(msg => ({
               id: msg.id,
               sender: msg.role === 'user' ? 'user' as const : 'ai' as const,
@@ -69,19 +68,27 @@ export const useChatMessages = (): UseChatMessagesResult => {
             
             setMessageHistory(userMsgHistory);
           }
-        } else {
+        } else if (isMounted) {
           // No existing chat session found, create a new chat ID
           setChatId(nanoid());
         }
       } catch (error) {
         console.error("Error in loadMessages:", error);
-        setChatId(nanoid()); // Fallback to a new chat ID
+        if (isMounted) {
+          setChatId(nanoid()); // Fallback to a new chat ID
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
     loadMessages();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []); // Empty dependency array to run only once on mount
   
   const addUserMessage = useCallback((messageData: Message) => {
