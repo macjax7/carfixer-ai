@@ -25,10 +25,12 @@ export const useMessageSender = () => {
     setIsLoading(true);
     
     try {
+      console.log("Sending message to AI:", input);
       const apiMessages = getMessagesForAPI(userMessage);
       const containsCode = containsDTCCode(input);
       
       const aiResponse = await chatWithAI(apiMessages, true, selectedVehicle, messageHistory);
+      console.log("Received AI response:", aiResponse);
       
       if (typeof aiResponse === 'object' && aiResponse.requestVehicleInfo) {
         setHasAskedForVehicle(true);
