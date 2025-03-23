@@ -9,8 +9,14 @@ export interface Vehicle {
   image_url?: string;
   last_service?: string;
   nickname?: string;
-  image?: string; // Alias for compatibility
-  lastService?: string; // Alias for compatibility
+  // Additional properties from database
+  user_id?: string;
+  mileage?: number;
+  color?: string;
+  license_plate?: string;
+  // Aliases for compatibility
+  image?: string;
+  lastService?: string;
 }
 
 export interface VehicleContextType {

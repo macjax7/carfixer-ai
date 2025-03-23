@@ -9,7 +9,7 @@ import { nanoid } from 'nanoid';
 export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
   // Fetch user's vehicles
@@ -17,7 +17,7 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const fetchVehicles = async () => {
       if (!user) {
         setVehicles([]);
-        setIsLoading(false);
+        setLoading(false);
         return;
       }
 
@@ -40,7 +40,7 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
         console.error('Exception fetching vehicles:', err);
         setVehicles([]);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
@@ -48,13 +48,13 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [user]);
 
   // Add a vehicle
-  const addVehicle = useCallback(async (vehicleData: Omit<Vehicle, 'id' | 'user_id'>) => {
-    if (!user) return null;
+  const addVehicle = useCallback(async (vehicleData: Omit<Vehicle, 'id'>) => {
+    if (!user) return;
 
     const newVehicle: Vehicle = {
       id: nanoid(),
-      user_id: user.id,
       ...vehicleData,
+      user_id: user.id
     };
 
     try {
@@ -76,22 +76,28 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       if (error) {
         console.error('Error adding vehicle:', error);
-        return null;
+        return;
       }
 
       setVehicles(prev => [...prev, newVehicle]);
-      return newVehicle;
     } catch (err) {
       console.error('Exception adding vehicle:', err);
-      return null;
     }
   }, [user]);
 
   // Update a vehicle
-  const updateVehicle = useCallback(async (updatedVehicle: Vehicle) => {
-    if (!user) return false;
+  const updateVehicle = useCallback(async (id: string, vehicleUpdates: Partial<Vehicle>) => {
+    if (!user) return;
 
     try {
+      const vehicleToUpdate = vehicles.find(v => v.id === id);
+      if (!vehicleToUpdate) {
+        console.error('Vehicle not found:', id);
+        return;
+      }
+
+      const updatedVehicle = { ...vehicleToUpdate, ...vehicleUpdates };
+
       // Using type assertion to work around database type limitations
       const { error } = await (supabase
         .from('vehicles' as any)
@@ -105,34 +111,31 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
           license_plate: updatedVehicle.license_plate,
           nickname: updatedVehicle.nickname,
         })
-        .eq('id', updatedVehicle.id)
+        .eq('id', id)
         .eq('user_id', user.id));
 
       if (error) {
         console.error('Error updating vehicle:', error);
-        return false;
+        return;
       }
 
       setVehicles(prev => 
         prev.map(vehicle => 
-          vehicle.id === updatedVehicle.id ? updatedVehicle : vehicle
+          vehicle.id === id ? updatedVehicle : vehicle
         )
       );
 
-      if (selectedVehicle?.id === updatedVehicle.id) {
+      if (selectedVehicle?.id === id) {
         setSelectedVehicle(updatedVehicle);
       }
-
-      return true;
     } catch (err) {
       console.error('Exception updating vehicle:', err);
-      return false;
     }
-  }, [user, selectedVehicle]);
+  }, [user, selectedVehicle, vehicles]);
 
-  // Delete a vehicle
-  const deleteVehicle = useCallback(async (vehicleId: string) => {
-    if (!user) return false;
+  // Remove a vehicle
+  const removeVehicle = useCallback(async (vehicleId: string) => {
+    if (!user) return;
 
     try {
       // Using type assertion to work around database type limitations
@@ -144,7 +147,7 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       if (error) {
         console.error('Error deleting vehicle:', error);
-        return false;
+        return;
       }
 
       setVehicles(prev => prev.filter(vehicle => vehicle.id !== vehicleId));
@@ -152,28 +155,26 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (selectedVehicle?.id === vehicleId) {
         setSelectedVehicle(null);
       }
-
-      return true;
     } catch (err) {
       console.error('Exception deleting vehicle:', err);
-      return false;
     }
   }, [user, selectedVehicle]);
 
   // Select a vehicle
-  const selectVehicle = useCallback((vehicle: Vehicle | null) => {
+  const selectVehicle = useCallback((vehicleId: string) => {
+    const vehicle = vehicles.find(v => v.id === vehicleId) || null;
     setSelectedVehicle(vehicle);
-  }, []);
+  }, [vehicles]);
 
   return (
     <VehicleContext.Provider
       value={{
         vehicles,
         selectedVehicle,
-        isLoading,
+        loading,
         addVehicle,
         updateVehicle,
-        deleteVehicle,
+        removeVehicle,
         selectVehicle,
       }}
     >
