@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -15,7 +14,7 @@ import SidebarProjects from './sidebar/SidebarProjects';
 import SidebarChatHistory from './sidebar/SidebarChatHistory';
 import SidebarSearchResults from './sidebar/SidebarSearchResults';
 import NewProjectDialog from './sidebar/NewProjectDialog';
-import { useSidebarState } from './sidebar/useSidebarState';
+import { useSidebarState } from '@/hooks/chat/sidebar/useSidebarState';
 
 const ChatSidebar = () => {
   const { user } = useAuth();

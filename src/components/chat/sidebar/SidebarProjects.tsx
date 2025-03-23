@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ChevronDown, ChevronRight, FolderPlus, LogIn, Folder } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { SidebarGroup, SidebarGroupContent, SidebarMenu } from '@/components/ui/
 import SidebarProjectItem from './SidebarProjectItem';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Project } from '@/hooks/chat/sidebar/types';
 
 interface ProjectSubItem {
   id: number | string;

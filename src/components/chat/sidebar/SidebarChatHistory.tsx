@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Clock, MessageSquare, LogIn } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { ChatHistoryItem } from './useSidebarState';
+import { ChatHistoryItem } from '@/hooks/chat/sidebar/types';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
