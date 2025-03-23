@@ -1,10 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, UserPlus } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
-import ProfileMenu from '@/components/ProfileMenu';
+import { ChevronLeft } from 'lucide-react';
 
 interface HeaderProps {
   title?: string;
@@ -20,47 +17,30 @@ const Header: React.FC<HeaderProps> = ({
   showNotifications = false,
 }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
 
-  const handleLogin = () => {
-    navigate('/login');
-  };
-
-  const handleSignUp = () => {
-    navigate('/signup');
+  const handleBack = () => {
+    navigate(-1);
   };
 
   return (
     <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border py-4 px-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
+          {showBackButton && (
+            <button
+              onClick={handleBack}
+              className="p-1 rounded-full hover:bg-secondary transition-colors"
+              aria-label="Go back"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+          )}
+          
           <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
         </div>
         
         <div className="flex items-center space-x-3">
-          {user ? (
-            <ProfileMenu />
-          ) : (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleLogin}
-                className="font-medium"
-              >
-                Log in
-              </Button>
-              
-              <Button 
-                variant="default" 
-                size="sm"
-                onClick={handleSignUp}
-                className="font-medium"
-              >
-                Sign up
-              </Button>
-            </>
-          )}
+          {/* Menu and notification icons have been removed as requested */}
         </div>
       </div>
     </header>

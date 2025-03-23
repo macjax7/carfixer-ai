@@ -1,106 +1,102 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import { Message } from '@/components/chat/types';
 import { ChatMessage } from '@/utils/openai';
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useChatMessages = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      sender: 'ai',
-      text: "Hello! I'm your CarFix AI assistant. How can I help with your vehicle today?",
-      timestamp: new Date()
-    }
-  ]);
-  
+  const [messages, setMessages] = useState<Message[]>([]);
   const [messageHistory, setMessageHistory] = useState<string[]>([]);
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-  const { user } = useAuth();
+  const [chatId, setChatId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
-  // Create a new chat session
-  const createChatSession = useCallback(async () => {
-    if (!user) return null;
-    
-    try {
-      const { data, error } = await supabase
-        .from('chat_sessions')
-        .insert([
-          { user_id: user.uid, title: 'New Chat' }
-        ])
-        .select()
-        .single();
-        
-      if (error) throw error;
-      setCurrentSessionId(data.id);
-      return data.id;
-    } catch (error) {
-      console.error('Error creating chat session:', error);
-      return null;
-    }
-  }, [user]);
-  
-  // Fetch chat session or create a new one if none exists
+  // Load messages from database if user is logged in
   useEffect(() => {
-    const initializeSession = async () => {
-      if (!user) return;
-      
+    const loadMessages = async () => {
       try {
-        // Check for existing sessions
-        const { data, error } = await supabase
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session?.user) return;
+        
+        setIsLoading(true);
+        
+        // Get the most recent chat session
+        const { data: chatSession, error: sessionError } = await supabase
           .from('chat_sessions')
           .select('*')
-          .eq('user_id', user.uid)
           .order('updated_at', { ascending: false })
-          .limit(1);
-          
-        if (error) throw error;
+          .limit(1)
+          .single();
         
-        if (data && data.length > 0) {
-          setCurrentSessionId(data[0].id);
+        if (sessionError && sessionError.code !== 'PGRST116') {
+          console.error("Error loading chat session:", sessionError);
+          return;
+        }
+        
+        if (chatSession) {
+          setChatId(chatSession.id);
           
-          // Fetch messages for this session
-          const { data: messagesData, error: messagesError } = await supabase
+          // Load messages for this session
+          const { data: chatMessages, error: messagesError } = await supabase
             .from('chat_messages')
             .select('*')
-            .eq('session_id', data[0].id)
+            .eq('session_id', chatSession.id)
             .order('created_at', { ascending: true });
-            
-          if (messagesError) throw messagesError;
           
-          if (messagesData && messagesData.length > 0) {
-            // Convert Supabase messages to our Message format
-            const formattedMessages = messagesData.map(msg => ({
+          if (messagesError) {
+            console.error("Error loading chat messages:", messagesError);
+            return;
+          }
+          
+          if (chatMessages && chatMessages.length > 0) {
+            const formattedMessages = chatMessages.map(msg => ({
               id: msg.id,
-              sender: msg.role === 'user' ? 'user' as const : 'ai' as const,
+              sender: msg.role as 'user' | 'ai',
               text: msg.content,
               timestamp: new Date(msg.created_at),
               image: msg.image_url
             }));
             
-            // Add welcome message at the beginning
-            setMessages([messages[0], ...formattedMessages]);
+            setMessages(formattedMessages);
             
-            // Update message history
-            setMessageHistory(formattedMessages
-              .filter(msg => msg.sender === 'user')
-              .map(msg => msg.text));
+            // Update message history with user messages
+            const userMsgHistory = chatMessages
+              .filter(msg => msg.role === 'user')
+              .map(msg => msg.content);
+            
+            setMessageHistory(userMsgHistory);
           }
         } else {
-          // No existing sessions, create a new one
-          await createChatSession();
+          // No existing chat session found, create a new chat ID
+          setChatId(nanoid());
         }
       } catch (error) {
-        console.error('Error initializing chat session:', error);
+        console.error("Error in loadMessages:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    initializeSession();
-  }, [user, createChatSession]);
+    loadMessages();
+    
+    // Listen for changes to the auth state
+    const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
+      if (session) {
+        loadMessages();
+      } else {
+        // Clear messages when user logs out
+        setMessages([]);
+        setMessageHistory([]);
+        setChatId(nanoid());
+      }
+    });
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
   
-  const addUserMessage = async (text: string, image?: string) => {
+  const addUserMessage = (text: string, image?: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       sender: 'user',
@@ -112,34 +108,10 @@ export const useChatMessages = () => {
     setMessages(prevMessages => [...prevMessages, userMessage]);
     setMessageHistory(prev => [...prev, text]);
     
-    // Save to Supabase if user is authenticated and session exists
-    if (user && currentSessionId) {
-      try {
-        await supabase
-          .from('chat_messages')
-          .insert([
-            {
-              session_id: currentSessionId,
-              content: text,
-              role: 'user',
-              image_url: image
-            }
-          ]);
-          
-        // Update session timestamp
-        await supabase
-          .from('chat_sessions')
-          .update({ updated_at: new Date().toISOString() })
-          .eq('id', currentSessionId);
-      } catch (error) {
-        console.error('Error saving user message:', error);
-      }
-    }
-    
     return userMessage;
   };
   
-  const addAIMessage = async (text: string, options?: {
+  const addAIMessage = (text: string, options?: {
     vehicleListingAnalysis?: Message['vehicleListingAnalysis'];
     componentDiagram?: Message['componentDiagram'];
   }) => {
@@ -152,32 +124,11 @@ export const useChatMessages = () => {
     };
     
     setMessages(prev => [...prev, aiMessage]);
-    
-    // Save to Supabase if user is authenticated and session exists
-    if (user && currentSessionId) {
-      try {
-        await supabase
-          .from('chat_messages')
-          .insert([
-            {
-              session_id: currentSessionId,
-              content: text,
-              role: 'assistant'
-              // Note: We don't save componentDiagram or vehicleListingAnalysis yet
-              // This would require schema updates
-            }
-          ]);
-      } catch (error) {
-        console.error('Error saving AI message:', error);
-      }
-    }
-    
     return aiMessage;
   };
   
   const getMessagesForAPI = (userMessage: Message): ChatMessage[] => {
     return messages
-      .filter(msg => msg.id !== '1') // Filter out the welcome message
       .concat(userMessage)
       .map(msg => ({
         role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
@@ -185,13 +136,22 @@ export const useChatMessages = () => {
       }));
   };
   
+  // Enhanced resetChat function that properly clears the chat and generates a new ID
+  const resetChat = () => {
+    // In a complete implementation, we would save the messages to history here
+    setMessages([]);
+    setMessageHistory([]);
+    setChatId(nanoid()); // Generate a new chat ID for the new conversation
+  };
+  
   return {
     messages,
     messageHistory,
+    chatId,
+    isLoading,
     addUserMessage,
     addAIMessage,
     getMessagesForAPI,
-    currentSessionId,
-    createChatSession
+    resetChat
   };
 };
