@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from "react";
-import { nanoid } from "nanoid";
+import { v4 as uuidv4 } from 'uuid';
 import { Message } from "@/components/chat/types";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -16,9 +16,13 @@ export const useChatDatabase = () => {
     if (user) {
       try {
         console.log(`Adding ${role} message to chat history:`, message);
+        // Generate a proper UUID for the message
+        const messageId = uuidv4();
+        
         await supabase
           .from('chat_messages')
           .insert({
+            id: messageId,
             session_id: chatId,
             content: message.text,
             role: role,
@@ -32,11 +36,13 @@ export const useChatDatabase = () => {
   }, [user]);
 
   const createChatSession = useCallback(async (
-    chatId: string,
     title: string,
     userId: string
   ) => {
     try {
+      // Generate a proper UUID for the chat session
+      const chatId = uuidv4();
+      
       console.log("Creating new chat session in database:", { id: chatId, title });
       await supabase
         .from('chat_sessions')
@@ -46,8 +52,10 @@ export const useChatDatabase = () => {
           title
         });
       console.log("Successfully created chat session");
+      return chatId;
     } catch (error) {
       console.error('Error creating chat session:', error);
+      return null;
     }
   }, []);
 
@@ -68,16 +76,19 @@ export const useChatDatabase = () => {
 
   const getChatMessageCount = useCallback(async (chatId: string) => {
     try {
-      const { data, error } = await supabase
+      console.log("Getting message count for session:", chatId);
+      const { data, error, count } = await supabase
         .from('chat_messages')
         .select('id', { count: 'exact' })
         .eq('session_id', chatId);
         
       if (error) {
+        console.error('Error in getChatMessageCount:', error);
         throw error;
       }
       
-      return data.length;
+      console.log("Message count result:", count || data?.length || 0);
+      return count || data?.length || 0;
     } catch (error) {
       console.error('Error getting message count:', error);
       return 0;
