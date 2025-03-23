@@ -1,9 +1,16 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Clock, MessageSquare } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { ChatHistoryItem } from './useSidebarState';
+
+interface ChatHistoryItem {
+  id: number;
+  title: string;
+  timestamp: string;
+  path: string;
+}
 
 interface SidebarChatHistoryProps {
   chatHistoryOpen: boolean;
