@@ -77,72 +77,76 @@ const AIChat: React.FC = () => {
   };
   
   return (
-    <div className={`flex flex-col h-full bg-background pt-8 ${isEmptyChat ? 'justify-between' : ''}`}>
+    <div className={`flex flex-col h-full bg-background ${isEmptyChat ? 'justify-center' : ''}`}>
       {/* Welcome message when no messages exist */}
       {isEmptyChat ? (
-        <div className="flex-1 flex flex-col items-center justify-center px-4 animate-fade-in">
-          <h1 className="text-3xl font-bold text-foreground text-center bg-gradient-to-r from-carfix-500 to-carfix-700 bg-clip-text text-transparent mb-12">
+        <div className="flex-1 flex flex-col items-center justify-center px-4 animate-fade-in max-w-3xl mx-auto w-full">
+          <h1 className="text-4xl font-semibold text-foreground text-center mb-16">
             How can I help with your vehicle?
           </h1>
-        </div>
-      ) : (
-        /* Chat messages - show when there are messages */
-        <ScrollArea className="flex-1 pt-4 px-2 md:px-4 pb-4">
-          <div className={`max-w-3xl mx-auto space-y-6 pb-4 ${state === 'collapsed' ? 'lg:mx-auto' : 'lg:ml-0 lg:mr-auto'}`}>
-            {messages.map((msg) => (
-              <ChatMessage 
-                key={msg.id}
-                id={msg.id}
-                sender={msg.sender}
-                text={msg.text}
-                timestamp={msg.timestamp}
-                image={msg.image}
-                componentDiagram={msg.componentDiagram}
-                vehicleListingAnalysis={msg.vehicleListingAnalysis}
-              />
-            ))}
-            
-            {/* Vehicle suggestions when AI has asked for vehicle info */}
-            {hasAskedForVehicle && getVehicleSuggestions()}
-            
-            {isLoading && <LoadingIndicator />}
-            
-            <div ref={messagesEndRef} />
-          </div>
-        </ScrollArea>
-      )}
-      
-      {/* Input form - positioned conditionally based on chat state */}
-      <div 
-        className={`
-          border-t border-border bg-background/95 backdrop-blur-sm py-3 px-3 md:px-4
-          ${isEmptyChat 
-            ? 'border-t-0 transition-all duration-300 pb-8' 
-            : 'mt-auto transition-all duration-300'
-          }
-        `}
-      >
-        <div className={`max-w-3xl ${state === 'collapsed' ? 'mx-auto' : 'lg:ml-0 lg:mr-auto'}`}>
-          <ChatInput
-            input={input}
-            setInput={setInput}
-            handleSendMessage={handleSendMessage}
-            handleImageUpload={handleImageUpload}
-            handleListingAnalysis={handleListingAnalysis}
-            isLoading={isLoading}
-          />
           
-          {/* Show suggested prompts below the input in empty chat state */}
-          {isEmptyChat && (
-            <div className="mt-4">
+          {/* Input form for empty state - centered position */}
+          <div className="w-full max-w-3xl px-4 sm:px-0">
+            <ChatInput
+              input={input}
+              setInput={setInput}
+              handleSendMessage={handleSendMessage}
+              handleImageUpload={handleImageUpload}
+              handleListingAnalysis={handleListingAnalysis}
+              isLoading={isLoading}
+            />
+            
+            {/* Show suggested prompts below the input in empty chat state */}
+            <div className="mt-6">
               <SuggestedPrompts 
                 handleSuggestedPrompt={handleSuggestedPrompt}
                 prompts={suggestedPrompts}
               />
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Chat messages - show when there are messages */
+        <>
+          <ScrollArea className="flex-1 pt-4 px-2 md:px-4 pb-4">
+            <div className={`max-w-3xl mx-auto space-y-6 pb-4 ${state === 'collapsed' ? 'lg:mx-auto' : 'lg:ml-0 lg:mr-auto'}`}>
+              {messages.map((msg) => (
+                <ChatMessage 
+                  key={msg.id}
+                  id={msg.id}
+                  sender={msg.sender}
+                  text={msg.text}
+                  timestamp={msg.timestamp}
+                  image={msg.image}
+                  componentDiagram={msg.componentDiagram}
+                  vehicleListingAnalysis={msg.vehicleListingAnalysis}
+                />
+              ))}
+              
+              {/* Vehicle suggestions when AI has asked for vehicle info */}
+              {hasAskedForVehicle && getVehicleSuggestions()}
+              
+              {isLoading && <LoadingIndicator />}
+              
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+          
+          {/* Input form - positioned at bottom for active chat */}
+          <div className="border-t border-border bg-background/95 backdrop-blur-sm py-4">
+            <div className={`max-w-3xl mx-auto px-4 sm:px-0 ${state === 'collapsed' ? 'lg:mx-auto' : 'lg:ml-0 lg:mr-auto'}`}>
+              <ChatInput
+                input={input}
+                setInput={setInput}
+                handleSendMessage={handleSendMessage}
+                handleImageUpload={handleImageUpload}
+                handleListingAnalysis={handleListingAnalysis}
+                isLoading={isLoading}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

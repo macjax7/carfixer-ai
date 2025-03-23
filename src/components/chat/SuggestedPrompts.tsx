@@ -69,66 +69,39 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({
     }
   }, [isLeftArrowHovering, isRightArrowHovering, api]);
   
+  // Group prompts into two rows for more ChatGPT-like appearance
+  const firstRow = prompts.slice(0, Math.ceil(prompts.length / 2));
+  const secondRow = prompts.slice(Math.ceil(prompts.length / 2));
+  
   return (
-    <div 
-      className="w-full max-w-xl mx-auto animate-fade-in"
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-    >
-      <Carousel
-        opts={{
-          align: "start",
-          loop: true,
-        }}
-        plugins={[
-          AutoplayPlugin(autoplayOptions)
-        ]}
-        setApi={(carouselApi) => {
-          setApi(carouselApi);
-          if (carouselApi) {
-            // Find and store the autoplay plugin instance
-            const plugins = carouselApi.plugins();
-            if (plugins.autoplay) {
-              autoplayRef.current = plugins.autoplay;
-            }
-          }
-        }}
-        className="w-full"
-      >
-        <CarouselContent>
-          {prompts.map((prompt, index) => (
-            <CarouselItem key={index} className="basis-full sm:basis-1/2 md:basis-1/2 lg:basis-1/3 xl:basis-1/4 transition-all duration-300">
-              <Button
-                onClick={() => handleSuggestedPrompt(prompt)}
-                variant="outline"
-                className="text-sm h-auto py-2 px-4 w-full bg-secondary/50 hover:bg-secondary/80 text-muted-foreground hover:text-foreground rounded-full text-left transition-all duration-200 border border-border/30 hover:border-border/60 hover:shadow-sm"
-              >
-                {prompt}
-              </Button>
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-        <div className="flex justify-center mt-4 gap-2">
-          <CarouselPrevious 
-            className={cn(
-              "relative inset-0 translate-y-0 left-0 h-8 w-8 rounded-full opacity-70 hover:opacity-100 transition-opacity",
-              isLeftArrowHovering ? "bg-secondary/80" : "bg-secondary/50"
-            )}
-            onMouseEnter={() => setIsLeftArrowHovering(true)}
-            onMouseLeave={() => setIsLeftArrowHovering(false)}
-            icon={ChevronLeft}
-          />
-          <CarouselNext 
-            className={cn(
-              "relative inset-0 translate-y-0 right-0 h-8 w-8 rounded-full opacity-70 hover:opacity-100 transition-opacity",
-              isRightArrowHovering ? "bg-secondary/80" : "bg-secondary/50"
-            )}
-            onMouseEnter={() => setIsRightArrowHovering(true)}
-            onMouseLeave={() => setIsRightArrowHovering(false)}
-            icon={ChevronRight}
-          />
-        </div>
-      </Carousel>
+    <div className="flex flex-col gap-3 items-center justify-center w-full animate-fade-in">
+      {/* Row 1 */}
+      <div className="flex flex-wrap gap-2 justify-center">
+        {firstRow.map((prompt, index) => (
+          <Button
+            key={`row1-${index}`}
+            onClick={() => handleSuggestedPrompt(prompt)}
+            variant="outline"
+            className="text-sm h-auto py-2 px-4 bg-secondary/50 hover:bg-secondary/80 text-foreground rounded-full transition-all duration-200 border border-border/30 hover:border-border/60 whitespace-nowrap"
+          >
+            {prompt}
+          </Button>
+        ))}
+      </div>
+      
+      {/* Row 2 */}
+      <div className="flex flex-wrap gap-2 justify-center">
+        {secondRow.map((prompt, index) => (
+          <Button
+            key={`row2-${index}`}
+            onClick={() => handleSuggestedPrompt(prompt)}
+            variant="outline"
+            className="text-sm h-auto py-2 px-4 bg-secondary/50 hover:bg-secondary/80 text-foreground rounded-full transition-all duration-200 border border-border/30 hover:border-border/60 whitespace-nowrap"
+          >
+            {prompt}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 };
