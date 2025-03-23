@@ -12,7 +12,9 @@ export const useChat = () => {
     handleImageUpload,
     handleListingAnalysis,
     handleSuggestedPrompt,
-    hasAskedForVehicle
+    hasAskedForVehicle,
+    currentSessionId,
+    createChatSession
   } = useMessageHandlers();
   
   const { suggestedPrompts } = useSuggestedPrompts();
@@ -27,6 +29,8 @@ export const useChat = () => {
     handleListingAnalysis,
     handleSuggestedPrompt,
     suggestedPrompts,
-    hasAskedForVehicle
+    hasAskedForVehicle,
+    currentSessionId,
+    createChatSession
   };
 };
