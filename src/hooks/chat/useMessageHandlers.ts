@@ -6,15 +6,14 @@ import { useMessageSender } from './useMessageSender';
 import { useChatHistory } from './useChatHistory';
 
 export const useMessageHandlers = () => {
-  const chatMessages = useChatMessages();
-  const { messages, chatId } = chatMessages;
-  const { input, setInput, isLoading, hasAskedForVehicle } = useMessageInput();
+  const { messages, chatId, isLoading: messagesLoading } = useChatMessages();
+  const { input, setInput, isLoading: inputLoading, hasAskedForVehicle } = useMessageInput();
   const { processAndSendMessage, isProcessing } = useMessageSender();
   const { saveCurrentChat, resetChat } = useChatHistory();
 
   const handleSendMessage = (e: FormEvent) => {
     e.preventDefault();
-    if (input.trim() && !isLoading && !isProcessing) {
+    if (input.trim() && !inputLoading && !isProcessing && !messagesLoading) {
       processAndSendMessage(input);
       setInput('');
     }
@@ -43,7 +42,7 @@ export const useMessageHandlers = () => {
     messages,
     input,
     setInput,
-    isLoading: isLoading || isProcessing,
+    isLoading: inputLoading || isProcessing || messagesLoading,
     handleSendMessage,
     handleImageUpload,
     handleListingAnalysis,

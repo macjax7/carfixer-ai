@@ -9,12 +9,14 @@ import { getRepairGuidance } from './repair';
 import { decodeVIN, getOBDSensorData } from './vehicle';
 import { speechToText } from './speech';
 import { ChatMessage } from './types';
+import { useCodeDetection } from '@/hooks/chat/useCodeDetection';
 
 /**
  * Custom hook to use the CarFix API with vehicle context
  */
 export function useOpenAI() {
   const { selectedVehicle } = useVehicles();
+  const { processCodeType } = useCodeDetection();
   
   const chatWithAI = async (
     messages: ChatMessage[], 
@@ -98,6 +100,7 @@ export function useOpenAI() {
     getRepairSteps,
     decodeVehicleVIN,
     getOBDData,
-    speechToText: convertSpeechToText
+    speechToText: convertSpeechToText,
+    processCodeType
   };
 }

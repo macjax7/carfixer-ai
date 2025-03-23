@@ -61,9 +61,9 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
       try {
         setLoading(true);
         
-        // Use type casting for now until types are properly defined
+        // Use type assertions for now
         const { data: vehiclesData, error } = await supabase
-          .from('vehicles')
+          .from('vehicles' as any)
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
@@ -151,7 +151,7 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
     try {
       // Use type assertion for now
       const { data, error } = await supabase
-        .from('vehicles')
+        .from('vehicles' as any)
         .insert([{
           user_id: user.id,
           make: vehicle.make,
@@ -190,7 +190,7 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
     try {
       // Use type assertion for now
       const { error } = await supabase
-        .from('vehicles')
+        .from('vehicles' as any)
         .delete()
         .eq('id', id)
         .eq('user_id', user.id);
@@ -221,7 +221,7 @@ export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) =>
     try {
       // Use type assertion for now
       const { error } = await supabase
-        .from('vehicles')
+        .from('vehicles' as any)
         .update({
           make: updatedVehicle.make,
           model: updatedVehicle.model,

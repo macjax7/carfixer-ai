@@ -1,8 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { nanoid } from 'nanoid';
 import { Message } from '@/components/chat/types';
-import { ChatMessage } from '@/utils/openai';
+import { ChatMessage } from '@/utils/openai/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 
@@ -93,7 +93,7 @@ export const useChatMessages = () => {
     // Set up subscription for real-time chat message updates
     const setupMessageSubscription = async () => {
       const { data: session } = await supabase.auth.getSession();
-      if (!session.session?.user) return;
+      if (!session.session?.user) return null;
       
       const subscription = supabase
         .channel('chat-messages-changes')
@@ -133,133 +133,93 @@ export const useChatMessages = () => {
       return subscription;
     };
     
-    const subscription = setupMessageSubscription();
+    const subscriptionPromise = setupMessageSubscription();
     
     return () => {
       // Clean up subscription
-      subscription.then(sub => {
+      subscriptionPromise.then(sub => {
         if (sub) {
           supabase.removeChannel(sub);
         }
       });
     };
-  }, []);
+  }, [user?.id]); // Only depend on user.id to prevent re-running on every render
   
-  const addUserMessage = async (text: string, image?: string) => {
-    const userMessage: Message = {
-      id: nanoid(),
-      sender: 'user',
-      text,
-      timestamp: new Date(),
-      image
-    };
+  const addUserMessage = useCallback((messageData: Message) => {
+    setMessages(prevMessages => [...prevMessages, messageData]);
+    setMessageHistory(prev => [...prev, messageData.text]);
     
-    setMessages(prevMessages => [...prevMessages, userMessage]);
-    setMessageHistory(prev => [...prev, text]);
-    
-    try {
-      // Store the message in the database if user is logged in
-      const { data: session } = await supabase.auth.getSession();
-      if (session.session?.user) {
-        // Check if we have a chat session for this chat
-        let sessionId = chatId;
-        
-        // If not found, create a new chat session
-        if (!sessionId) {
-          const { data: newSession, error: sessionError } = await supabase
-            .from('chat_sessions')
-            .insert({
-              title: text.length > 30 ? `${text.substring(0, 30)}...` : text,
-              user_id: session.session.user.id
-            })
-            .select('id')
-            .single();
-          
-          if (sessionError) {
-            console.error("Error creating chat session:", sessionError);
-          } else {
-            sessionId = newSession.id;
-            setChatId(sessionId);
-          }
-        }
-        
-        // Store the user message
-        if (sessionId) {
+    // Store the message in the database if user is logged in
+    (async () => {
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (session.session?.user && chatId) {
           await supabase
             .from('chat_messages')
             .insert({
-              id: userMessage.id,
-              session_id: sessionId,
+              id: messageData.id,
+              session_id: chatId,
               role: 'user',
-              content: text,
-              image_url: image
+              content: messageData.text,
+              image_url: messageData.image
             });
         }
+      } catch (error) {
+        console.error("Error storing user message:", error);
       }
-    } catch (error) {
-      console.error("Error storing user message:", error);
-    }
+    })();
     
-    return userMessage;
-  };
+    return messageData;
+  }, [chatId]);
   
-  const addAIMessage = async (text: string, options?: {
-    vehicleListingAnalysis?: Message['vehicleListingAnalysis'];
-    componentDiagram?: Message['componentDiagram'];
-  }) => {
-    const aiMessage: Message = {
-      id: nanoid(),
-      sender: 'ai',
-      text,
-      timestamp: new Date(),
-      ...options
-    };
+  const addAIMessage = useCallback((messageData: Message) => {
+    setMessages(prev => [...prev, messageData]);
     
-    setMessages(prev => [...prev, aiMessage]);
-    
-    try {
-      // Store AI response in the database if user is logged in
-      const { data: session } = await supabase.auth.getSession();
-      if (session.session?.user && chatId) {
-        await supabase
-          .from('chat_messages')
-          .insert({
-            id: aiMessage.id,
-            session_id: chatId,
-            role: 'assistant',
-            content: text
-          });
+    // Store AI response in the database if user is logged in
+    (async () => {
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (session.session?.user && chatId) {
+          await supabase
+            .from('chat_messages')
+            .insert({
+              id: messageData.id,
+              session_id: chatId,
+              role: 'assistant',
+              content: messageData.text
+            });
+        }
+      } catch (error) {
+        console.error("Error storing AI message:", error);
       }
-    } catch (error) {
-      console.error("Error storing AI message:", error);
-    }
+    })();
     
-    return aiMessage;
-  };
+    return messageData;
+  }, [chatId]);
   
-  const getMessagesForAPI = (userMessage: Message): ChatMessage[] => {
+  const getMessagesForAPI = useCallback((userMessage: Message): ChatMessage[] => {
     return messages
       .concat(userMessage)
       .map(msg => ({
         role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
         content: msg.text
       }));
-  };
+  }, [messages]);
   
   // Enhanced resetChat function that properly clears the chat and generates a new ID
-  const resetChat = () => {
+  const resetChat = useCallback(() => {
     // In a complete implementation, we would save the messages to history here
     setMessages([]);
     setMessageHistory([]);
     setChatId(nanoid()); // Generate a new chat ID for the new conversation
-  };
+  }, []);
   
-  const addMessage = (message: Message) => {
+  const addMessage = useCallback((message: Message) => {
     setMessages(prev => [...prev, message]);
     if (message.sender === 'user') {
       setMessageHistory(prev => [...prev, message.text]);
     }
-  };
+  }, []);
   
   return {
     messages,

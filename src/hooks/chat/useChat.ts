@@ -5,7 +5,9 @@ import { useMessageHandlers } from './useMessageHandlers';
 import { useSuggestedPrompts } from './useSuggestedPrompts';
 
 export const useChat = () => {
-  const messageHandlers = useMessageHandlers();
+  const { toast } = useToast();
+  const { suggestedPrompts } = useSuggestedPrompts();
+  
   const {
     messages,
     input,
@@ -18,10 +20,7 @@ export const useChat = () => {
     hasAskedForVehicle,
     resetChat,
     saveCurrentChat
-  } = messageHandlers;
-  
-  const { toast } = useToast();
-  const { suggestedPrompts } = useSuggestedPrompts();
+  } = useMessageHandlers();
   
   // Check if we can create a new chat (only if the current chat has messages)
   const canCreateNewChat = messages.length > 0;
@@ -41,9 +40,6 @@ export const useChat = () => {
       });
     }
   }, [canCreateNewChat, resetChat, saveCurrentChat, toast]);
-
-  // We don't need to call other hooks in this hook
-  // Just pass the result of messageHandlers
   
   return {
     messages,

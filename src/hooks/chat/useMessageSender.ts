@@ -5,15 +5,17 @@ import { Message } from "@/components/chat/types";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useChatMessages } from "./useChatMessages";
-import { useOpenAI } from "@/utils/openai";
+import { useOpenAI } from "@/utils/openai/hook";
+import { useCodeDetection } from "./useCodeDetection";
 
 export const useMessageSender = () => {
   const { user } = useAuth();
   const { addUserMessage, addAIMessage, chatId, setChatId } = useChatMessages();
   const [isProcessing, setIsProcessing] = useState(false);
   
-  // Use the OpenAI utility directly
-  const { sendMessage: sendToChatService, analyzeListing, identifyPart, detectCodeType } = useOpenAI();
+  // Use the OpenAI utility
+  const { chatWithAI, analyzeListing, identifyPart } = useOpenAI();
+  const { processCodeType } = useCodeDetection();
 
   const addToChatHistory = useCallback(async (
     newChatId: string, 
@@ -64,7 +66,15 @@ export const useMessageSender = () => {
       }
       
       // Add user message to the chat
-      const userMessage = await addUserMessage(text, image);
+      const userMessageData = {
+        id: nanoid(),
+        sender: 'user' as const,
+        text,
+        timestamp: new Date(),
+        image
+      };
+      
+      addUserMessage(userMessageData);
       
       // Determine the message type (image analysis, URL, or regular text)
       let aiResponseText = '';
@@ -91,40 +101,53 @@ export const useMessageSender = () => {
             aiMessageExtra = { vehicleListingAnalysis: urlResults.vehicleListingAnalysis };
           } else {
             // If it's not a vehicle listing, just process as a normal query
-            aiResponseText = await sendToChatService(text, newChatId);
+            aiResponseText = await chatWithAI([{ role: 'user', content: text }]);
           }
         } catch (error) {
           console.error("Error processing URL:", error);
-          aiResponseText = await sendToChatService(text, newChatId);
+          aiResponseText = await chatWithAI([{ role: 'user', content: text }]);
         }
       } else {
         // Process code detection for diagnostic codes
-        const codeType = detectCodeType ? detectCodeType(text) : null;
+        const codeType = processCodeType(text);
         if (codeType) {
-          aiResponseText = await sendToChatService(text, newChatId, codeType);
+          aiResponseText = await chatWithAI([{ role: 'user', content: text }], true, null, [codeType]);
         } else {
           // Process normal text query
-          aiResponseText = await sendToChatService(text, newChatId);
+          aiResponseText = await chatWithAI([{ role: 'user', content: text }]);
         }
       }
       
       // Add AI response to the chat
-      const aiMessage = await addAIMessage(aiResponseText, aiMessageExtra);
+      const aiMessageData = {
+        id: nanoid(),
+        sender: 'ai' as const,
+        text: aiResponseText,
+        timestamp: new Date(),
+        ...aiMessageExtra
+      };
       
-      return aiMessage;
+      addAIMessage(aiMessageData);
+      
+      return aiMessageData;
     } catch (error) {
       console.error("Error processing message:", error);
       
       // Show error message
-      const errorMessage = await addAIMessage(
-        "I'm sorry, I encountered an error processing your request. Please try again."
-      );
+      const errorMessageData = {
+        id: nanoid(),
+        sender: 'ai' as const,
+        text: "I'm sorry, I encountered an error processing your request. Please try again.",
+        timestamp: new Date()
+      };
       
-      return errorMessage;
+      addAIMessage(errorMessageData);
+      
+      return errorMessageData;
     } finally {
       setIsProcessing(false);
     }
-  }, [chatId, setChatId, user, addUserMessage, addAIMessage, sendToChatService, identifyPart, analyzeListing, detectCodeType]);
+  }, [chatId, setChatId, user, addUserMessage, addAIMessage, chatWithAI, identifyPart, analyzeListing, processCodeType]);
 
   return {
     processAndSendMessage,
