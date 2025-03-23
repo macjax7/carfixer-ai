@@ -64,9 +64,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
       handleImageUpload(selectedImage);
       setSelectedImage(null);
     } else if (input.trim()) {
-      // Create a simple form event
-      const event = new Event('submit') as unknown as FormEvent;
-      handleSendMessage(event);
+      const formEvent = new Event('submit') as unknown as FormEvent;
+      handleSendMessage(formEvent);
     }
   };
 
