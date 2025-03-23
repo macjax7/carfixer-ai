@@ -1,3 +1,4 @@
+
 import { useVehicles } from '@/hooks/use-vehicles';
 import { sendChatMessage } from './chat';
 import { analyzeImage } from './image';
@@ -24,6 +25,7 @@ export function useOpenAI() {
     messageHistory: string[] = []
   ) => {
     try {
+      console.log("Starting chatWithAI with messages:", messages);
       const response = await sendChatMessage(
         messages, 
         includeVehicleContext, 

@@ -26,6 +26,7 @@ export const useMessageSender = () => {
   ) => {
     if (user) {
       try {
+        console.log(`Adding ${role} message to chat history:`, message);
         await supabase
           .from('chat_messages')
           .insert({
@@ -34,6 +35,7 @@ export const useMessageSender = () => {
             role: role,
             image_url: message.image
           });
+        console.log(`Successfully added ${role} message to chat history`);
       } catch (error) {
         console.error('Error saving message to database:', error);
       }
@@ -44,11 +46,13 @@ export const useMessageSender = () => {
     if (!text.trim() && !image) return;
     
     setIsProcessing(true);
+    console.log("Processing message:", text, image ? "(with image)" : "");
     
     try {
       // Create or ensure chat ID exists
       const newChatId = chatId || nanoid();
       if (!chatId) {
+        console.log("Creating new chat with ID:", newChatId);
         setChatId(newChatId);
         
         // Create chat session in database with a descriptive title
@@ -58,6 +62,7 @@ export const useMessageSender = () => {
               ? text.substring(0, 30) + '...' 
               : text;
               
+            console.log("Creating new chat session in database:", { id: newChatId, title });
             await supabase
               .from('chat_sessions')
               .insert({
@@ -65,6 +70,7 @@ export const useMessageSender = () => {
                 user_id: user.id,
                 title
               });
+            console.log("Successfully created chat session");
           } catch (error) {
             console.error('Error creating chat session:', error);
           }
@@ -82,6 +88,7 @@ export const useMessageSender = () => {
               ? text.substring(0, 30) + '...' 
               : text;
               
+            console.log("Updating chat session title:", title);
             await supabase
               .from('chat_sessions')
               .update({ title })
@@ -99,6 +106,7 @@ export const useMessageSender = () => {
         image
       };
       
+      console.log("Adding user message to chat:", userMessageData);
       addUserMessage(userMessageData);
       
       // Also add it to the database
@@ -163,6 +171,7 @@ export const useMessageSender = () => {
         ...aiMessageExtra
       };
       
+      console.log("Adding AI response to chat:", aiMessageData);
       addAIMessage(aiMessageData);
       
       // Also add it to the database

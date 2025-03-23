@@ -8,7 +8,7 @@ import { ChatMessage } from './types';
 export async function sendChatMessage(
   messages: ChatMessage[], 
   includeVehicleContext = true, 
-  vehicleInfo = null,
+  vehicleInfo = null, 
   messageHistory: string[] = []
 ) {
   try {
