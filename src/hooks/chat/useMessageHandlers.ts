@@ -11,7 +11,7 @@ export const useMessageHandlers = () => {
   const { toast } = useToast();
   const { chatWithAI, identifyPart, analyzeListing } = useOpenAI();
   const { selectedVehicle } = useVehicles();
-  const { messages, messageHistory, addUserMessage, addAIMessage, getMessagesForAPI } = useChatMessages();
+  const { messages, messageHistory, addUserMessage, addAIMessage, getMessagesForAPI, resetChat } = useChatMessages();
   const { input, setInput, isLoading, setIsLoading, hasAskedForVehicle, setHasAskedForVehicle } = useMessageInput();
   const { containsDTCCode } = useCodeDetection();
   
@@ -175,6 +175,7 @@ Try pasting a direct link to a vehicle listing from platforms like Craigslist, F
     handleImageUpload,
     handleListingAnalysis,
     handleSuggestedPrompt,
-    hasAskedForVehicle
+    hasAskedForVehicle,
+    resetChat
   };
 };
