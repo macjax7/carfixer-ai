@@ -1,14 +1,18 @@
 
 import * as React from "react"
-import { ArrowLeft, ArrowRight } from "lucide-react"
+import { ArrowLeft, ArrowRight, LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useCarousel } from "./useCarousel"
 
+interface CarouselNavigationProps extends React.ComponentProps<typeof Button> {
+  icon?: LucideIcon;
+}
+
 export const CarouselPrevious = React.forwardRef<
   HTMLButtonElement,
-  React.ComponentProps<typeof Button>
->(({ className, variant = "outline", size = "icon", ...props }, ref) => {
+  CarouselNavigationProps
+>(({ className, variant = "outline", size = "icon", icon: Icon = ArrowLeft, ...props }, ref) => {
   const { orientation, scrollPrev, canScrollPrev } = useCarousel()
 
   return (
@@ -27,7 +31,7 @@ export const CarouselPrevious = React.forwardRef<
       onClick={scrollPrev}
       {...props}
     >
-      <ArrowLeft className="h-4 w-4" />
+      <Icon className="h-4 w-4" />
       <span className="sr-only">Previous slide</span>
     </Button>
   )
@@ -36,8 +40,8 @@ CarouselPrevious.displayName = "CarouselPrevious"
 
 export const CarouselNext = React.forwardRef<
   HTMLButtonElement,
-  React.ComponentProps<typeof Button>
->(({ className, variant = "outline", size = "icon", ...props }, ref) => {
+  CarouselNavigationProps
+>(({ className, variant = "outline", size = "icon", icon: Icon = ArrowRight, ...props }, ref) => {
   const { orientation, scrollNext, canScrollNext } = useCarousel()
 
   return (
@@ -56,7 +60,7 @@ export const CarouselNext = React.forwardRef<
       onClick={scrollNext}
       {...props}
     >
-      <ArrowRight className="h-4 w-4" />
+      <Icon className="h-4 w-4" />
       <span className="sr-only">Next slide</span>
     </Button>
   )
