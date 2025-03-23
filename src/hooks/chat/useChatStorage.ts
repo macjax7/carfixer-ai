@@ -19,12 +19,17 @@ export const useChatStorage = (
     setChatId(newChatId);
 
     try {
+      // Create a descriptive title based on the message content
+      const title = message.text.length > 30 
+        ? message.text.substring(0, 30) + '...' 
+        : message.text;
+        
       await supabase
         .from('chat_sessions')
         .insert({
           id: newChatId,
           user_id: user.id,
-          title: message.text.substring(0, 30) + (message.text.length > 30 ? '...' : '')
+          title
         });
       
       return newChatId;

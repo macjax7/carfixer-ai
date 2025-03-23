@@ -49,18 +49,41 @@ export const useMessageSender = () => {
       if (!chatId) {
         setChatId(newChatId);
         
-        // Create chat session in database
+        // Create chat session in database with a descriptive title
         if (user) {
           try {
+            const title = text.length > 30 
+              ? text.substring(0, 30) + '...' 
+              : text;
+              
             await supabase
               .from('chat_sessions')
               .insert({
                 id: newChatId,
                 user_id: user.id,
-                title: text.substring(0, 30) + (text.length > 30 ? '...' : '')
+                title
               });
           } catch (error) {
             console.error('Error creating chat session:', error);
+          }
+        }
+      } else {
+        // Update the title when it's the first message in an existing chat
+        if (user) {
+          const { data: messageCount } = await supabase
+            .from('chat_messages')
+            .select('id', { count: 'exact' })
+            .eq('session_id', chatId);
+            
+          if (messageCount === null || messageCount.length === 0) {
+            const title = text.length > 30 
+              ? text.substring(0, 30) + '...' 
+              : text;
+              
+            await supabase
+              .from('chat_sessions')
+              .update({ title })
+              .eq('id', chatId);
           }
         }
       }

@@ -97,6 +97,7 @@ export const useSidebarState = () => {
     canCreateNewChat,
     isLoadingChatHistory,
     isProjectsLoading,
-    fetchProjects
+    fetchProjects,
+    refreshChatHistory
   };
 };

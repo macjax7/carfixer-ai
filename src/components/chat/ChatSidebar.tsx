@@ -48,7 +48,8 @@ const ChatSidebar = () => {
     canCreateNewChat,
     isLoadingChatHistory,
     isProjectsLoading,
-    deleteProject
+    deleteProject,
+    refreshChatHistory
   } = useSidebarState();
 
   // Handle chat selection
@@ -96,6 +97,8 @@ const ChatSidebar = () => {
               setChatHistoryOpen={setChatHistoryOpen}
               chatHistory={chatHistory}
               isLoading={isLoadingChatHistory}
+              onSelectChat={handleSelectChat}
+              refreshChatHistory={refreshChatHistory}
             />
           </>
         )}
