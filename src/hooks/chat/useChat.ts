@@ -9,6 +9,7 @@ import { useListingHandler } from './useListingHandler';
 import { useChatMessages } from './useChatMessages';
 import { nanoid } from 'nanoid';
 import { ChatHistoryItem } from '@/hooks/chat/sidebar/types';
+import { Message } from '@/components/chat/types';
 
 export const useChat = () => {
   const { 
@@ -26,7 +27,7 @@ export const useChat = () => {
   const [hasAskedForVehicle, setHasAskedForVehicle] = useState(false);
   const [isCreatingNewChat, setIsCreatingNewChat] = useState(false);
   
-  // Input handling
+  // Input handling with the fixed hook that includes canSendMessage and resetInput
   const { input, setInput, canSendMessage, resetInput } = useMessageInput();
   
   // Get suggestion prompts
@@ -34,10 +35,31 @@ export const useChat = () => {
 
   // Message sender hook
   const { processAndSendMessage, isProcessing } = useMessageSender();
+  
+  // Create adapter functions for the specialized handlers to match the expected signature
+  const handleImageUploadAdapter = useCallback((file: File, prompt?: string) => {
+    const messageText = prompt || 'Can you identify this part?';
+    return handleImageUpload(file, messageText);
+  }, []);
+  
+  const handleListingAnalysisAdapter = useCallback((url: string) => {
+    return handleListingAnalysis(url);
+  }, []);
 
-  // Specialized handlers
-  const { handleImageUpload } = useImageHandler(processAndSendMessage);
-  const { handleListingAnalysis } = useListingHandler(processAndSendMessage);
+  // Specialized handlers - fixing the signature mismatch
+  const { handleImageUpload } = useImageHandler((message: Message) => {
+    // Add the message directly to the chat
+    addUserMessage(message);
+    // Process the message for AI response
+    return processAndSendMessage(message.text, message.image);
+  });
+  
+  const { handleListingAnalysis } = useListingHandler((message: Message) => {
+    // Add the message directly to the chat
+    addUserMessage(message);
+    // Process the message for AI response
+    return processAndSendMessage(message.text, message.image);
+  });
   
   // Determine if we can create a new chat based on current state
   const canCreateNewChat = !isCreatingNewChat && !messagesLoading && messages.length === 0;
@@ -83,8 +105,8 @@ export const useChat = () => {
     input,
     setInput,
     handleSendMessage,
-    handleImageUpload,
-    handleListingAnalysis,
+    handleImageUpload: handleImageUploadAdapter,
+    handleListingAnalysis: handleListingAnalysisAdapter,
     handleNewChat,
     handleSuggestedPrompt,
     isLoading,
