@@ -21,3 +21,18 @@ export interface ChatMessagesActions {
 }
 
 export type UseChatMessagesResult = ChatMessagesState & ChatMessagesActions;
+
+// Add new types for improved organization
+export interface ChatStorageOperations {
+  createChatSession: (message: Message) => Promise<string | undefined>;
+  storeUserMessage: (messageData: Message, sessionId: string) => Promise<void>;
+  storeAIMessage: (messageData: Message, sessionId: string) => Promise<void>;
+  fetchLastChatSession: () => Promise<{id: string, title: string} | null>;
+  fetchChatMessages: (sessionId: string) => Promise<any[]>;
+}
+
+export interface ChatSubscriptionProps {
+  chatId: string | null;
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  setMessageHistory: React.Dispatch<React.SetStateAction<string[]>>;
+}

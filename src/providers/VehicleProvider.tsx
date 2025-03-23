@@ -1,166 +1,185 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { VehicleContext } from '@/context/VehicleContext';
-import { Vehicle, VehicleContextType } from '@/types/vehicle';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { Vehicle } from '@/types/vehicle';
 import { nanoid } from 'nanoid';
 
 export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  // Fetch vehicles when user changes
+  // Fetch user's vehicles
   useEffect(() => {
     const fetchVehicles = async () => {
       if (!user) {
         setVehicles([]);
-        setSelectedVehicle(null);
-        setLoading(false);
+        setIsLoading(false);
         return;
       }
 
       try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('vehicles')
+        // Using 'from' with type assertion to tell TypeScript this is safe
+        // This works around the database type definition limitations
+        const { data, error } = await (supabase
+          .from('vehicles' as any)
           .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+          .eq('user_id', user.id));
 
-        if (error) throw error;
-
-        setVehicles(data || []);
-        
-        // Select the first vehicle if available and none is selected
-        if (data && data.length > 0 && !selectedVehicle) {
-          setSelectedVehicle(data[0]);
+        if (error) {
+          console.error('Error fetching vehicles:', error);
+          setVehicles([]);
+        } else if (data) {
+          // Type assertion to help TypeScript understand this is a Vehicle array
+          setVehicles(data as unknown as Vehicle[]);
         }
-      } catch (error) {
-        console.error('Error fetching vehicles:', error);
+      } catch (err) {
+        console.error('Exception fetching vehicles:', err);
+        setVehicles([]);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     fetchVehicles();
-
-    // Set up real-time subscription for vehicles
-    let subscription: any = null;
-    
-    if (user) {
-      subscription = supabase
-        .channel('vehicles-changes')
-        .on('postgres_changes', 
-          { 
-            event: '*', 
-            schema: 'public', 
-            table: 'vehicles',
-            filter: `user_id=eq.${user.id}`
-          }, 
-          () => {
-            fetchVehicles();
-          }
-        )
-        .subscribe();
-    }
-
-    return () => {
-      if (subscription) {
-        supabase.removeChannel(subscription);
-      }
-    };
   }, [user]);
 
-  // Add a new vehicle
-  const addVehicle = useCallback(async (vehicle: Omit<Vehicle, 'id'>) => {
-    if (!user) return;
+  // Add a vehicle
+  const addVehicle = useCallback(async (vehicleData: Omit<Vehicle, 'id' | 'user_id'>) => {
+    if (!user) return null;
 
-    const newVehicle = {
-      ...vehicle,
+    const newVehicle: Vehicle = {
       id: nanoid(),
       user_id: user.id,
-      created_at: new Date().toISOString()
+      ...vehicleData,
     };
 
     try {
-      const { error } = await supabase
-        .from('vehicles')
-        .insert([newVehicle]);
+      // Using type assertion to work around database type limitations
+      const { error } = await (supabase
+        .from('vehicles' as any)
+        .insert([{
+          id: newVehicle.id,
+          user_id: newVehicle.user_id,
+          make: newVehicle.make,
+          model: newVehicle.model,
+          year: newVehicle.year,
+          mileage: newVehicle.mileage,
+          color: newVehicle.color,
+          vin: newVehicle.vin,
+          license_plate: newVehicle.license_plate,
+          nickname: newVehicle.nickname,
+        }]));
 
-      if (error) throw error;
-      
-      // We don't need to update state manually since the real-time subscription will do it
-    } catch (error) {
-      console.error('Error adding vehicle:', error);
+      if (error) {
+        console.error('Error adding vehicle:', error);
+        return null;
+      }
+
+      setVehicles(prev => [...prev, newVehicle]);
+      return newVehicle;
+    } catch (err) {
+      console.error('Exception adding vehicle:', err);
+      return null;
     }
   }, [user]);
 
-  // Remove a vehicle
-  const removeVehicle = useCallback(async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('vehicles')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      // If the deleted vehicle was selected, select another one
-      if (selectedVehicle?.id === id) {
-        const remainingVehicles = vehicles.filter(v => v.id !== id);
-        setSelectedVehicle(remainingVehicles.length > 0 ? remainingVehicles[0] : null);
-      }
-      
-      // We don't need to update vehicles state manually since the real-time subscription will do it
-    } catch (error) {
-      console.error('Error removing vehicle:', error);
-    }
-  }, [selectedVehicle, vehicles]);
-
   // Update a vehicle
-  const updateVehicle = useCallback(async (id: string, updates: Partial<Vehicle>) => {
-    try {
-      const { error } = await supabase
-        .from('vehicles')
-        .update(updates)
-        .eq('id', id);
+  const updateVehicle = useCallback(async (updatedVehicle: Vehicle) => {
+    if (!user) return false;
 
-      if (error) throw error;
-      
-      // Update the selected vehicle if it's the one being updated
-      if (selectedVehicle?.id === id) {
-        setSelectedVehicle(prev => prev ? { ...prev, ...updates } : null);
+    try {
+      // Using type assertion to work around database type limitations
+      const { error } = await (supabase
+        .from('vehicles' as any)
+        .update({
+          make: updatedVehicle.make,
+          model: updatedVehicle.model,
+          year: updatedVehicle.year,
+          mileage: updatedVehicle.mileage,
+          color: updatedVehicle.color,
+          vin: updatedVehicle.vin,
+          license_plate: updatedVehicle.license_plate,
+          nickname: updatedVehicle.nickname,
+        })
+        .eq('id', updatedVehicle.id)
+        .eq('user_id', user.id));
+
+      if (error) {
+        console.error('Error updating vehicle:', error);
+        return false;
       }
-      
-      // We don't need to update vehicles state manually since the real-time subscription will do it
-    } catch (error) {
-      console.error('Error updating vehicle:', error);
+
+      setVehicles(prev => 
+        prev.map(vehicle => 
+          vehicle.id === updatedVehicle.id ? updatedVehicle : vehicle
+        )
+      );
+
+      if (selectedVehicle?.id === updatedVehicle.id) {
+        setSelectedVehicle(updatedVehicle);
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Exception updating vehicle:', err);
+      return false;
     }
-  }, [selectedVehicle]);
+  }, [user, selectedVehicle]);
+
+  // Delete a vehicle
+  const deleteVehicle = useCallback(async (vehicleId: string) => {
+    if (!user) return false;
+
+    try {
+      // Using type assertion to work around database type limitations
+      const { error } = await (supabase
+        .from('vehicles' as any)
+        .delete()
+        .eq('id', vehicleId)
+        .eq('user_id', user.id));
+
+      if (error) {
+        console.error('Error deleting vehicle:', error);
+        return false;
+      }
+
+      setVehicles(prev => prev.filter(vehicle => vehicle.id !== vehicleId));
+      
+      if (selectedVehicle?.id === vehicleId) {
+        setSelectedVehicle(null);
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Exception deleting vehicle:', err);
+      return false;
+    }
+  }, [user, selectedVehicle]);
 
   // Select a vehicle
-  const selectVehicle = useCallback((id: string) => {
-    const vehicle = vehicles.find(v => v.id === id) || null;
+  const selectVehicle = useCallback((vehicle: Vehicle | null) => {
     setSelectedVehicle(vehicle);
-  }, [vehicles]);
-
-  // Create the context value object
-  const contextValue: VehicleContextType = {
-    vehicles,
-    selectedVehicle,
-    addVehicle,
-    removeVehicle,
-    updateVehicle,
-    selectVehicle,
-    loading
-  };
+  }, []);
 
   return (
-    <VehicleContext.Provider value={contextValue}>
+    <VehicleContext.Provider
+      value={{
+        vehicles,
+        selectedVehicle,
+        isLoading,
+        addVehicle,
+        updateVehicle,
+        deleteVehicle,
+        selectVehicle,
+      }}
+    >
       {children}
     </VehicleContext.Provider>
   );
 };
+
+export default VehicleProvider;

@@ -6,6 +6,7 @@ import { ChatMessage } from '@/utils/openai/types';
 import { useChatStorage } from './useChatStorage';
 import { useChatSubscription } from './useChatSubscription';
 import { UseChatMessagesResult } from './types';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useChatMessages = (): UseChatMessagesResult => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -22,7 +23,11 @@ export const useChatMessages = (): UseChatMessagesResult => {
   } = useChatStorage(chatId, setChatId);
   
   // Set up subscription to real-time updates
-  useChatSubscription(chatId, setMessages, setMessageHistory);
+  useChatSubscription({
+    chatId,
+    setMessages,
+    setMessageHistory
+  });
   
   // Load initial messages
   useEffect(() => {
@@ -139,6 +144,3 @@ export const useChatMessages = (): UseChatMessagesResult => {
     setChatId
   };
 };
-
-// Need to import supabase for the useEffect
-import { supabase } from '@/integrations/supabase/client';

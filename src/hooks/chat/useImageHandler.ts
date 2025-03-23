@@ -22,7 +22,7 @@ export const useImageHandler = (addMessageToChat: (message: Message) => void) =>
         id: nanoid(),
         sender: 'user',
         text: userPrompt || 'Can you identify this part?',
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(),
         image: imageUrl
       };
       
@@ -34,9 +34,9 @@ export const useImageHandler = (addMessageToChat: (message: Message) => void) =>
       // Create the AI response message
       const aiMessage: Message = {
         id: nanoid(),
-        sender: 'assistant',
+        sender: 'ai',
         text: response || 'I couldn\'t identify this part. Could you provide a clearer image?',
-        timestamp: new Date().toISOString()
+        timestamp: new Date()
       };
       
       addMessageToChat(aiMessage);
@@ -46,9 +46,9 @@ export const useImageHandler = (addMessageToChat: (message: Message) => void) =>
       // Add error message
       addMessageToChat({
         id: nanoid(),
-        sender: 'assistant',
+        sender: 'ai',
         text: 'Sorry, I encountered an error analyzing your image. Please try again.',
-        timestamp: new Date().toISOString()
+        timestamp: new Date()
       });
     } finally {
       setIsProcessingImage(false);

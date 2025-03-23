@@ -4,11 +4,12 @@ import { nanoid } from 'nanoid';
 import { Message } from '@/components/chat/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { ChatStorageOperations } from './types';
 
 export const useChatStorage = (
   chatId: string | null,
   setChatId: (id: string) => void
-) => {
+): ChatStorageOperations => {
   const { user } = useAuth();
 
   const createChatSession = useCallback(async (message: Message) => {

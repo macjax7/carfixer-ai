@@ -19,7 +19,7 @@ export const useListingHandler = (addMessageToChat: (message: Message) => void) 
         id: nanoid(),
         sender: 'user',
         text: `Can you analyze this vehicle listing? ${url}`,
-        timestamp: new Date().toISOString()
+        timestamp: new Date()
       };
       
       addMessageToChat(userMessage);
@@ -30,9 +30,9 @@ export const useListingHandler = (addMessageToChat: (message: Message) => void) 
       // Create a message with the listing analysis
       const aiMessage: Message = {
         id: nanoid(),
-        sender: 'assistant',
+        sender: 'ai',
         text: listing?.summary || 'I couldn\'t analyze this listing. Please check the URL and try again.',
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(),
         vehicleListingAnalysis: listing
       };
       
@@ -43,9 +43,9 @@ export const useListingHandler = (addMessageToChat: (message: Message) => void) 
       // Add error message
       addMessageToChat({
         id: nanoid(),
-        sender: 'assistant',
+        sender: 'ai',
         text: 'Sorry, I encountered an error analyzing this listing. Please check the URL and try again.',
-        timestamp: new Date().toISOString()
+        timestamp: new Date()
       });
     } finally {
       setIsProcessingListing(false);

@@ -1,13 +1,14 @@
 
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { Message } from '@/components/chat/types';
 import { supabase } from '@/integrations/supabase/client';
+import { ChatSubscriptionProps } from './types';
 
-export const useChatSubscription = (
-  chatId: string | null, 
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
-  setMessageHistory: React.Dispatch<React.SetStateAction<string[]>>
-) => {
+export const useChatSubscription = ({
+  chatId,
+  setMessages,
+  setMessageHistory
+}: ChatSubscriptionProps) => {
   useEffect(() => {
     if (!chatId) return;
 
@@ -26,9 +27,9 @@ export const useChatSubscription = (
           (payload) => {
             // Only update if the message is for the current chat session
             if (payload.new && payload.new.session_id === chatId) {
-              const newMsg = {
+              const newMsg: Message = {
                 id: payload.new.id,
-                sender: payload.new.role === 'user' ? 'user' as const : 'ai' as const,
+                sender: payload.new.role === 'user' ? 'user' : 'ai',
                 text: payload.new.content,
                 timestamp: new Date(payload.new.created_at),
                 image: payload.new.image_url
@@ -65,3 +66,5 @@ export const useChatSubscription = (
     };
   }, [chatId, setMessages, setMessageHistory]);
 };
+
+export default useChatSubscription;
