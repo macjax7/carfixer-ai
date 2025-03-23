@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
-import { SidebarMenuItem, SidebarSubMenu } from '@/components/ui/sidebar';
+import { SidebarMenuItem, SidebarMenuSub } from '@/components/ui/sidebar';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Project } from '@/hooks/chat/sidebar/types';
@@ -58,7 +58,7 @@ const SidebarProjectItem = ({ project, isOpen, onToggle, onDelete }: SidebarProj
       </SidebarMenuItem>
       
       {hasSubItems && isOpen && (
-        <SidebarSubMenu>
+        <SidebarMenuSub>
           {project.subItems.map((item) => (
             <SidebarMenuItem key={item.id} className="pl-7">
               <Link to={item.path} className="truncate">
@@ -66,7 +66,7 @@ const SidebarProjectItem = ({ project, isOpen, onToggle, onDelete }: SidebarProj
               </Link>
             </SidebarMenuItem>
           ))}
-        </SidebarSubMenu>
+        </SidebarMenuSub>
       )}
     </div>
   );
