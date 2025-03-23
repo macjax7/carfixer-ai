@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
@@ -14,16 +14,20 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
+  const { user, signIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  
+  // Get the redirect path from location state or default to '/'
+  const from = location.state?.from?.pathname || '/';
 
   // Redirect if user is already logged in
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate(from, { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, from]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,19 +44,15 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Use Supabase auth directly to prevent issues with the Firebase wrapper
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.toLowerCase().trim(),
-        password
-      });
-      
-      if (error) throw error;
+      // Use the signIn method from AuthContext instead of direct Supabase call
+      await signIn(email, password);
       
       toast({
         title: "Success",
         description: "You've been logged in successfully"
       });
-      navigate('/');
+      
+      // No need to navigate here as the useEffect will handle it
     } catch (error: any) {
       console.error('Login error:', error);
       

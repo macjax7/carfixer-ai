@@ -38,6 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // First, set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
+        console.log("Auth state changed:", event, currentSession?.user?.email);
         setSession(currentSession);
         if (currentSession?.user) {
           // Create a modified user object with displayName and uid for Firebase compatibility
@@ -56,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Then check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log("Initial session check:", currentSession?.user?.email);
       setSession(currentSession);
       if (currentSession?.user) {
         // Create a modified user object with displayName and uid for Firebase compatibility
@@ -104,6 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setError('An unknown error occurred during sign in');
       }
+      throw error; // Rethrow to let the Login component handle it
     } finally {
       setLoading(false);
     }
@@ -130,6 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setError('An unknown error occurred during sign up');
       }
+      throw error; // Rethrow to let the SignUp component handle it
     } finally {
       setLoading(false);
     }

@@ -11,6 +11,7 @@ import VehicleProvider from './providers/VehicleProvider';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from './components/ui/toaster';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from './context/AuthContext';
 
 const queryClient = new QueryClient();
 
@@ -18,35 +19,37 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="light">
-        <VehicleProvider>
-          <Router>
-            <Routes>
-              <Route path="/" element={<Chat />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/chat/:chatId" element={<Chat />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route 
-                path="/vehicles" 
-                element={
-                  <ProtectedRoute>
-                    <Vehicles />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/settings" 
-                element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Router>
-          <Toaster />
-        </VehicleProvider>
+        <AuthProvider>
+          <VehicleProvider>
+            <Router>
+              <Routes>
+                <Route path="/" element={<Chat />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/chat/:chatId" element={<Chat />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<SignUp />} />
+                <Route 
+                  path="/vehicles" 
+                  element={
+                    <ProtectedRoute>
+                      <Vehicles />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/settings" 
+                  element={
+                    <ProtectedRoute>
+                      <Settings />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Router>
+            <Toaster />
+          </VehicleProvider>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
