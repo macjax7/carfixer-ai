@@ -6,7 +6,7 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious
-} from '@/components/ui/carousel';
+} from '@/components/ui/carousel'; // This import will now use the new structure
 import { Button } from '@/components/ui/button';
 
 interface SuggestedPromptsProps {
