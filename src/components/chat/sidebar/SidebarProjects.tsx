@@ -17,6 +17,7 @@ interface SidebarProjectsProps {
   toggleProject: (project: string) => void;
   handleNewProjectButton: (e: React.MouseEvent) => void;
   isLoading?: boolean;
+  deleteProject?: (projectId: string | number) => void;
 }
 
 const SidebarProjects = ({
@@ -26,7 +27,8 @@ const SidebarProjects = ({
   projectStates,
   toggleProject,
   handleNewProjectButton,
-  isLoading = false
+  isLoading = false,
+  deleteProject
 }: SidebarProjectsProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -77,6 +79,7 @@ const SidebarProjects = ({
                       project={project}
                       isOpen={projectStates[project.title]}
                       onToggle={() => toggleProject(project.title)}
+                      onDelete={deleteProject ? () => deleteProject(project.id) : undefined}
                     />
                   ))}
                 </SidebarMenu>

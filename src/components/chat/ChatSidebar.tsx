@@ -42,7 +42,8 @@ const ChatSidebar = () => {
     handleSearch,
     canCreateNewChat,
     isLoadingChatHistory,
-    isProjectsLoading
+    isProjectsLoading,
+    deleteProject
   } = useSidebarState();
 
   return (
@@ -76,6 +77,7 @@ const ChatSidebar = () => {
               toggleProject={toggleProject}
               handleNewProjectButton={handleNewProjectButton}
               isLoading={isProjectsLoading}
+              deleteProject={deleteProject}
             />
             
             <SidebarChatHistory 

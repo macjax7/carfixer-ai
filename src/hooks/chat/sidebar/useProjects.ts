@@ -213,7 +213,7 @@ export const useProjects = () => {
       const { error } = await supabase
         .from('projects')
         .delete()
-        .eq('id', projectId);
+        .eq('id', projectId.toString());
       
       if (error) throw error;
       

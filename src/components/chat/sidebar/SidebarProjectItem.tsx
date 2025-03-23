@@ -1,46 +1,73 @@
+
 import React from 'react';
+import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { SidebarMenuItem, SidebarSubMenu } from '@/components/ui/sidebar';
 import { Link } from 'react-router-dom';
-import { Folder, ChevronDown, ChevronRight } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
 import { Project } from '@/hooks/chat/sidebar/types';
 
 interface SidebarProjectItemProps {
   project: Project;
   isOpen: boolean;
   onToggle: () => void;
+  onDelete?: () => void;
 }
 
-const SidebarProjectItem = ({ project, isOpen, onToggle }: SidebarProjectItemProps) => {
+const SidebarProjectItem = ({ project, isOpen, onToggle, onDelete }: SidebarProjectItemProps) => {
+  const hasSubItems = project.subItems && project.subItems.length > 0;
+  
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (onDelete) {
+      onDelete();
+    }
+  };
+  
   return (
     <div>
-      <Collapsible 
-        open={isOpen} 
-        onOpenChange={onToggle}
+      <SidebarMenuItem
+        onClick={hasSubItems ? onToggle : undefined}
+        className={`flex items-center justify-between group ${hasSubItems ? 'cursor-pointer' : ''}`}
       >
-        <CollapsibleTrigger asChild>
-          <SidebarMenuButton className="flex items-center justify-between w-full">
-            <div className="flex items-center">
-              <Folder className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>{project.title}</span>
-            </div>
-            {isOpen ? 
-              <ChevronDown className="h-3 w-3 text-muted-foreground ml-1" /> : 
-              <ChevronRight className="h-3 w-3 text-muted-foreground ml-1" />}
-          </SidebarMenuButton>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pl-6 transition-all duration-200 ease-in-out">
-          {project.subItems.map((subItem) => (
-            <SidebarMenuItem key={subItem.id}>
-              <SidebarMenuButton asChild className="text-sm">
-                <Link to={subItem.path}>
-                  <span>{subItem.title}</span>
-                </Link>
-              </SidebarMenuButton>
+        <Link 
+          to={project.path} 
+          className="flex-1 flex items-center"
+          onClick={e => hasSubItems && e.preventDefault()}
+        >
+          {hasSubItems ? (
+            isOpen ? 
+              <ChevronDown className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" /> : 
+              <ChevronRight className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+          ) : (
+            <span className="w-5" />
+          )}
+          <span className="truncate">{project.title}</span>
+        </Link>
+        
+        {onDelete && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={handleDeleteClick}
+          >
+            <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+          </Button>
+        )}
+      </SidebarMenuItem>
+      
+      {hasSubItems && isOpen && (
+        <SidebarSubMenu>
+          {project.subItems.map((item) => (
+            <SidebarMenuItem key={item.id} className="pl-7">
+              <Link to={item.path} className="truncate">
+                {item.title}
+              </Link>
             </SidebarMenuItem>
           ))}
-        </CollapsibleContent>
-      </Collapsible>
+        </SidebarSubMenu>
+      )}
     </div>
   );
 };
