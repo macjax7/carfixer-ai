@@ -8,8 +8,10 @@ import LoadingIndicator from './chat/LoadingIndicator';
 import { useChat } from '@/hooks/chat/useChat';
 import { useVehicles } from '@/hooks/use-vehicles';
 import { useSidebar } from '@/components/ui/sidebar';
+import { useParams } from 'react-router-dom';
 
 const AIChat: React.FC = () => {
+  const { chatId } = useParams<{ chatId?: string }>();
   const {
     messages,
     input,
@@ -20,12 +22,21 @@ const AIChat: React.FC = () => {
     handleListingAnalysis,
     handleSuggestedPrompt,
     suggestedPrompts,
-    hasAskedForVehicle
+    hasAskedForVehicle,
+    loadChatById,
+    chatIdLoaded
   } = useChat();
   
   const { state } = useSidebar();
   const { vehicles, selectedVehicle } = useVehicles();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Load specific chat if chatId is provided in URL
+  useEffect(() => {
+    if (chatId && chatId !== chatIdLoaded) {
+      loadChatById(chatId);
+    }
+  }, [chatId, loadChatById, chatIdLoaded]);
   
   // Scroll to bottom when messages change
   useEffect(() => {

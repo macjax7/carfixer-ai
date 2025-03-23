@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Clock, MessageSquare, LogIn } from 'lucide-react';
+import { ChevronDown, ChevronRight, Clock, MessageSquare, LogIn, Loader2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { ChatHistoryItem } from '@/hooks/chat/sidebar/types';
@@ -13,12 +13,14 @@ interface SidebarChatHistoryProps {
   chatHistoryOpen: boolean;
   setChatHistoryOpen: (open: boolean) => void;
   chatHistory: ChatHistoryItem[];
+  isLoading?: boolean;
 }
 
 const SidebarChatHistory = ({
   chatHistoryOpen,
   setChatHistoryOpen,
-  chatHistory
+  chatHistory,
+  isLoading = false
 }: SidebarChatHistoryProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -38,6 +40,7 @@ const SidebarChatHistory = ({
                 <ChevronRight className="h-4 w-4 mr-2 text-muted-foreground" />}
               Chat History
             </span>
+            {isLoading && <Loader2 className="h-3 w-3 animate-spin mr-2" />}
           </button>
         </CollapsibleTrigger>
         

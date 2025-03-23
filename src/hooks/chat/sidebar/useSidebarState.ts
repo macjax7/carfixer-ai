@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useChat } from '@/hooks/chat/useChat';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
@@ -37,7 +37,9 @@ export const useSidebarState = () => {
     chatHistoryOpen,
     setChatHistoryOpen,
     chatHistory,
-    setChatHistory
+    setChatHistory,
+    isLoading: isLoadingChatHistory,
+    refreshChatHistory
   } = useChatHistory();
   
   // Get search state
@@ -65,6 +67,10 @@ export const useSidebarState = () => {
     
     if (canCreateNewChat) {
       handleNewChat();
+      // After starting a new chat, refresh the chat history
+      setTimeout(() => {
+        refreshChatHistory();
+      }, 500);
     }
   };
 
@@ -89,6 +95,7 @@ export const useSidebarState = () => {
     handleNewChatClick,
     toggleSearch,
     handleSearch,
-    canCreateNewChat
+    canCreateNewChat,
+    isLoadingChatHistory
   };
 };

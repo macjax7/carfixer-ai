@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -39,7 +40,8 @@ const ChatSidebar = () => {
     handleNewChatClick,
     toggleSearch,
     handleSearch,
-    canCreateNewChat
+    canCreateNewChat,
+    isLoadingChatHistory
   } = useSidebarState();
 
   return (
@@ -78,6 +80,7 @@ const ChatSidebar = () => {
               chatHistoryOpen={chatHistoryOpen}
               setChatHistoryOpen={setChatHistoryOpen}
               chatHistory={chatHistory}
+              isLoading={isLoadingChatHistory}
             />
           </>
         )}
