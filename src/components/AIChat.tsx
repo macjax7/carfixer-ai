@@ -67,7 +67,6 @@ const AIChat: React.FC = () => {
       {/* Welcome message when no messages exist */}
       {messages.length === 0 && (
         <div className="flex-1 flex flex-col items-center justify-center">
-          <h1 className="text-2xl font-semibold mb-6">What can I help with?</h1>
           <SuggestedPrompts 
             handleSuggestedPrompt={handleSuggestedPrompt}
             prompts={suggestedPrompts}
