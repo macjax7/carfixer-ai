@@ -4,7 +4,6 @@ import { ScrollArea } from './ui/scroll-area';
 import ChatMessage from './chat/ChatMessage';
 import ChatInput from './chat/ChatInput';
 import SuggestedPrompts from './chat/SuggestedPrompts';
-import LoadingIndicator from './chat/LoadingIndicator';
 import { useChat } from '@/hooks/chat/useChat';
 import { useVehicles } from '@/hooks/use-vehicles';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -126,7 +125,7 @@ const AIChat: React.FC = () => {
               {/* Vehicle suggestions when AI has asked for vehicle info */}
               {hasAskedForVehicle && getVehicleSuggestions()}
               
-              {isLoading && <LoadingIndicator />}
+              {/* Removed loading indicator here */}
               
               <div ref={messagesEndRef} />
             </div>
