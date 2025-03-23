@@ -15,7 +15,7 @@ export async function sendChatMessage(
     // Filter messages to only include the required fields for the API
     const apiMessages = messages.map(({ role, content }) => ({ role, content }));
     
-    console.log("Invoking Supabase function with payload:", {
+    console.log("Preparing to invoke Supabase function with payload:", {
       service: 'diagnostic',
       action: 'chat',
       data: {
@@ -48,7 +48,16 @@ export async function sendChatMessage(
     }
     
     console.log("Received response from Supabase function:", data);
-    return data;
+    
+    // Return specifically the message property from the response
+    if (data && data.message) {
+      return data.message;
+    } else if (data) {
+      console.warn("Unexpected response format. Full response:", data);
+      return typeof data === 'string' ? data : JSON.stringify(data);
+    } else {
+      throw new Error("Empty response received from OpenAI API");
+    }
   } catch (error) {
     console.error('Error sending chat message:', error);
     throw error;

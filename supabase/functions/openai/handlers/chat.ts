@@ -5,6 +5,8 @@ const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 export async function handleChatRequest(data: any) {
   try {
+    console.log("Chat handler received data:", JSON.stringify(data));
+    
     const { messages, includeVehicleContext = false, vehicleInfo = {}, messageHistory = [] } = data;
     
     if (!messages || messages.length === 0) {
@@ -57,8 +59,12 @@ export async function handleChatRequest(data: any) {
     ];
 
     if (!openAIApiKey) {
+      console.error('OPENAI_API_KEY is not configured in environment variables');
       throw new Error('OpenAI API key is not configured');
     }
+
+    console.log(`Using model: ${hasDTCQuery ? 'gpt-4o' : 'gpt-4o-mini'}`);
+    console.log("Sending request to OpenAI with messages:", JSON.stringify(requestMessages));
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -80,6 +86,7 @@ export async function handleChatRequest(data: any) {
     }
 
     const result = await response.json();
+    console.log("Received response from OpenAI:", JSON.stringify(result));
     
     // Add error checking for the response structure
     if (!result || !result.choices || !result.choices[0] || !result.choices[0].message) {

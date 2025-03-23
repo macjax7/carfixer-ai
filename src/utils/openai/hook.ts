@@ -1,4 +1,3 @@
-
 import { useVehicles } from '@/hooks/use-vehicles';
 import { sendChatMessage } from './chat';
 import { analyzeImage } from './image';
@@ -24,12 +23,19 @@ export function useOpenAI() {
     vehicleOverride = null,
     messageHistory: string[] = []
   ) => {
-    return sendChatMessage(
-      messages, 
-      includeVehicleContext, 
-      vehicleOverride || selectedVehicle,
-      messageHistory
-    );
+    try {
+      const response = await sendChatMessage(
+        messages, 
+        includeVehicleContext, 
+        vehicleOverride || selectedVehicle,
+        messageHistory
+      );
+      console.log("Chat response:", response);
+      return response;
+    } catch (error) {
+      console.error("Error in chatWithAI:", error);
+      throw error;
+    }
   };
   
   const identifyPart = async (imageUrl: string, customPrompt?: string) => {
@@ -86,7 +92,6 @@ export function useOpenAI() {
     return getOBDSensorData();
   };
   
-  // Add the speechToText function to the hook
   const convertSpeechToText = async (audioBlob: Blob) => {
     return speechToText(audioBlob);
   };

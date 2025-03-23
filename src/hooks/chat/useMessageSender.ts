@@ -7,11 +7,13 @@ import { useAuth } from '@/context/AuthContext';
 import { useChatMessages } from "./useChatMessages";
 import { useOpenAI } from "@/utils/openai/hook";
 import { useCodeDetection } from "./useCodeDetection";
+import { useToast } from "@/hooks/use-toast";
 
 export const useMessageSender = () => {
   const { user } = useAuth();
   const { addUserMessage, addAIMessage, chatId, setChatId } = useChatMessages();
   const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
   
   // Use the OpenAI utility
   const { chatWithAI, analyzeListing, identifyPart } = useOpenAI();
@@ -99,46 +101,57 @@ export const useMessageSender = () => {
       
       addUserMessage(userMessageData);
       
+      // Also add it to the database
+      if (user) {
+        await addToChatHistory(newChatId, userMessageData, 'user');
+      }
+      
       // Determine the message type (image analysis, URL, or regular text)
       let aiResponseText = '';
       let aiMessageExtra = {};
       
-      if (image) {
-        // Process image-based query
-        try {
+      try {
+        if (image) {
+          // Process image-based query
+          console.log("Processing image-based query");
           const imageResult = await identifyPart(image, text);
           aiResponseText = imageResult.text;
           if (imageResult.componentDiagram) {
             aiMessageExtra = { componentDiagram: imageResult.componentDiagram };
           }
-        } catch (error) {
-          console.error("Error processing image:", error);
-          aiResponseText = "I'm sorry, I couldn't analyze that image properly. Could you try with a clearer picture?";
-        }
-      } else if (/https?:\/\/[^\s]+/.test(text)) {
-        // Process URL-based query
-        try {
+        } else if (/https?:\/\/[^\s]+/.test(text)) {
+          // Process URL-based query
+          console.log("Processing URL-based query");
           const urlResults = await analyzeListing(text);
           if (urlResults.vehicleListingAnalysis) {
             aiResponseText = urlResults.text;
             aiMessageExtra = { vehicleListingAnalysis: urlResults.vehicleListingAnalysis };
           } else {
             // If it's not a vehicle listing, just process as a normal query
+            console.log("URL doesn't appear to be a vehicle listing, processing as normal text");
             aiResponseText = await chatWithAI([{ role: 'user', content: text }]);
           }
-        } catch (error) {
-          console.error("Error processing URL:", error);
-          aiResponseText = await chatWithAI([{ role: 'user', content: text }]);
-        }
-      } else {
-        // Process code detection for diagnostic codes
-        const codeType = processCodeType(text);
-        if (codeType) {
-          aiResponseText = await chatWithAI([{ role: 'user', content: text }], true, null, [codeType]);
         } else {
-          // Process normal text query
-          aiResponseText = await chatWithAI([{ role: 'user', content: text }]);
+          // Process code detection for diagnostic codes
+          console.log("Processing text query");
+          const codeType = processCodeType(text);
+          if (codeType) {
+            console.log("Detected code type:", codeType);
+            aiResponseText = await chatWithAI([{ role: 'user', content: text }], true, null, [codeType]);
+          } else {
+            // Process normal text query
+            console.log("No code detected, processing as normal text");
+            aiResponseText = await chatWithAI([{ role: 'user', content: text }]);
+          }
         }
+      } catch (error) {
+        console.error("Error in AI processing:", error);
+        aiResponseText = "I apologize, but I encountered an error processing your request. Please try again.";
+        toast({
+          variant: "destructive",
+          title: "AI Processing Error",
+          description: "Failed to get a response from OpenAI. Please check your connection or try again later."
+        });
       }
       
       // Add AI response to the chat
@@ -151,6 +164,11 @@ export const useMessageSender = () => {
       };
       
       addAIMessage(aiMessageData);
+      
+      // Also add it to the database
+      if (user) {
+        await addToChatHistory(newChatId, aiMessageData, 'assistant');
+      }
       
       return aiMessageData;
     } catch (error) {
@@ -165,12 +183,17 @@ export const useMessageSender = () => {
       };
       
       addAIMessage(errorMessageData);
+      toast({
+        variant: "destructive",
+        title: "Processing Error",
+        description: "An error occurred while processing your message. Please try again."
+      });
       
       return errorMessageData;
     } finally {
       setIsProcessing(false);
     }
-  }, [chatId, setChatId, user, addUserMessage, addAIMessage, chatWithAI, identifyPart, analyzeListing, processCodeType]);
+  }, [chatId, setChatId, user, addUserMessage, addAIMessage, chatWithAI, identifyPart, analyzeListing, processCodeType, addToChatHistory, toast]);
 
   return {
     processAndSendMessage,
