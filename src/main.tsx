@@ -5,5 +5,10 @@ import App from './App.tsx';
 import './index.css';
 
 // Explicitly create the root using React 18's createRoot API
-const root = createRoot(document.getElementById("root")!);
-root.render(<App />);
+const container = document.getElementById('root');
+const root = createRoot(container!);
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
