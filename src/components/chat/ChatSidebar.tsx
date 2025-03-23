@@ -9,7 +9,6 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import ProfileMenu from '@/components/ProfileMenu';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
@@ -142,10 +141,6 @@ const ChatSidebar = () => {
   // Handle start new chat
   const handleNewChatClick = () => {
     handleNewChat();
-    toast({
-      title: "New Chat",
-      description: "Started a new chat session",
-    });
   };
   
   // Toggle search mode
@@ -454,12 +449,14 @@ const ChatSidebar = () => {
       </SidebarContent>
       
       <SidebarFooter className="border-t p-4">
-        <div className="flex items-center">
-          <ProfileMenu />
-          <div className="ml-3 truncate">
-            <p className="text-sm font-medium truncate">{user?.email || 'User'}</p>
+        {/* Remove the ProfileMenu component and just display the email when user is logged in */}
+        {user && (
+          <div className="flex items-center">
+            <div className="truncate">
+              <p className="text-sm font-medium truncate">{user.email || 'User'}</p>
+            </div>
           </div>
-        </div>
+        )}
       </SidebarFooter>
       
       <Dialog open={newProjectDialogOpen} onOpenChange={setNewProjectDialogOpen}>
