@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -10,7 +9,6 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import ProfileMenu from '@/components/ProfileMenu';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
@@ -97,13 +95,11 @@ const ChatSidebar = () => {
     }));
   };
   
-  // Handle creating a new project
   const handleNewProject = (e) => {
-    e.stopPropagation(); // Prevent triggering the parent collapsible
+    e.stopPropagation();
     setNewProjectDialogOpen(true);
   };
   
-  // Create new project handler
   const createNewProject = () => {
     if (!newProjectName.trim()) {
       toast({
@@ -123,7 +119,6 @@ const ChatSidebar = () => {
     
     setUserProjects(prev => [...prev, newProject]);
     
-    // Update project states to include the new project
     setProjectStates(prev => ({
       ...prev,
       [newProjectName]: false
@@ -138,9 +133,7 @@ const ChatSidebar = () => {
     });
   };
   
-  // Handle start new chat
   const handleNewChat = () => {
-    // Navigate to chat page with a new empty chat
     navigate('/');
     toast({
       title: "New Chat",
@@ -148,13 +141,11 @@ const ChatSidebar = () => {
     });
   };
   
-  // Toggle search mode
   const toggleSearch = () => {
     setIsSearching(!isSearching);
     setSearchQuery('');
     setSearchResults({ projects: [], chats: [] });
     
-    // Focus search input when search is enabled
     if (!isSearching && searchInputRef.current) {
       setTimeout(() => {
         searchInputRef.current.focus();
@@ -162,7 +153,6 @@ const ChatSidebar = () => {
     }
   };
   
-  // Search function
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
@@ -172,13 +162,11 @@ const ChatSidebar = () => {
       return;
     }
     
-    // Search projects
     const filteredProjects = userProjects.filter(project => 
       project.title.toLowerCase().includes(query) ||
       project.subItems.some(item => item.title.toLowerCase().includes(query))
     );
     
-    // Get matching sub-items for matched projects
     const matchedProjects = filteredProjects.map(project => ({
       ...project,
       subItems: project.subItems.filter(item => 
@@ -186,7 +174,6 @@ const ChatSidebar = () => {
       )
     }));
     
-    // Search chat history
     const filteredChats = chatHistory.filter(chat => 
       chat.title.toLowerCase().includes(query)
     );
@@ -257,7 +244,6 @@ const ChatSidebar = () => {
       
       <SidebarContent>
         {searchQuery ? (
-          // Display search results
           <div className="px-2 py-2">
             <div className="text-xs text-muted-foreground mb-2">
               Search results for "{searchQuery}"
@@ -321,7 +307,6 @@ const ChatSidebar = () => {
             )}
           </div>
         ) : (
-          // Display normal sidebar content
           <>
             <SidebarGroup>
               <SidebarGroupContent>
@@ -455,16 +440,6 @@ const ChatSidebar = () => {
         )}
       </SidebarContent>
       
-      <SidebarFooter className="border-t p-4">
-        <div className="flex items-center">
-          <ProfileMenu />
-          <div className="ml-3 truncate">
-            <p className="text-sm font-medium truncate">{user?.email || 'User'}</p>
-          </div>
-        </div>
-      </SidebarFooter>
-      
-      {/* New Project Dialog */}
       <Dialog open={newProjectDialogOpen} onOpenChange={setNewProjectDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

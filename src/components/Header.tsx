@@ -1,7 +1,10 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, LogIn, UserPlus } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Button } from '@/components/ui/button';
+import ProfileMenu from '@/components/ProfileMenu';
 
 interface HeaderProps {
   title?: string;
@@ -17,9 +20,18 @@ const Header: React.FC<HeaderProps> = ({
   showNotifications = false,
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleBack = () => {
     navigate(-1);
+  };
+
+  const handleLogin = () => {
+    navigate('/login');
+  };
+
+  const handleSignUp = () => {
+    navigate('/signup');
   };
 
   return (
@@ -40,7 +52,31 @@ const Header: React.FC<HeaderProps> = ({
         </div>
         
         <div className="flex items-center space-x-3">
-          {/* Menu and notification icons have been removed as requested */}
+          {user ? (
+            <ProfileMenu />
+          ) : (
+            <>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleLogin}
+                className="flex items-center gap-1"
+              >
+                <LogIn className="h-4 w-4" />
+                <span>Log in</span>
+              </Button>
+              
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={handleSignUp}
+                className="flex items-center gap-1"
+              >
+                <UserPlus className="h-4 w-4" />
+                <span>Sign up</span>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>
