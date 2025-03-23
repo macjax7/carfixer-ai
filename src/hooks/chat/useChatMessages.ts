@@ -49,10 +49,7 @@ export const useChatMessages = () => {
       }));
   };
   
-  // Enhanced resetChat function to properly clear the chat
   const resetChat = () => {
-    // In a complete implementation, we would save the messages to history here
-    // For now, we'll just clear the current messages and history
     setMessages([]);
     setMessageHistory([]);
   };

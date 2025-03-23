@@ -1,8 +1,6 @@
 
 import { useMessageHandlers } from './useMessageHandlers';
 import { useSuggestedPrompts } from './useSuggestedPrompts';
-import { useState, useCallback } from 'react';
-import { useToast } from '@/components/ui/use-toast';
 
 export const useChat = () => {
   const {
@@ -18,25 +16,20 @@ export const useChat = () => {
     resetChat
   } = useMessageHandlers();
   
-  const { toast } = useToast();
   const { suggestedPrompts } = useSuggestedPrompts();
   
   // Check if we can create a new chat (only if the current chat has messages)
   const canCreateNewChat = messages.length > 0;
   
   // Handle starting a new chat
-  const handleNewChat = useCallback(() => {
+  const handleNewChat = () => {
     if (canCreateNewChat) {
-      // In a real app, this would save the current chat to history
-      // For now, just reset the current chat
-      resetChat();
+      // TODO: In a real app, this would save the current chat to history
       
-      toast({
-        title: "New Chat",
-        description: "Started a new chat session",
-      });
+      // Reset the current chat
+      resetChat();
     }
-  }, [canCreateNewChat, resetChat, toast]);
+  };
   
   return {
     messages,
