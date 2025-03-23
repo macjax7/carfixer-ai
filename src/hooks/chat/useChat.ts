@@ -1,7 +1,7 @@
 
 import { useMessageHandlers } from './useMessageHandlers';
 import { useSuggestedPrompts } from './useSuggestedPrompts';
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
 export const useChat = () => {
