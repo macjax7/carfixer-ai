@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useOpenAI } from '@/utils/openai/hook';
 import { nanoid } from 'nanoid';
-import { Message } from './types';
+import { Message } from '@/components/chat/types';
 
 export const useImageHandler = (addMessageToChat: (message: Message) => void) => {
   const [isProcessingImage, setIsProcessingImage] = useState(false);

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useOpenAI } from '@/utils/openai/hook';
 import { nanoid } from 'nanoid';
-import { Message } from './types';
+import { Message } from '@/components/chat/types';
 
 export const useListingHandler = (addMessageToChat: (message: Message) => void) => {
   const [isProcessingListing, setIsProcessingListing] = useState(false);

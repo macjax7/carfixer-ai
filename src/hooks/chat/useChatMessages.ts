@@ -3,17 +3,28 @@ import { useState, useEffect, useCallback } from 'react';
 import { nanoid } from 'nanoid';
 import { Message } from '@/components/chat/types';
 import { ChatMessage } from '@/utils/openai/types';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthContext';
+import { useChatStorage } from './useChatStorage';
+import { useChatSubscription } from './useChatSubscription';
+import { UseChatMessagesResult } from './types';
 
-export const useChatMessages = () => {
+export const useChatMessages = (): UseChatMessagesResult => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageHistory, setMessageHistory] = useState<string[]>([]);
   const [chatId, setChatId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
+
+  const {
+    createChatSession,
+    storeUserMessage,
+    storeAIMessage,
+    fetchLastChatSession,
+    fetchChatMessages
+  } = useChatStorage(chatId, setChatId);
   
-  // Load messages from database if user is logged in
+  // Set up subscription to real-time updates
+  useChatSubscription(chatId, setMessages, setMessageHistory);
+  
+  // Load initial messages
   useEffect(() => {
     const loadMessages = async () => {
       try {
@@ -27,36 +38,13 @@ export const useChatMessages = () => {
         setIsLoading(true);
         
         // Get the most recent chat session
-        const { data: chatSession, error: sessionError } = await supabase
-          .from('chat_sessions')
-          .select('*')
-          .eq('user_id', session.session.user.id)
-          .order('updated_at', { ascending: false })
-          .limit(1)
-          .single();
-        
-        if (sessionError && sessionError.code !== 'PGRST116') {
-          console.error("Error loading chat session:", sessionError);
-          setChatId(nanoid());
-          setIsLoading(false);
-          return;
-        }
+        const chatSession = await fetchLastChatSession();
         
         if (chatSession) {
           setChatId(chatSession.id);
           
           // Load messages for this session
-          const { data: chatMessages, error: messagesError } = await supabase
-            .from('chat_messages')
-            .select('*')
-            .eq('session_id', chatSession.id)
-            .order('created_at', { ascending: true });
-          
-          if (messagesError) {
-            console.error("Error loading chat messages:", messagesError);
-            setIsLoading(false);
-            return;
-          }
+          const chatMessages = await fetchChatMessages(chatSession.id);
           
           if (chatMessages && chatMessages.length > 0) {
             const formattedMessages = chatMessages.map(msg => ({
@@ -89,113 +77,30 @@ export const useChatMessages = () => {
     };
     
     loadMessages();
-    
-    // Set up subscription for real-time chat message updates
-    const setupMessageSubscription = async () => {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session?.user) return null;
-      
-      const subscription = supabase
-        .channel('chat-messages-changes')
-        .on('postgres_changes', 
-          { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'chat_messages',
-          }, 
-          (payload) => {
-            // Only update if the message is for the current chat session
-            if (payload.new && payload.new.session_id === chatId) {
-              const newMsg = {
-                id: payload.new.id,
-                sender: payload.new.role === 'user' ? 'user' as const : 'ai' as const,
-                text: payload.new.content,
-                timestamp: new Date(payload.new.created_at),
-                image: payload.new.image_url
-              };
-              
-              setMessages(prevMessages => {
-                // Check if the message is already in the array to avoid duplicates
-                if (!prevMessages.some(msg => msg.id === newMsg.id)) {
-                  return [...prevMessages, newMsg];
-                }
-                return prevMessages;
-              });
-              
-              if (payload.new.role === 'user') {
-                setMessageHistory(prev => [...prev, payload.new.content]);
-              }
-            }
-          }
-        )
-        .subscribe();
-        
-      return subscription;
-    };
-    
-    const subscriptionPromise = setupMessageSubscription();
-    
-    return () => {
-      // Clean up subscription
-      subscriptionPromise.then(sub => {
-        if (sub) {
-          supabase.removeChannel(sub);
-        }
-      });
-    };
-  }, [user?.id]); // Only depend on user.id to prevent re-running on every render
+  }, []); // Empty dependency array to run only once on mount
   
   const addUserMessage = useCallback((messageData: Message) => {
     setMessages(prevMessages => [...prevMessages, messageData]);
     setMessageHistory(prev => [...prev, messageData.text]);
     
     // Store the message in the database if user is logged in
-    (async () => {
-      try {
-        const { data: session } = await supabase.auth.getSession();
-        if (session.session?.user && chatId) {
-          await supabase
-            .from('chat_messages')
-            .insert({
-              id: messageData.id,
-              session_id: chatId,
-              role: 'user',
-              content: messageData.text,
-              image_url: messageData.image
-            });
-        }
-      } catch (error) {
-        console.error("Error storing user message:", error);
-      }
-    })();
+    if (chatId) {
+      storeUserMessage(messageData, chatId);
+    }
     
     return messageData;
-  }, [chatId]);
+  }, [chatId, storeUserMessage]);
   
   const addAIMessage = useCallback((messageData: Message) => {
     setMessages(prev => [...prev, messageData]);
     
     // Store AI response in the database if user is logged in
-    (async () => {
-      try {
-        const { data: session } = await supabase.auth.getSession();
-        if (session.session?.user && chatId) {
-          await supabase
-            .from('chat_messages')
-            .insert({
-              id: messageData.id,
-              session_id: chatId,
-              role: 'assistant',
-              content: messageData.text
-            });
-        }
-      } catch (error) {
-        console.error("Error storing AI message:", error);
-      }
-    })();
+    if (chatId) {
+      storeAIMessage(messageData, chatId);
+    }
     
     return messageData;
-  }, [chatId]);
+  }, [chatId, storeAIMessage]);
   
   const getMessagesForAPI = useCallback((userMessage: Message): ChatMessage[] => {
     return messages
@@ -234,3 +139,6 @@ export const useChatMessages = () => {
     setChatId
   };
 };
+
+// Need to import supabase for the useEffect
+import { supabase } from '@/integrations/supabase/client';

@@ -1,162 +1,165 @@
 
-import React, { useState, ReactNode, useEffect } from 'react';
-import { VehicleContext } from '@/context/VehicleContext';
-import { Vehicle } from '@/types/vehicle';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/AuthContext';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  fetchVehicles, 
-  addVehicleToSupabase, 
-  removeVehicleFromSupabase, 
-  updateVehicleInSupabase,
-  subscribeToVehicleChanges
-} from '@/services/vehicleService';
+import { VehicleContext } from '@/context/VehicleContext';
+import { Vehicle, VehicleContextType } from '@/types/vehicle';
+import { useAuth } from '@/context/AuthContext';
+import { nanoid } from 'nanoid';
 
-interface VehicleProviderProps {
-  children: ReactNode;
-}
-
-export const VehicleProvider: React.FC<VehicleProviderProps> = ({ children }) => {
+export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
   const { user } = useAuth();
-  
-  // Fetch vehicles from Supabase when user changes
+
+  // Fetch vehicles when user changes
   useEffect(() => {
-    const loadVehicles = async () => {
+    const fetchVehicles = async () => {
       if (!user) {
         setVehicles([]);
         setSelectedVehicle(null);
         setLoading(false);
         return;
       }
-      
+
       try {
         setLoading(true);
-        const formattedVehicles = await fetchVehicles(user.id);
-        setVehicles(formattedVehicles);
+        const { data, error } = await supabase
+          .from('vehicles')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        setVehicles(data || []);
         
-        // Set the first vehicle as selected if there is one and no current selection
-        if (formattedVehicles.length > 0 && !selectedVehicle) {
-          setSelectedVehicle(formattedVehicles[0]);
-        } else if (selectedVehicle) {
-          // Update selected vehicle if it exists in the new list
-          const updatedSelected = formattedVehicles.find(v => v.id === selectedVehicle.id);
-          setSelectedVehicle(updatedSelected || (formattedVehicles.length > 0 ? formattedVehicles[0] : null));
+        // Select the first vehicle if available and none is selected
+        if (data && data.length > 0 && !selectedVehicle) {
+          setSelectedVehicle(data[0]);
         }
       } catch (error) {
         console.error('Error fetching vehicles:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load your vehicles. Please try again.",
-          variant: "destructive"
-        });
       } finally {
         setLoading(false);
       }
     };
+
+    fetchVehicles();
+
+    // Set up real-time subscription for vehicles
+    let subscription: any = null;
     
-    loadVehicles();
-    
-    // Setup subscription for real-time updates
-    const subscription = subscribeToVehicleChanges(user?.id, loadVehicles);
-      
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, [user, toast, selectedVehicle]);
-  
-  const addVehicle = async (vehicle: Omit<Vehicle, 'id'>) => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to add a vehicle",
-        variant: "destructive"
-      });
-      return;
+    if (user) {
+      subscription = supabase
+        .channel('vehicles-changes')
+        .on('postgres_changes', 
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'vehicles',
+            filter: `user_id=eq.${user.id}`
+          }, 
+          () => {
+            fetchVehicles();
+          }
+        )
+        .subscribe();
     }
-    
+
+    return () => {
+      if (subscription) {
+        supabase.removeChannel(subscription);
+      }
+    };
+  }, [user]);
+
+  // Add a new vehicle
+  const addVehicle = useCallback(async (vehicle: Omit<Vehicle, 'id'>) => {
+    if (!user) return;
+
+    const newVehicle = {
+      ...vehicle,
+      id: nanoid(),
+      user_id: user.id,
+      created_at: new Date().toISOString()
+    };
+
     try {
-      await addVehicleToSupabase(user, vehicle);
+      const { error } = await supabase
+        .from('vehicles')
+        .insert([newVehicle]);
+
+      if (error) throw error;
       
-      toast({
-        title: "Vehicle Added",
-        description: `${vehicle.make} ${vehicle.model} has been added to your vehicles`
-      });
-      
-      // Local state update handled by the subscription
+      // We don't need to update state manually since the real-time subscription will do it
     } catch (error) {
       console.error('Error adding vehicle:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add vehicle. Please try again.",
-        variant: "destructive"
-      });
     }
-  };
-  
-  const removeVehicle = async (id: string) => {
-    if (!user) return;
-    
+  }, [user]);
+
+  // Remove a vehicle
+  const removeVehicle = useCallback(async (id: string) => {
     try {
-      await removeVehicleFromSupabase(user.id, id);
+      const { error } = await supabase
+        .from('vehicles')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // If the deleted vehicle was selected, select another one
+      if (selectedVehicle?.id === id) {
+        const remainingVehicles = vehicles.filter(v => v.id !== id);
+        setSelectedVehicle(remainingVehicles.length > 0 ? remainingVehicles[0] : null);
+      }
       
-      toast({
-        title: "Vehicle Removed",
-        description: "Vehicle has been removed from your account"
-      });
-      
-      // Local state update handled by the subscription
+      // We don't need to update vehicles state manually since the real-time subscription will do it
     } catch (error) {
       console.error('Error removing vehicle:', error);
-      toast({
-        title: "Error",
-        description: "Failed to remove vehicle. Please try again.",
-        variant: "destructive"
-      });
     }
-  };
-  
-  const updateVehicle = async (id: string, updatedVehicle: Partial<Vehicle>) => {
-    if (!user) return;
-    
+  }, [selectedVehicle, vehicles]);
+
+  // Update a vehicle
+  const updateVehicle = useCallback(async (id: string, updates: Partial<Vehicle>) => {
     try {
-      await updateVehicleInSupabase(user.id, id, updatedVehicle);
+      const { error } = await supabase
+        .from('vehicles')
+        .update(updates)
+        .eq('id', id);
+
+      if (error) throw error;
       
-      toast({
-        title: "Vehicle Updated",
-        description: "Vehicle information has been updated"
-      });
+      // Update the selected vehicle if it's the one being updated
+      if (selectedVehicle?.id === id) {
+        setSelectedVehicle(prev => prev ? { ...prev, ...updates } : null);
+      }
       
-      // Local state update handled by the subscription
+      // We don't need to update vehicles state manually since the real-time subscription will do it
     } catch (error) {
       console.error('Error updating vehicle:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update vehicle. Please try again.",
-        variant: "destructive"
-      });
     }
+  }, [selectedVehicle]);
+
+  // Select a vehicle
+  const selectVehicle = useCallback((id: string) => {
+    const vehicle = vehicles.find(v => v.id === id) || null;
+    setSelectedVehicle(vehicle);
+  }, [vehicles]);
+
+  // Create the context value object
+  const contextValue: VehicleContextType = {
+    vehicles,
+    selectedVehicle,
+    addVehicle,
+    removeVehicle,
+    updateVehicle,
+    selectVehicle,
+    loading
   };
-  
-  const selectVehicle = (id: string) => {
-    const vehicle = vehicles.find(v => v.id === id);
-    setSelectedVehicle(vehicle || null);
-  };
-  
+
   return (
-    <VehicleContext.Provider value={{
-      vehicles,
-      selectedVehicle,
-      addVehicle,
-      removeVehicle,
-      updateVehicle,
-      selectVehicle,
-      loading
-    }}>
+    <VehicleContext.Provider value={contextValue}>
       {children}
     </VehicleContext.Provider>
   );
