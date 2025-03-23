@@ -69,24 +69,69 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({
     }
   }, [isLeftArrowHovering, isRightArrowHovering, api]);
   
-  // Show only 3 prompts at a time in a single row
-  const visiblePrompts = prompts.slice(0, 3);
-  
   return (
-    <div className="flex flex-col gap-3 items-center justify-center w-full animate-fade-in">
-      {/* Show only a single row with 3 prompts */}
-      <div className="flex flex-wrap gap-2 justify-center">
-        {visiblePrompts.map((prompt, index) => (
-          <Button
-            key={index}
-            onClick={() => handleSuggestedPrompt(prompt)}
-            variant="outline"
-            className="text-sm h-auto py-2 px-4 bg-secondary/50 hover:bg-secondary/80 text-foreground rounded-full transition-all duration-200 border border-border/30 hover:border-border/60 whitespace-nowrap"
-          >
-            {prompt}
-          </Button>
-        ))}
-      </div>
+    <div 
+      className="flex flex-col gap-3 items-center justify-center w-full animate-fade-in"
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
+      <Carousel
+        opts={{
+          align: 'start',
+          loop: true,
+        }}
+        plugins={[
+          AutoplayPlugin(autoplayOptions, (autoplay) => {
+            autoplayRef.current = autoplay;
+          }),
+        ]}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+        setApi={setApi}
+        className="w-full max-w-md relative"
+      >
+        <CarouselContent className="py-2">
+          {prompts.map((prompt, index) => (
+            <CarouselItem key={index} className="basis-auto">
+              <Button
+                onClick={() => handleSuggestedPrompt(prompt)}
+                variant="outline"
+                className="text-sm h-auto py-2 px-4 bg-secondary/50 hover:bg-secondary/80 text-foreground rounded-full transition-all duration-200 border border-border/30 hover:border-border/60 whitespace-nowrap"
+              >
+                {prompt}
+              </Button>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        
+        <div 
+          className={cn(
+            "absolute left-0 top-1/2 -translate-y-1/2 size-8 flex items-center justify-center rounded-full transition-opacity duration-200",
+            !isHovering && "opacity-0", 
+            isHovering && "opacity-100 cursor-pointer",
+            isLeftArrowHovering && "bg-secondary/70"
+          )}
+          onMouseEnter={() => setIsLeftArrowHovering(true)}
+          onMouseLeave={() => setIsLeftArrowHovering(false)}
+          onClick={() => api?.scrollPrev()}
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </div>
+        
+        <div 
+          className={cn(
+            "absolute right-0 top-1/2 -translate-y-1/2 size-8 flex items-center justify-center rounded-full transition-opacity duration-200",
+            !isHovering && "opacity-0", 
+            isHovering && "opacity-100 cursor-pointer",
+            isRightArrowHovering && "bg-secondary/70"
+          )}
+          onMouseEnter={() => setIsRightArrowHovering(true)}
+          onMouseLeave={() => setIsRightArrowHovering(false)}
+          onClick={() => api?.scrollNext()}
+        >
+          <ChevronRight className="h-5 w-5" />
+        </div>
+      </Carousel>
     </div>
   );
 };

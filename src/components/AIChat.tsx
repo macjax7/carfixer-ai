@@ -80,13 +80,13 @@ const AIChat: React.FC = () => {
     <div className={`flex flex-col h-full bg-background ${isEmptyChat ? 'justify-center' : ''}`}>
       {/* Welcome message when no messages exist */}
       {isEmptyChat ? (
-        <div className="flex-1 flex flex-col items-center justify-center px-4 animate-fade-in max-w-3xl mx-auto w-full" style={{ marginTop: '-10vh' }}>
+        <div className="flex-1 flex flex-col items-center justify-center px-4 animate-fade-in max-w-3xl mx-auto w-full" style={{ marginTop: '-15vh' }}>
           <h1 className="text-4xl font-semibold text-foreground text-center mb-8">
             How can I help with your vehicle?
           </h1>
           
           {/* Input form for empty state - centered position */}
-          <div className="w-full max-w-3xl px-4 sm:px-0">
+          <div className="w-full max-w-2xl px-4 sm:px-0">
             <ChatInput
               input={input}
               setInput={setInput}
@@ -97,7 +97,7 @@ const AIChat: React.FC = () => {
             />
             
             {/* Show suggested prompts below the input in empty chat state */}
-            <div className="mt-4">
+            <div className="mt-6">
               <SuggestedPrompts 
                 handleSuggestedPrompt={handleSuggestedPrompt}
                 prompts={suggestedPrompts}
