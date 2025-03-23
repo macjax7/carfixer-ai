@@ -1,9 +1,10 @@
 
 import { useContext } from 'react';
 import { VehicleContext } from '@/context/VehicleContext';
+import { VehicleContextType } from '@/types/vehicle';
 
 // Default empty vehicle implementation for when no provider is present
-const defaultVehicleContext = {
+const defaultVehicleContext: VehicleContextType = {
   vehicles: [],
   selectedVehicle: null,
   addVehicle: async () => {},

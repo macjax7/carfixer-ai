@@ -1,65 +1,59 @@
 
-import { useToast } from '@/components/ui/use-toast';
-import { useChatMessages } from './useChatMessages';
-import { useMessageInput } from './useMessageInput';
-import { useOpenAI } from '@/utils/openai';
+import { useState } from 'react';
+import { useOpenAI } from '@/utils/openai/hook';
+import { nanoid } from 'nanoid';
+import { Message } from './types';
 
-export const useListingHandler = () => {
-  const { toast } = useToast();
+export const useListingHandler = (addMessageToChat: (message: Message) => void) => {
+  const [isProcessingListing, setIsProcessingListing] = useState(false);
   const { analyzeListing } = useOpenAI();
-  const { addUserMessage, addAIMessage } = useChatMessages();
-  const { setInput, isLoading, setIsLoading } = useMessageInput();
 
   const handleListingAnalysis = async (url: string) => {
-    if (isLoading) return;
+    if (!url) return;
     
-    const userMessage = addUserMessage(`Can you analyze this vehicle listing? ${url}`);
-    
-    setInput('');
-    setIsLoading(true);
+    setIsProcessingListing(true);
     
     try {
-      const listingData = await analyzeListing(url);
+      // Add the user message to the chat
+      const userMessage: Message = {
+        id: nanoid(),
+        sender: 'user',
+        text: `Can you analyze this vehicle listing? ${url}`,
+        timestamp: new Date().toISOString()
+      };
       
-      if (listingData.extractionFailed || listingData.unreliableExtraction) {
-        console.warn('Vehicle data extraction failed or was unreliable:', listingData);
-        
-        addAIMessage(`I couldn't reliably extract information from this vehicle listing. ${listingData.errorMessage || 'The URL may be invalid, require authentication, or the listing format is not supported.'}
-        
-If you'd like me to analyze a vehicle, you can:
-1. Try a different listing URL from a supported platform (CarGurus, Autotrader, Facebook Marketplace, Craigslist, etc.)
-2. Or tell me about the vehicle directly by providing the year, make, model, mileage, and price.`);
-        
-        return;
-      }
+      addMessageToChat(userMessage);
       
-      addAIMessage("I've analyzed this vehicle listing for you. Here's what I found:", {
-        vehicleListingAnalysis: {
-          url,
-          ...listingData
-        }
-      });
+      // Process the listing with AI
+      const listing = await analyzeListing(url);
+      
+      // Create a message with the listing analysis
+      const aiMessage: Message = {
+        id: nanoid(),
+        sender: 'assistant',
+        text: listing?.summary || 'I couldn\'t analyze this listing. Please check the URL and try again.',
+        timestamp: new Date().toISOString(),
+        vehicleListingAnalysis: listing
+      };
+      
+      addMessageToChat(aiMessage);
     } catch (error) {
-      console.error('Error analyzing vehicle listing:', error);
+      console.error('Error analyzing listing:', error);
       
-      let errorMessage = "Sorry, I couldn't analyze that vehicle listing. Please try again with a different URL.";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
+      // Add error message
+      addMessageToChat({
+        id: nanoid(),
+        sender: 'assistant',
+        text: 'Sorry, I encountered an error analyzing this listing. Please check the URL and try again.',
+        timestamp: new Date().toISOString()
       });
-      
-      addAIMessage(`I couldn't analyze that vehicle listing. ${error instanceof Error ? error.message : 'The URL may be invalid or not from a supported platform.'}
-      
-Try pasting a direct link to a vehicle listing from platforms like Craigslist, Facebook Marketplace, CarGurus, AutoTrader, etc. Make sure the listing is publicly accessible and doesn't require login credentials to view.`);
     } finally {
-      setIsLoading(false);
+      setIsProcessingListing(false);
     }
   };
-
-  return { handleListingAnalysis };
+  
+  return {
+    handleListingAnalysis,
+    isProcessingListing
+  };
 };

@@ -1,53 +1,62 @@
 
-import { useToast } from '@/components/ui/use-toast';
-import { useChatMessages } from './useChatMessages';
-import { useMessageInput } from './useMessageInput';
-import { useOpenAI } from '@/utils/openai';
+import { useState } from 'react';
+import { useOpenAI } from '@/utils/openai/hook';
+import { nanoid } from 'nanoid';
+import { Message } from './types';
 
-export const useImageHandler = () => {
-  const { toast } = useToast();
+export const useImageHandler = (addMessageToChat: (message: Message) => void) => {
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const { identifyPart } = useOpenAI();
-  const { addUserMessage, addAIMessage } = useChatMessages();
-  const { input, setInput, isLoading, setIsLoading } = useMessageInput();
 
-  const handleImageUpload = async (file: File) => {
-    if (isLoading) return;
+  const handleImageUpload = async (imageFile: File, userPrompt: string = '') => {
+    if (!imageFile) return;
     
-    const userPrompt = input.trim() || "Can you identify this car part?";
-    const userMessage = addUserMessage(userPrompt, URL.createObjectURL(file));
-    
-    setInput('');
-    setIsLoading(true);
+    setIsProcessingImage(true);
     
     try {
-      let prompt = userPrompt;
-      if (!prompt.toLowerCase().includes("identify") && !prompt.toLowerCase().includes("what")) {
-        prompt = `Identify this car part: ${prompt}`;
-      }
+      // Create a local URL for the image
+      const imageUrl = URL.createObjectURL(imageFile);
       
-      const imageUrl = URL.createObjectURL(file);
-      const analysis = await identifyPart(imageUrl, prompt);
+      // Add the user message with image to the chat
+      const userMessage: Message = {
+        id: nanoid(),
+        sender: 'user',
+        text: userPrompt || 'Can you identify this part?',
+        timestamp: new Date().toISOString(),
+        image: imageUrl
+      };
       
-      addAIMessage(analysis);
+      addMessageToChat(userMessage);
+      
+      // Process the image with AI
+      const response = await identifyPart(imageUrl);
+      
+      // Create the AI response message
+      const aiMessage: Message = {
+        id: nanoid(),
+        sender: 'assistant',
+        text: response || 'I couldn\'t identify this part. Could you provide a clearer image?',
+        timestamp: new Date().toISOString()
+      };
+      
+      addMessageToChat(aiMessage);
     } catch (error) {
-      console.error('Error analyzing image:', error);
+      console.error('Error processing image:', error);
       
-      let errorMessage = "Sorry, I couldn't analyze the image. Please try again.";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
+      // Add error message
+      addMessageToChat({
+        id: nanoid(),
+        sender: 'assistant',
+        text: 'Sorry, I encountered an error analyzing your image. Please try again.',
+        timestamp: new Date().toISOString()
       });
-      
-      addAIMessage("I couldn't analyze that image. Please try again with a clearer picture of the car part.");
     } finally {
-      setIsLoading(false);
+      setIsProcessingImage(false);
     }
   };
-
-  return { handleImageUpload };
+  
+  return {
+    handleImageUpload,
+    isProcessingImage
+  };
 };
