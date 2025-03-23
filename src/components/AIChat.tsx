@@ -77,7 +77,7 @@ const AIChat: React.FC = () => {
   };
   
   return (
-    <div className={`flex flex-col h-full bg-background pt-14 ${isEmptyChat ? 'justify-between' : ''}`}>
+    <div className={`flex flex-col h-full bg-background pt-8 ${isEmptyChat ? 'justify-between' : ''}`}>
       {/* Welcome message when no messages exist */}
       {isEmptyChat ? (
         <div className="flex-1 flex flex-col items-center justify-center px-4 animate-fade-in">
@@ -117,7 +117,7 @@ const AIChat: React.FC = () => {
         className={`
           border-t border-border bg-background/95 backdrop-blur-sm py-3 px-3 md:px-4
           ${isEmptyChat 
-            ? 'border-t-0 transition-all duration-300 pb-10' 
+            ? 'border-t-0 transition-all duration-300 pb-8' 
             : 'mt-auto transition-all duration-300'
           }
         `}
@@ -134,7 +134,7 @@ const AIChat: React.FC = () => {
           
           {/* Show suggested prompts below the input in empty chat state */}
           {isEmptyChat && (
-            <div className="mt-6">
+            <div className="mt-4">
               <SuggestedPrompts 
                 handleSuggestedPrompt={handleSuggestedPrompt}
                 prompts={suggestedPrompts}

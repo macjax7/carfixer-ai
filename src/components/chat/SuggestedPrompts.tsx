@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import Autoplay from 'embla-carousel-autoplay';
+import AutoplayPlugin from 'embla-carousel-autoplay';
 
 interface SuggestedPromptsProps {
   handleSuggestedPrompt: (prompt: string) => void;
@@ -24,7 +24,7 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({
   const [isHovering, setIsHovering] = useState(false);
   const [isLeftArrowHovering, setIsLeftArrowHovering] = useState(false);
   const [isRightArrowHovering, setIsRightArrowHovering] = useState(false);
-  const autoplayRef = useRef<Autoplay | null>(null);
+  const autoplayRef = useRef<AutoplayPlugin | null>(null);
   const [api, setApi] = useState<any>(null);
   
   // Configure autoplay plugin with slow default speed
@@ -80,7 +80,7 @@ const SuggestedPrompts: React.FC<SuggestedPromptsProps> = ({
           loop: true,
         }}
         plugins={[
-          Autoplay(autoplayOptions)
+          AutoplayPlugin(autoplayOptions)
         ]}
         setApi={(carouselApi) => {
           setApi(carouselApi);
