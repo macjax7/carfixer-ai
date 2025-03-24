@@ -1,29 +1,13 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Settings, Car, PanelLeftClose } from 'lucide-react';
-import { SidebarGroup, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from '@/components/ui/sidebar';
+import { Car, Settings } from 'lucide-react';
+import { SidebarGroup, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 
 const NavigationSection = () => {
-  const { toggleSidebar } = useSidebar();
-
   return (
     <SidebarGroup>
       <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarMenuButton asChild>
-            <NavLink 
-              to="/" 
-              className={({ isActive }) => 
-                isActive ? 'bg-sidebar-accent text-accent-foreground' : ''
-              }
-            >
-              <Home className="h-5 w-5" />
-              <span>Home</span>
-            </NavLink>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-        
         <SidebarMenuItem>
           <SidebarMenuButton asChild>
             <NavLink 
@@ -49,13 +33,6 @@ const NavigationSection = () => {
               <Settings className="h-5 w-5" />
               <span>Settings</span>
             </NavLink>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-        
-        <SidebarMenuItem className="mt-auto lg:hidden">
-          <SidebarMenuButton onClick={toggleSidebar}>
-            <PanelLeftClose className="h-5 w-5" />
-            <span>Collapse</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
