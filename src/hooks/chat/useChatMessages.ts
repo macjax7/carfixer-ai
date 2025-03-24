@@ -1,20 +1,18 @@
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import { Message } from '@/components/chat/types';
 import { useAuth } from '@/context/AuthContext';
 import { useGuestSession } from './useGuestSession';
 import { useRealTimeMessages } from './useRealTimeMessages';
+import { useMessageState } from './useMessageState';
+import { useChatState } from './useChatState';
+import { useChatInitialization } from './useChatInitialization';
 
 export const useChatMessages = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [messageHistory, setMessageHistory] = useState<string[]>([]);
-  const [chatId, setChatId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [chatIdLoaded, setChatIdLoaded] = useState<string | null>(null);
-  const processedMessageIdsRef = useRef<Set<string>>(new Set());
-  
   const { user } = useAuth();
+  
+  // Get session management hooks
   const { 
     loadGuestSession,
     saveGuestSession,
@@ -23,88 +21,45 @@ export const useChatMessages = () => {
     isLoaded
   } = useGuestSession();
   
-  // Initialize chat session
-  useEffect(() => {
-    if (!isLoaded) return;
-    
-    const initializeChat = () => {
-      setIsLoading(true);
-      
-      // For guest users, try to load from localStorage
-      if (!user) {
-        if (hasGuestSession()) {
-          const guestSession = loadGuestSession();
-          if (guestSession) {
-            console.log("Loaded guest session:", guestSession);
-            setChatId(guestSession.chatId);
-            setMessages(guestSession.messages);
-            setMessageHistory(guestSession.messageHistory || []);
-            setChatIdLoaded(guestSession.chatId);
-            
-            // Initialize processed message IDs from loaded messages
-            const processedIds = new Set<string>();
-            guestSession.messages.forEach(msg => processedIds.add(msg.id));
-            processedMessageIdsRef.current = processedIds;
-          } else {
-            // Create a new guest chat ID
-            const newId = generateGuestChatId();
-            console.log("Created new guest chat ID:", newId);
-            setChatId(newId);
-            setChatIdLoaded(newId);
-          }
-        } else {
-          // Create a new guest chat ID
-          const newId = generateGuestChatId();
-          console.log("Created new guest chat ID:", newId);
-          setChatId(newId);
-          setChatIdLoaded(newId);
-        }
-      } else {
-        // For logged in users, we'll load from the database in a separate hook
-        if (!chatId) {
-          const newId = nanoid();
-          console.log("Created new user chat ID:", newId);
-          setChatId(newId);
-          setChatIdLoaded(newId);
-        }
-      }
-      
-      setIsLoading(false);
-    };
-    
-    initializeChat();
-  }, [user, isLoaded, hasGuestSession, loadGuestSession, generateGuestChatId, chatId]);
+  // Use more focused state hooks
+  const {
+    messages,
+    messageHistory,
+    addMessage,
+    resetMessages,
+    updateAllMessages,
+    updateMessageHistory,
+    processedMessageIdsRef
+  } = useMessageState();
   
-  // Create a stable callback function for adding messages
-  const stableAddMessage = useCallback((message: Message) => {
-    // Skip if we've already processed this message
-    if (processedMessageIdsRef.current.has(message.id)) {
-      return;
-    }
-    
-    // Add to processed set
-    processedMessageIdsRef.current.add(message.id);
-    
-    // Add to messages state with functional update to prevent race conditions
-    setMessages(prev => {
-      // Double check to avoid duplicates in case of concurrent updates
-      if (prev.some(msg => msg.id === message.id)) {
-        return prev;
-      }
-      return [...prev, message];
-    });
-  }, []);
+  const {
+    chatId,
+    chatIdLoaded,
+    isLoading,
+    setIsLoading,
+    setChatId,
+    setChatIdLoaded,
+    updateChatId,
+    generateNewChatId
+  } = useChatState();
   
-  // Create a stable callback for updating message history
-  const stableUpdateHistory = useCallback((newHistoryItems: string[]) => {
-    setMessageHistory(prev => [...prev, ...newHistoryItems]);
-  }, []);
+  // Initialize chat based on user status and existing sessions
+  useChatInitialization(
+    isLoaded,
+    hasGuestSession,
+    loadGuestSession,
+    generateGuestChatId,
+    setIsLoading,
+    updateChatId,
+    updateAllMessages,
+    updateMessageHistory
+  );
   
   // Set up real-time subscription with stable callbacks
   useRealTimeMessages(
     chatId,
-    stableAddMessage,
-    stableUpdateHistory
+    addMessage,
+    updateMessageHistory
   );
   
   // Save guest session when messages change
@@ -114,6 +69,7 @@ export const useChatMessages = () => {
     }
   }, [chatId, messages, messageHistory, saveGuestSession, user]);
   
+  // User message handling with deduplication
   const addUserMessage = useCallback((messageData: Message) => {
     console.log("Adding user message:", messageData);
     
@@ -122,63 +78,41 @@ export const useChatMessages = () => {
       return messageData;
     }
     
-    // Add to processed set
-    processedMessageIdsRef.current.add(messageData.id);
+    // Add message (will handle updating processedMessageIdsRef)
+    addMessage(messageData);
     
-    // Use functional update to prevent race conditions
-    setMessages(prevMessages => {
-      // Double check to avoid duplicates
-      if (prevMessages.some(msg => msg.id === messageData.id)) {
-        return prevMessages;
-      }
-      return [...prevMessages, messageData];
-    });
-    
-    setMessageHistory(prev => [...prev, messageData.text]);
     return messageData;
-  }, []);
+  }, [addMessage, processedMessageIdsRef]);
   
+  // AI message handling with deduplication
   const addAIMessage = useCallback((messageData: Message) => {
     console.log("Adding AI message:", messageData);
     
-    // Skip if already processed
+    // Skip if already processed  
     if (processedMessageIdsRef.current.has(messageData.id)) {
       return messageData;
     }
     
-    // Add to processed set
-    processedMessageIdsRef.current.add(messageData.id);
-    
-    // Use functional update to prevent race conditions
-    setMessages(prev => {
-      // Double check to avoid duplicates
-      if (prev.some(msg => msg.id === messageData.id)) {
-        return prev;
-      }
-      return [...prev, messageData];
-    });
+    // Add message (will handle updating processedMessageIdsRef)
+    addMessage(messageData);
     
     return messageData;
-  }, []);
+  }, [addMessage, processedMessageIdsRef]);
   
+  // Reset chat state and generate new ID
   const resetChat = useCallback(() => {
     console.log("Resetting chat");
     
     // Clear messages and history
-    setMessages([]);
-    setMessageHistory([]);
-    
-    // Clear processed message IDs
-    processedMessageIdsRef.current.clear();
+    resetMessages();
     
     // Generate new chat ID
-    const newId = nanoid();
-    setChatId(newId);
-    setChatIdLoaded(newId);
+    const newId = generateNewChatId();
     
     return newId;
-  }, []);
+  }, [resetMessages, generateNewChatId]);
   
+  // Load existing chat by ID
   const loadChatById = useCallback(async (id: string) => {
     if (id === chatIdLoaded) return;
     
@@ -187,21 +121,16 @@ export const useChatMessages = () => {
     
     try {
       // Set chat ID first
-      setChatId(id);
-      setChatIdLoaded(id);
+      updateChatId(id);
       
       // Clear existing messages - they will be loaded via real-time subscription
-      setMessages([]);
-      setMessageHistory([]);
-      
-      // Clear processed message IDs for the new chat
-      processedMessageIdsRef.current.clear();
+      resetMessages();
     } catch (error) {
       console.error("Error loading chat by ID:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [chatIdLoaded]);
+  }, [chatIdLoaded, setIsLoading, updateChatId, resetMessages]);
   
   return {
     messages,
