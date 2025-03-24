@@ -93,12 +93,9 @@ const ChatSidebar = () => {
             />
             
             <SidebarChatHistory 
-              chatHistoryOpen={chatHistoryOpen}
-              setChatHistoryOpen={setChatHistoryOpen}
               chatHistory={chatHistory}
               isLoading={isLoadingChatHistory}
               onSelectChat={handleSelectChat}
-              refreshChatHistory={refreshChatHistory}
             />
           </>
         )}

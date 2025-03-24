@@ -9,12 +9,25 @@ import { cn } from '@/lib/utils';
 interface SidebarChatHistoryProps {
   chatHistory: ChatHistoryItem[];
   isLoading: boolean;
+  chatHistoryOpen?: boolean;
+  setChatHistoryOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  onSelectChat?: (chatId: string) => void;
+  refreshChatHistory?: () => Promise<void>;
 }
 
 const SidebarChatHistory: React.FC<SidebarChatHistoryProps> = ({
   chatHistory,
-  isLoading
+  isLoading,
+  onSelectChat
 }) => {
+  // Handle chat selection
+  const handleChatClick = (chatId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onSelectChat) {
+      onSelectChat(chatId);
+    }
+  };
+
   return (
     <CollapsibleContent className="px-1 py-2">
       {isLoading ? (
@@ -34,6 +47,7 @@ const SidebarChatHistory: React.FC<SidebarChatHistoryProps> = ({
                     isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
                   )
                 }
+                onClick={(e) => handleChatClick(item.id.toString(), e)}
               >
                 <div className="flex-1 overflow-hidden">
                   <p className="truncate">{item.title}</p>
