@@ -69,7 +69,7 @@ const SidebarChatHistory = ({
               <SidebarMenu>
                 {chatHistory.map((chat) => (
                   <SidebarMenuItem key={chat.id}>
-                    <SidebarMenuButton onClick={() => handleChatSelect(chat.id)}>
+                    <SidebarMenuButton onClick={() => handleChatSelect(chat.id.toString())}>
                       <MessageSquare className="h-4 w-4" />
                       <div className="flex flex-col items-start">
                         <span className="truncate max-w-[140px]">{chat.title}</span>

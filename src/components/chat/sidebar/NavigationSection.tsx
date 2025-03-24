@@ -5,7 +5,7 @@ import { Home, Settings, Car, PanelLeftClose } from 'lucide-react';
 import { SidebarGroup, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from '@/components/ui/sidebar';
 
 const NavigationSection = () => {
-  const { collapse } = useSidebar();
+  const { toggleSidebar } = useSidebar();
 
   return (
     <SidebarGroup>
@@ -53,7 +53,7 @@ const NavigationSection = () => {
         </SidebarMenuItem>
         
         <SidebarMenuItem className="mt-auto lg:hidden">
-          <SidebarMenuButton onClick={collapse}>
+          <SidebarMenuButton onClick={toggleSidebar}>
             <PanelLeftClose className="h-5 w-5" />
             <span>Collapse</span>
           </SidebarMenuButton>
