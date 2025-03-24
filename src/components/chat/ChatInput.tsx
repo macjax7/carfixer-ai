@@ -75,6 +75,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
+  // Fix the type mismatch by creating a wrapper function that doesn't require an event parameter
+  const handleSubmitAction = () => {
+    // Create a synthetic event to pass to submitMessage
+    const syntheticEvent = { preventDefault: () => {} } as FormEvent;
+    submitMessage(syntheticEvent);
+  };
+
   return (
     <form onSubmit={handleFormSubmit} className="relative max-w-3xl mx-auto transition-all duration-300 animate-fade-in">
       {selectedImage && (
@@ -101,7 +108,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         <ChatActions
           input={input}
           hasSelectedImage={!!selectedImage}
-          onSubmit={(e) => submitMessage(e as FormEvent)}
+          onSubmit={handleSubmitAction}
           onImageSelected={handleImageSelected}
           onImageRemoved={handleImageRemoved}
           onUrlSubmit={handleUrlSubmit}
