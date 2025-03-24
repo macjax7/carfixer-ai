@@ -1,5 +1,5 @@
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useChatMessages } from "./useChatMessages";
 import { useAuth } from '@/context/AuthContext';
 import { useChatDatabase } from "./useChatDatabase";
@@ -11,8 +11,10 @@ import { useVehicleExtractor } from "./useVehicleExtractor";
 
 export const useMessageSender = () => {
   const { user } = useAuth();
-  const { addUserMessage, addAIMessage, chatId, setChatId } = useChatMessages();
+  const { addUserMessage, addAIMessage, chatId, setChatId, messages } = useChatMessages();
   const { vehicles, selectedVehicle } = useVehicles();
+  const [extractedVehicleContext, setExtractedVehicleContext] = useState<any>(null);
+  
   const { 
     isProcessing, 
     setIsProcessing,
@@ -25,6 +27,21 @@ export const useMessageSender = () => {
   const { handleChatError, handleAIProcessingError } = useErrorHandler();
   const { ensureChatSession, updateSessionTitle } = useChatSession(chatId, setChatId);
   const { extractVehicleInfo } = useVehicleExtractor();
+
+  // Helper function to get vehicle context from messages
+  const getVehicleContextFromMessages = useCallback(() => {
+    // Scan through messages to find vehicle mentions
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const message = messages[i];
+      if (message.sender === 'user') {
+        const extractedInfo = extractVehicleInfo(message.text, selectedVehicle);
+        if (extractedInfo) {
+          return extractedInfo;
+        }
+      }
+    }
+    return null;
+  }, [messages, extractVehicleInfo, selectedVehicle]);
 
   const processAndSendMessage = useCallback(async (text: string, image?: string) => {
     if (!text.trim() && !image) return;
@@ -43,12 +60,19 @@ export const useMessageSender = () => {
       
       // Add user message to the chat UI first, before sending to API
       const userMessageData = processUserMessage(text, image);
-      
-      console.log("Adding user message to chat:", userMessageData);
+      console.log("Adding user message to local UI state:", userMessageData);
       addUserMessage(userMessageData);
       
-      // Extract vehicle information from the message
-      const vehicleInfo = extractVehicleInfo(text, selectedVehicle);
+      // Extract vehicle information from the message and store it
+      const newVehicleInfo = extractVehicleInfo(text, selectedVehicle);
+      if (newVehicleInfo) {
+        console.log("Extracted new vehicle info:", newVehicleInfo);
+        setExtractedVehicleContext(newVehicleInfo);
+      }
+      
+      // Use extracted vehicle info or look through previous messages
+      const vehicleInfo = newVehicleInfo || extractedVehicleContext || getVehicleContextFromMessages();
+      console.log("Using vehicle context for API call:", vehicleInfo);
       
       // Also add it to the database if user is logged in
       if (user && currentChatId) {
@@ -69,7 +93,7 @@ export const useMessageSender = () => {
         // Add AI response to the chat UI
         const aiMessageData = createAIMessage(aiResponseText, aiMessageExtra);
         
-        console.log("Adding AI response to chat:", aiMessageData);
+        console.log("Adding AI response to local UI state:", aiMessageData);
         addAIMessage(aiMessageData);
         
         // Also add it to the database if user is logged in
@@ -111,8 +135,9 @@ export const useMessageSender = () => {
     user, 
     selectedVehicle,
     addUserMessage, 
-    addAIMessage, 
-    processUserMessage, 
+    addAIMessage,
+    messages,
+    processUserMessage,
     processAIResponse, 
     createAIMessage,
     addToChatHistory,
@@ -121,12 +146,15 @@ export const useMessageSender = () => {
     setIsProcessing,
     ensureChatSession,
     updateSessionTitle,
-    extractVehicleInfo
+    extractVehicleInfo,
+    extractedVehicleContext,
+    getVehicleContextFromMessages
   ]);
 
   return {
     processAndSendMessage,
     isProcessing,
-    extractVehicleInfo
+    extractVehicleInfo,
+    extractedVehicleContext
   };
 };

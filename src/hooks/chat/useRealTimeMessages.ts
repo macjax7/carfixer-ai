@@ -49,9 +49,8 @@ export const useRealTimeMessages = (
               addMessage(newMsg);
               
               if (payload.new.role === 'user') {
-                // Fix: pass a string array directly instead of a function
-                const newHistory = [payload.new.content];
-                updateMessageHistory(newHistory);
+                // Get current history from the database to maintain context
+                updateMessageHistory([...payload.new.content]);
               }
             }
           }

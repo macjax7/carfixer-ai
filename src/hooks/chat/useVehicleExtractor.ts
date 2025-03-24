@@ -1,3 +1,4 @@
+
 import { Vehicle } from '@/types/vehicle';
 
 interface VehicleInfo {
@@ -39,7 +40,6 @@ export const useVehicleExtractor = () => {
       const make = makeMatch[0].toLowerCase();
       
       // Attempt to extract model - this is a simplified approach
-      // Would need more sophisticated NLP for production use
       let modelMatch = null;
       
       // Common models by make

@@ -1,4 +1,3 @@
-
 import { corsHeaders, createSuccessResponse, createErrorResponse } from '../utils.ts';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -26,29 +25,31 @@ export async function handleChatRequest(data: any) {
     const dtcCodes = extractDTCCodes(userMessage);
     const hasDTCQuery = dtcCodes.length > 0;
     
-    // If repair or diagnostic query with no vehicle mention, prompt for vehicle
-    if ((isRepairOrDiagnosticQuery || hasDTCQuery) && !hasVehicleMention && !vehicleInfo?.make) {
+    // Only prompt for vehicle if we have no vehicle context AND it's a repair/diagnostic query
+    const hasVehicleContext = vehicleInfo && Object.keys(vehicleInfo).length > 0;
+    
+    if ((isRepairOrDiagnosticQuery || hasDTCQuery) && !hasVehicleMention && !hasVehicleContext) {
       return createSuccessResponse({
         message: generateVehiclePrompt(),
         requestVehicleInfo: true
       });
     }
     
-    // Modified system prompt to be more cautious about assuming vehicle context
+    // Modified system prompt to maintain vehicle context
     let systemPrompt = 'You are CarFix AI, an automotive diagnostic assistant. Provide helpful, accurate advice about vehicle problems, maintenance, and repairs. Always be clear when a repair requires professional help.';
     
-    // Updated to encourage focusing on the specific vehicle mentioned in the query, not just saved vehicles
-    systemPrompt += ' IMPORTANT: Focus on the specific vehicle the user is asking about in their query. If the user has not specified a vehicle and you need vehicle-specific information to provide an accurate answer, politely ask which vehicle they are working on.';
+    // Always include vehicle context if available - don't ask again
+    if (hasVehicleContext) {
+      systemPrompt += ` The user is asking about their ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}. Keep this vehicle in context throughout the entire conversation and do not ask for vehicle information again unless they explicitly mention a different vehicle.`;
+    } else if (hasVehicleMention) {
+      // If they mentioned a vehicle but we don't have structured info, still avoid asking again
+      systemPrompt += ` The user has mentioned a specific vehicle. Don't ask for vehicle information again unless they explicitly mention a different vehicle.`;
+    } else {
+      // Only in this case should we potentially ask for vehicle info
+      systemPrompt += ' If the user has not specified a vehicle and you need vehicle-specific information to provide an accurate answer, politely ask which vehicle they are working on.';
+    }
     
     // Enhanced instructions for OBD codes
-    systemPrompt += ' When you identify OBD-II diagnostic trouble codes (like P0300, B1234, C0123, U0123) in the user\'s message, provide comprehensive analysis including: 1) Code meaning specific to their vehicle, 2) Affected components, 3) Common causes in order of likelihood, 4) Diagnostic steps in order of simplicity, 5) Repair difficulty, 6) Estimated repair costs, 7) Related codes that often appear together, and 8) Preventative measures.';
-    
-    // Only include the user's selected vehicle as context if relevant, but don't assume it's the one they're asking about
-    if (includeVehicleContext && vehicleInfo && Object.keys(vehicleInfo).length > 0) {
-      systemPrompt += ` The user's vehicle is a ${vehicleInfo.year || ''} ${vehicleInfo.make || ''} ${vehicleInfo.model || ''}. Keep this vehicle in the context of the conversation unless they explicitly mention a different vehicle.`;
-    }
-
-    // If the user is asking about DTCs, add the codes to the system prompt
     if (hasDTCQuery) {
       systemPrompt += ` The user is asking about the following diagnostic trouble code(s): ${dtcCodes.join(', ')}. Provide detailed analysis for each.`;
     }
@@ -104,9 +105,7 @@ export async function handleChatRequest(data: any) {
   }
 }
 
-// Helper functions
-
-// Check if the user has mentioned a vehicle in their messages
+// Helper functions - keep these unchanged
 function checkForVehicleMention(currentMessage: string, messageHistory: string[] = []): boolean {
   // Common car makes
   const carMakes = [
@@ -136,7 +135,6 @@ function checkForVehicleMention(currentMessage: string, messageHistory: string[]
   return false;
 }
 
-// Check if the query is about a repair or diagnostic procedure
 function checkForRepairOrDiagnosticQuery(message: string): boolean {
   const repairTerms = [
     'fix', 'repair', 'replace', 'install', 'remove', 'change', 'maintenance',
@@ -160,7 +158,6 @@ function checkForRepairOrDiagnosticQuery(message: string): boolean {
   return repairPattern.test(message) && partPattern.test(message);
 }
 
-// Extract OBD-II codes from user message
 function extractDTCCodes(message: string): string[] {
   // Pattern for OBD-II codes: P, B, C, or U followed by 4 digits
   const dtcPattern = /\b[PBCU][0-9]{4}\b/gi;
@@ -170,7 +167,6 @@ function extractDTCCodes(message: string): string[] {
   return [...new Set(matches.map(code => code.toUpperCase()))];
 }
 
-// Generate a random vehicle prompt
 function generateVehiclePrompt(): string {
   const prompts = [
     "Which vehicle are you working on? I can provide more specific advice if you share the year, make, and model.",
