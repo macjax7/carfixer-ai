@@ -46,6 +46,25 @@ const ChatMessage: React.FC<MessageProps> = ({
   componentDiagram,
   vehicleListingAnalysis
 }) => {
+  // Ensure timestamp is a Date object before using Date methods
+  const formattedTime = (): string => {
+    if (timestamp instanceof Date) {
+      return timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    } else if (typeof timestamp === 'string') {
+      // If timestamp is a string, try to parse it as a date
+      try {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      } catch (e) {
+        console.error('Error parsing timestamp:', e);
+        return ''; // Return empty string if parsing fails
+      }
+    } else {
+      console.error('Invalid timestamp format:', timestamp);
+      return ''; // Return empty string for invalid format
+    }
+  };
+
   return (
     <div 
       className={cn(
@@ -68,7 +87,7 @@ const ChatMessage: React.FC<MessageProps> = ({
       {vehicleListingAnalysis && <VehicleListingAnalysis vehicleListingAnalysis={vehicleListingAnalysis} />}
       
       <p className="text-xs opacity-70 mt-1 text-right">
-        {timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+        {formattedTime()}
       </p>
     </div>
   );

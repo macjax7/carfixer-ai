@@ -37,11 +37,14 @@ export const useChatSubscription = ({
             
             // Only update if the message is for the current chat session
             if (payload.new && payload.new.session_id === chatId) {
+              // Ensure timestamp is always a proper Date object
+              const timestamp = new Date(payload.new.created_at);
+              
               const newMsg: Message = {
                 id: payload.new.id,
                 sender: payload.new.role === 'user' ? 'user' : 'ai',
                 text: payload.new.content,
-                timestamp: new Date(payload.new.created_at),
+                timestamp: timestamp,
                 image: payload.new.image_url
               };
               
