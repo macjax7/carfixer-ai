@@ -2,7 +2,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import { Message } from '@/components/chat/types';
-import { ChatMessage } from '@/utils/openai/types';
 import { useAuth } from '@/context/AuthContext';
 import { useGuestSession } from './useGuestSession';
 import { useRealTimeMessages } from './useRealTimeMessages';
@@ -70,9 +69,10 @@ export const useChatMessages = () => {
     initializeChat();
   }, [user, isLoaded, hasGuestSession, loadGuestSession, generateGuestChatId, chatId]);
   
-  // Set up real-time subscription
-  useRealTimeMessages(chatId, 
-    // Add message callback
+  // Set up real-time subscription - with improved handling
+  useRealTimeMessages(
+    chatId, 
+    // Add message callback - prevent duplicates
     (message) => {
       console.log("Adding message from real-time update:", message);
       setMessages(prev => {
@@ -99,25 +99,28 @@ export const useChatMessages = () => {
   
   const addUserMessage = useCallback((messageData: Message) => {
     console.log("Adding user message:", messageData);
-    setMessages(prevMessages => [...prevMessages, messageData]);
+    setMessages(prevMessages => {
+      // Check if message already exists to avoid duplicates
+      if (prevMessages.some(msg => msg.id === messageData.id)) {
+        return prevMessages;
+      }
+      return [...prevMessages, messageData];
+    });
     setMessageHistory(prev => [...prev, messageData.text]);
     return messageData;
   }, []);
   
   const addAIMessage = useCallback((messageData: Message) => {
     console.log("Adding AI message:", messageData);
-    setMessages(prev => [...prev, messageData]);
+    setMessages(prev => {
+      // Check if message already exists to avoid duplicates
+      if (prev.some(msg => msg.id === messageData.id)) {
+        return prev;
+      }
+      return [...prev, messageData];
+    });
     return messageData;
   }, []);
-  
-  const getMessagesForAPI = useCallback((userMessage: Message): ChatMessage[] => {
-    return messages
-      .concat(userMessage)
-      .map(msg => ({
-        role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
-        content: msg.text
-      }));
-  }, [messages]);
   
   const resetChat = useCallback(() => {
     console.log("Resetting chat");
@@ -158,7 +161,6 @@ export const useChatMessages = () => {
     isLoading,
     addUserMessage,
     addAIMessage,
-    getMessagesForAPI,
     resetChat,
     setChatId,
     loadChatById,

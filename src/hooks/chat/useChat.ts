@@ -6,7 +6,6 @@ import { useImageHandler } from './useImageHandler';
 import { useListingHandler } from './useListingHandler';
 import { useChatMessages } from './useChatMessages';
 import { useMessageSender } from './useMessageSender';
-import { nanoid } from 'nanoid';
 import { Message } from '@/components/chat/types';
 
 export const useChat = () => {

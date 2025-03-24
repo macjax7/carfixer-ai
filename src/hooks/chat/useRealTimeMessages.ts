@@ -1,5 +1,4 @@
-
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Message } from '@/components/chat/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -8,17 +7,25 @@ export const useRealTimeMessages = (
   addMessage: (message: Message) => void,
   updateMessageHistory: (newHistory: string[]) => void
 ) => {
+  // Keep track of subscription with a ref to avoid cleanup issues
+  const subscriptionRef = useRef<any>(null);
+  
   // Set up real-time subscription to chat messages
   useEffect(() => {
     if (!chatId) return;
 
     console.log("Setting up real-time subscription for chat ID:", chatId);
     
-    let subscription: any = null;
+    // Clean up any existing subscription first
+    if (subscriptionRef.current) {
+      console.log("Cleaning up existing subscription before creating new one");
+      supabase.removeChannel(subscriptionRef.current);
+      subscriptionRef.current = null;
+    }
     
     const setupSubscription = async () => {
-      subscription = supabase
-        .channel('chat-messages-changes')
+      const channel = supabase
+        .channel(`chat-messages-${chatId}`) // Use unique channel name to avoid conflicts
         .on('postgres_changes', 
           { 
             event: 'INSERT', 
@@ -57,16 +64,18 @@ export const useRealTimeMessages = (
           console.log("Supabase channel subscription status:", status);
         });
       
-      return subscription;
+      subscriptionRef.current = channel;
+      return channel;
     };
     
     setupSubscription();
     
     return () => {
       // Clean up subscription
-      if (subscription) {
+      if (subscriptionRef.current) {
         console.log("Cleaning up Supabase channel subscription");
-        supabase.removeChannel(subscription);
+        supabase.removeChannel(subscriptionRef.current);
+        subscriptionRef.current = null;
       }
     };
   }, [chatId, addMessage, updateMessageHistory]);

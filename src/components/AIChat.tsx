@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { ScrollArea } from './ui/scroll-area';
 import ChatMessage from './chat/ChatMessage';
 import ChatInput from './chat/ChatInput';
@@ -30,6 +30,8 @@ const AIChat: React.FC = () => {
   const { state } = useSidebar();
   const { vehicles, selectedVehicle } = useVehicles();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [userScrolled, setUserScrolled] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   // Chat state - empty or has messages
   const isEmptyChat = messages.length === 0;
@@ -41,10 +43,31 @@ const AIChat: React.FC = () => {
     }
   }, [chatId, loadChatById, chatIdLoaded]);
   
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages change, but only if not manually scrolled up
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+    if (!userScrolled || messages.length <= 1 || isLoading) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isLoading, userScrolled]);
+  
+  // Reset user scrolled state when a new message is about to be sent
+  useEffect(() => {
+    if (isLoading) {
+      setUserScrolled(false);
+    }
+  }, [isLoading]);
+  
+  // Handle scroll events to detect when user manually scrolls
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const isScrolledUp = scrollHeight - scrollTop - clientHeight > 100;
+    
+    if (isScrolledUp && !userScrolled) {
+      setUserScrolled(true);
+    } else if (!isScrolledUp && userScrolled) {
+      setUserScrolled(false);
+    }
+  };
   
   // Generate vehicle suggestions if the AI has asked for vehicle info
   const getVehicleSuggestions = () => {
@@ -58,6 +81,7 @@ const AIChat: React.FC = () => {
             className="bg-carfix-100 hover:bg-carfix-200 text-carfix-900 px-3 py-1.5 rounded-full text-sm transition-colors"
             onClick={() => {
               setInput(`I'm working on my ${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.nickname ? ` (${vehicle.nickname})` : ''}`);
+              setUserScrolled(false); // Reset scroll state when selecting vehicle
             }}
           >
             {vehicle.year} {vehicle.make} {vehicle.model}
@@ -68,6 +92,7 @@ const AIChat: React.FC = () => {
           className="bg-secondary hover:bg-secondary/80 text-foreground px-3 py-1.5 rounded-full text-sm transition-colors"
           onClick={() => {
             setInput("I'm working on a different vehicle");
+            setUserScrolled(false); // Reset scroll state when selecting vehicle
           }}
         >
           Different vehicle
@@ -108,11 +133,15 @@ const AIChat: React.FC = () => {
       ) : (
         /* Chat messages - show when there are messages */
         <>
-          <ScrollArea className="flex-1 pt-4 px-2 md:px-4 pb-4">
+          <div 
+            className="flex-1 pt-4 px-2 md:px-4 pb-4 overflow-auto" 
+            onScroll={handleScroll}
+            ref={scrollAreaRef}
+          >
             <div className={`max-w-3xl mx-auto space-y-6 pb-4 ${state === 'collapsed' ? 'lg:mx-auto' : 'lg:ml-0 lg:mr-auto'}`}>
-              {messages.map((msg) => (
+              {messages.map((msg, index) => (
                 <ChatMessage 
-                  key={msg.id}
+                  key={`${msg.id}-${index}`} // Using index to force re-render if needed
                   id={msg.id}
                   sender={msg.sender}
                   text={msg.text}
@@ -131,7 +160,7 @@ const AIChat: React.FC = () => {
               
               <div ref={messagesEndRef} />
             </div>
-          </ScrollArea>
+          </div>
           
           {/* Input form - positioned at bottom for active chat */}
           <div className="border-t border-border bg-background/95 backdrop-blur-sm py-4">
@@ -139,9 +168,18 @@ const AIChat: React.FC = () => {
               <ChatInput
                 input={input}
                 setInput={setInput}
-                handleSendMessage={handleSendMessage}
-                handleImageUpload={handleImageUpload}
-                handleListingAnalysis={handleListingAnalysis}
+                handleSendMessage={(e) => {
+                  setUserScrolled(false); // Reset scroll state on send
+                  handleSendMessage(e);
+                }}
+                handleImageUpload={(file, prompt) => {
+                  setUserScrolled(false); // Reset scroll state on image upload
+                  handleImageUpload(file, prompt);
+                }}
+                handleListingAnalysis={(url) => {
+                  setUserScrolled(false); // Reset scroll state on listing analysis
+                  handleListingAnalysis(url);
+                }}
                 isLoading={isLoading}
               />
             </div>
