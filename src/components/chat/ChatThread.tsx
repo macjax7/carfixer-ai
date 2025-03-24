@@ -22,21 +22,31 @@ const ChatThread: React.FC<ChatThreadProps> = ({
   const [userScrolled, setUserScrolled] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const previousMessagesLengthRef = useRef<number>(messages.length);
+  const lastMessageRef = useRef<string | null>(null);
   
-  // Scroll to bottom only when new messages are added or when loading state changes
+  // This effect handles automatic scrolling based on specific conditions
   useEffect(() => {
-    // Only scroll if user hasn't manually scrolled up or when a new message is added
-    if ((!userScrolled || messages.length > previousMessagesLengthRef.current || isLoading) && 
-        messagesEndRef.current) {
+    const currentLastMessage = messages.length > 0 ? messages[messages.length - 1].id : null;
+    const isNewMessage = currentLastMessage !== lastMessageRef.current;
+    
+    // Only auto-scroll if:
+    // 1. There's a new message (not just a re-render)
+    // 2. AND (User hasn't manually scrolled up OR we're loading)
+    if (isNewMessage && (!userScrolled || isLoading) && messagesEndRef.current) {
+      // Use a slight delay to ensure the DOM has updated
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
+      
+      // Update last message reference to prevent duplicate scrolling
+      lastMessageRef.current = currentLastMessage;
     }
-    // Update previous message length after checking
+    
+    // Update previous message length reference
     previousMessagesLengthRef.current = messages.length;
-  }, [messages.length, isLoading, userScrolled]);
+  }, [messages, isLoading, userScrolled]);
   
-  // Reset userScrolled when user sends a new message
+  // Reset userScrolled when user explicitly sends a new message
   useEffect(() => {
     if (isLoading) {
       setUserScrolled(false);

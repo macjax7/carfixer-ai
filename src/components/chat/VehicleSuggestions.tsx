@@ -18,9 +18,10 @@ const VehicleSuggestions: React.FC<VehicleSuggestionsProps> = ({ setUserScrolled
     
     // Create a synthetic event to pass to handleSendMessage
     const syntheticEvent = { preventDefault: () => {} } as React.FormEvent;
+    // Slight delay to ensure state updates before sending
     setTimeout(() => {
       handleSendMessage(syntheticEvent);
-    }, 50);
+    }, 100);
   };
   
   if (vehicles.length === 0) return null;
