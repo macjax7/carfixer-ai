@@ -8,7 +8,6 @@ import { useImageHandler } from './useImageHandler';
 import { useListingHandler } from './useListingHandler';
 import { useChatMessages } from './useChatMessages';
 import { nanoid } from 'nanoid';
-import { ChatHistoryItem } from '@/hooks/chat/sidebar/types';
 import { Message } from '@/components/chat/types';
 
 export const useChat = () => {
@@ -83,7 +82,9 @@ export const useChat = () => {
   }, [resetChatMessages, resetInput]);
   
   // Handle sending a message
-  const handleSendMessage = useCallback(async () => {
+  const handleSendMessage = useCallback(async (e) => {
+    e.preventDefault(); // Ensure form doesn't refresh page
+    
     if (!canSendMessage || !input.trim()) return;
     
     await processAndSendMessage(input);
@@ -99,6 +100,29 @@ export const useChat = () => {
   
   // Combine loading states
   const isLoading = messagesLoading || isProcessing;
+  
+  // Check AI responses for vehicle request patterns
+  useEffect(() => {
+    // Check the last AI message for vehicle request
+    const lastAiMessage = [...messages].reverse().find(msg => msg.sender === 'ai');
+    if (lastAiMessage) {
+      const message = lastAiMessage.text.toLowerCase();
+      if (
+        (message.includes('which vehicle') || 
+         message.includes('what vehicle') || 
+         message.includes('what car') ||
+         message.includes('which car') ||
+         message.includes('make and model') ||
+         message.includes('year, make') ||
+         message.includes('vehicle you')) && 
+        (message.includes('working on') || 
+         message.includes('asking about') ||
+         message.includes('referring to'))
+      ) {
+        setHasAskedForVehicle(true);
+      }
+    }
+  }, [messages]);
   
   return {
     messages,

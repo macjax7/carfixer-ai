@@ -31,7 +31,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if ((input.trim() || selectedImage) && !isLoading) {
-        submitMessage();
+        submitMessage(e);
       }
     }
   };
@@ -59,20 +59,19 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  const submitMessage = () => {
+  const submitMessage = (e: FormEvent) => {
     if (selectedImage && handleImageUpload) {
       handleImageUpload(selectedImage);
       setSelectedImage(null);
     } else if (input.trim()) {
-      const formEvent = new Event('submit') as unknown as FormEvent;
-      handleSendMessage(formEvent);
+      handleSendMessage(e);
     }
   };
 
   const handleFormSubmit = (e: FormEvent) => {
     e.preventDefault();
     if ((input.trim() || selectedImage) && !isLoading) {
-      submitMessage();
+      submitMessage(e);
     }
   };
 
@@ -102,7 +101,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         <ChatActions
           input={input}
           hasSelectedImage={!!selectedImage}
-          onSubmit={submitMessage}
+          onSubmit={(e) => submitMessage(e as FormEvent)}
           onImageSelected={handleImageSelected}
           onImageRemoved={handleImageRemoved}
           onUrlSubmit={handleUrlSubmit}

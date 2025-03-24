@@ -82,13 +82,13 @@ export const useMessageSender = () => {
         }
       }
       
-      // Add user message to the chat
+      // Add user message to the chat UI first, before sending to API
       const userMessageData = processUserMessage(text, image);
       
       console.log("Adding user message to chat:", userMessageData);
       addUserMessage(userMessageData);
       
-      // Also add it to the database
+      // Also add it to the database if user is logged in
       if (user && currentChatId) {
         try {
           await addToChatHistory(currentChatId, userMessageData, 'user');
@@ -104,13 +104,13 @@ export const useMessageSender = () => {
         const { text: aiResponseText, extra: aiMessageExtra } = await processAIResponse(text, image);
         console.log("Received AI response:", aiResponseText?.substring(0, 50) + "...");
         
-        // Add AI response to the chat
+        // Add AI response to the chat UI
         const aiMessageData = createAIMessage(aiResponseText, aiMessageExtra);
         
         console.log("Adding AI response to chat:", aiMessageData);
         addAIMessage(aiMessageData);
         
-        // Also add it to the database
+        // Also add it to the database if user is logged in
         if (user && currentChatId) {
           try {
             await addToChatHistory(currentChatId, aiMessageData, 'assistant');
@@ -125,7 +125,7 @@ export const useMessageSender = () => {
         console.error("AI processing error:", error);
         const errorMessage = handleAIProcessingError(error);
         
-        // Show error message
+        // Show error message in the chat
         const errorMessageData = createAIMessage(errorMessage);
         addAIMessage(errorMessageData);
         
@@ -135,7 +135,7 @@ export const useMessageSender = () => {
       console.error("Error in processAndSendMessage:", error);
       handleChatError(error, "Error processing message");
       
-      // Show error message
+      // Show error message in the chat
       const errorMessageData = createAIMessage(
         "I'm sorry, I encountered an error processing your request. Please try again."
       );
