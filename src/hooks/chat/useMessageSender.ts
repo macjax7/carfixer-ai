@@ -9,12 +9,14 @@ import { useVehicles } from '@/hooks/use-vehicles';
 import { useChatSession } from "./useChatSession";
 import { useVehicleExtractor } from "./useVehicleExtractor";
 import { v4 as uuidv4 } from 'uuid';
+import { useToast } from '@/hooks/use-toast';
 
 export const useMessageSender = () => {
   const { user } = useAuth();
   const { addUserMessage, addAIMessage, chatId, setChatId, messages } = useChatMessages();
   const { vehicles, selectedVehicle } = useVehicles();
   const [vehicleContext, setVehicleContext] = useState<any>(selectedVehicle || null);
+  const { toast } = useToast();
   
   const { 
     isProcessing, 
@@ -75,6 +77,15 @@ export const useMessageSender = () => {
         currentChatId = uuidv4();
         setChatId(currentChatId);
         console.log("Generated new chat ID:", currentChatId);
+      } else {
+        // Ensure chatId is a valid UUID
+        const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(currentChatId);
+        if (!isValidUUID) {
+          console.warn("Current chatId is not a valid UUID:", currentChatId);
+          currentChatId = uuidv4();
+          setChatId(currentChatId);
+          console.log("Generated new UUID-formatted chat ID:", currentChatId);
+        }
       }
       
       // Create or ensure chat ID exists with proper UUID format for authenticated users
@@ -121,6 +132,11 @@ export const useMessageSender = () => {
           console.log("User message added to database with chat ID:", currentChatId);
         } catch (error) {
           console.error("Error adding user message to history:", error);
+          toast({
+            title: "Message Storage Error",
+            description: "Failed to save your message to history. Please try again.",
+            variant: "destructive"
+          });
           // Continue even if this fails
         }
       }
@@ -128,13 +144,14 @@ export const useMessageSender = () => {
       // Process the message and get AI response
       try {
         console.log("Sending message to OpenAI with vehicle context:", effectiveVehicleInfo);
+        
         const { text: aiResponseText, extra: aiMessageExtra } = await processAIResponse(text, image, effectiveVehicleInfo);
         console.log("Received AI response:", aiResponseText?.substring(0, 50) + "...");
         
         // Add AI response to the chat UI with a valid UUID
         const aiMessageId = uuidv4();
         const aiMessageData = {
-          ...createAIMessage(aiResponseText, aiMessageExtra),
+          ...createAIMessage(aiResponseText || "Sorry, I couldn't process your request. Please try again.", aiMessageExtra),
           id: aiMessageId
         };
         
@@ -205,7 +222,8 @@ export const useMessageSender = () => {
     ensureChatSession,
     updateSessionTitle,
     extractVehicleInfo,
-    getVehicleContextFromMessages
+    getVehicleContextFromMessages,
+    toast
   ]);
 
   return {

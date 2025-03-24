@@ -4,9 +4,11 @@ import { Message } from '@/components/chat/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
+import { useToast } from '@/hooks/use-toast';
 
 export const useMessageStorage = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const storeUserMessage = useCallback(async (messageData: Message, sessionId: string) => {
     if (!user || !sessionId) {
@@ -19,6 +21,18 @@ export const useMessageStorage = () => {
       
       // Generate a proper UUID for the message
       const messageId = messageData.id || uuidv4();
+      
+      // Ensure sessionId is a valid UUID
+      const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId);
+      if (!isValidUUID) {
+        console.error("Invalid UUID format for sessionId:", sessionId);
+        toast({
+          title: "Storage Error",
+          description: "Invalid session format. Please refresh the page.",
+          variant: "destructive"
+        });
+        return;
+      }
       
       const { error } = await supabase
         .from('chat_messages')
@@ -39,7 +53,7 @@ export const useMessageStorage = () => {
     } catch (error) {
       console.error("Error storing user message:", error);
     }
-  }, [user]);
+  }, [user, toast]);
 
   const storeAIMessage = useCallback(async (messageData: Message, sessionId: string) => {
     if (!user || !sessionId) {
@@ -52,6 +66,13 @@ export const useMessageStorage = () => {
       
       // Generate a proper UUID for the message
       const messageId = messageData.id || uuidv4();
+      
+      // Ensure sessionId is a valid UUID
+      const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId);
+      if (!isValidUUID) {
+        console.error("Invalid UUID format for sessionId:", sessionId);
+        return;
+      }
       
       const { error } = await supabase
         .from('chat_messages')
@@ -82,6 +103,14 @@ export const useMessageStorage = () => {
     
     try {
       console.log(`Fetching messages for chat session:`, sessionId);
+      
+      // Ensure sessionId is a valid UUID
+      const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId);
+      if (!isValidUUID) {
+        console.error("Invalid UUID format for sessionId in fetchChatMessages:", sessionId);
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from('chat_messages')
         .select('*')

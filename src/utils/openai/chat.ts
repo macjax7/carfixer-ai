@@ -27,7 +27,12 @@ export async function sendChatMessage(
     // Check if we're connected to Supabase
     console.log("Checking Supabase connection before API call...");
     
-    const { data, error } = await supabase.functions.invoke('openai', {
+    // Add timeout to prevent hanging requests
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("API request timed out")), 30000)
+    );
+    
+    const apiPromise = supabase.functions.invoke('openai', {
       body: {
         service: 'diagnostic',
         action: 'chat',
@@ -39,6 +44,10 @@ export async function sendChatMessage(
         }
       }
     });
+    
+    // Race between the API call and the timeout
+    const response = await Promise.race([apiPromise, timeoutPromise]) as any;
+    const { data, error } = response || {};
 
     if (error) {
       console.error("Supabase function error:", error);
