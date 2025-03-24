@@ -87,7 +87,7 @@ export const useChatMessages = () => {
     generateNewChatId, 
     loadChatByIdHandler, 
     setChatId, 
-    setMessages
+    updateAllMessages
   );
   
   return {
