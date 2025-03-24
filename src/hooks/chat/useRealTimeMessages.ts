@@ -4,6 +4,7 @@ import { Message } from '@/components/chat/types';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
+import { isValidUUID } from '@/utils/uuid';
 
 export const useRealTimeMessages = (
   chatId: string | null,
@@ -38,8 +39,7 @@ export const useRealTimeMessages = (
     }
 
     // Validate UUID format - must be a valid UUID for Supabase real-time to work
-    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(chatId);
-    if (!isValidUUID) {
+    if (!isValidUUID(chatId)) {
       console.warn("ChatId is not a valid UUID for real-time subscription:", chatId);
       
       // Try to create a valid UUID but only log the warning - don't change the active chatId

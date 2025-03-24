@@ -13,7 +13,16 @@ import { Toaster } from './components/ui/toaster';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/auth/AuthContext';
 
-const queryClient = new QueryClient();
+// Create a new query client with retry settings
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 function App() {
   return (
