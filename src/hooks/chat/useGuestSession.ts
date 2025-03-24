@@ -52,6 +52,14 @@ export const useGuestSession = () => {
   // Save guest session to localStorage with quota protection
   const saveGuestSession = useCallback((chatId: string, messages: Message[], messageHistory: string[]) => {
     try {
+      // Ensure chatId is a valid UUID
+      const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(chatId);
+      if (!isValidUUID) {
+        console.warn("chatId is not a valid UUID:", chatId);
+        chatId = uuidv4();
+        console.log("Generated a valid UUID for guest session:", chatId);
+      }
+    
       // Limit the number of messages to prevent exceeding quota
       const limitedMessages = messages.slice(-MAX_MESSAGES_TO_STORE);
       const limitedHistory = messageHistory.slice(-MAX_MESSAGES_TO_STORE);
@@ -64,6 +72,7 @@ export const useGuestSession = () => {
       };
       
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      console.log("Guest session saved with chatId:", chatId);
     } catch (error) {
       console.error("Error saving guest session:", error);
       
