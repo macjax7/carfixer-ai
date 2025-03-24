@@ -19,6 +19,11 @@ export const useMessageHandlers = () => {
     }
   };
 
+  const handleTextInput = (text: string) => {
+    processAndSendMessage(text);
+    setInput('');
+  };
+
   const handleImageUpload = (file: File) => {
     if (file) {
       const imageUrl = URL.createObjectURL(file);
@@ -44,6 +49,7 @@ export const useMessageHandlers = () => {
     setInput,
     isLoading: inputLoading || isProcessing || messagesLoading,
     handleSendMessage,
+    handleTextInput,
     handleImageUpload,
     handleListingAnalysis,
     handleSuggestedPrompt,

@@ -7,6 +7,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useSession } from './useSession';
 import { useMessages } from './useMessages';
 import { useChatSubscription } from './useChatSubscription';
+import { useMessageSync } from './useMessageSync';
+import { useChatReset } from './useChatReset';
 
 export const useChatMessages = () => {
   const { user } = useAuth();
@@ -36,27 +38,11 @@ export const useChatMessages = () => {
     setMessageHistory: updateMessageHistory
   });
   
-  // Auto-save guest session when messages change
-  useCallback(() => {
-    if (!user && chatId && messages.length > 0) {
-      saveGuestSession(chatId, messages, messageHistory);
-    }
-  }, [user, messages, messageHistory, chatId, saveGuestSession]);
+  // Set up message syncing for guest sessions
+  useMessageSync(chatId, messages, messageHistory, saveGuestSession);
   
-  // Enhanced resetChat function that properly clears the chat and generates a new ID
-  const resetChat = useCallback(() => {
-    // In a complete implementation, we would save the messages to history here
-    updateMessages([]);
-    updateMessageHistory([]);
-    const newChatId = nanoid();
-    setChatId(newChatId);
-    
-    // If user is not logged in, clear the guest session
-    if (!user) {
-      // Assuming clearGuestSession exists in the parent component
-      // clearGuestSession();
-    }
-  }, [user, updateMessages, updateMessageHistory, setChatId]);
+  // Set up chat reset functionality
+  const { resetChat } = useChatReset(updateMessages, updateMessageHistory, setChatId, user);
   
   return {
     messages,
