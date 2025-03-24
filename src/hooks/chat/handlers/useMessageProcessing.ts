@@ -30,13 +30,13 @@ export const useMessageProcessing = () => {
       }
       
       // Convert previous messages for context
-      const previousMessages = contextMessages.map(msg => ({
+      const previousMessages: ChatMessage[] = contextMessages.map(msg => ({
         role: msg.sender === 'user' ? 'user' : 'assistant',
         content: msg.text
-      })) as ChatMessage[];
+      }));
       
       // Combine with current message
-      const allMessages = [...previousMessages, { role: 'user', content: userText }];
+      const allMessages: ChatMessage[] = [...previousMessages, { role: 'user', content: userText }];
       
       // Get response from AI
       const aiResponseText = await chatWithAI(allMessages);
