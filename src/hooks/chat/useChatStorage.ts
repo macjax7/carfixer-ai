@@ -88,6 +88,37 @@ export const useChatStorage = (chatId: string | null, onMessagesLoaded: (message
     }
   }, [user]);
 
+  // Create a chat session for a user message
+  const createChatSession = useCallback(async (messageData: Message) => {
+    if (!user) return null;
+
+    const newChatId = uuidv4();
+    
+    try {
+      // Create a descriptive title based on the message content
+      const title = messageData.text.length > 30 
+        ? messageData.text.substring(0, 30) + '...' 
+        : messageData.text;
+        
+      const { error } = await supabase
+        .from('chat_sessions')
+        .insert({
+          id: newChatId,
+          user_id: user.id,
+          title
+        });
+      
+      if (error) {
+        console.error('Error creating chat session:', error);
+      }
+      
+      return newChatId;
+    } catch (error) {
+      console.error('Error in createChatSession:', error);
+      return newChatId; // Still return ID even if DB operation fails
+    }
+  }, [user]);
+
   // Fetch messages for a given chat
   const fetchChatMessages = useCallback(async (sessionId: string): Promise<Message[]> => {
     if (!sessionId) {
@@ -152,37 +183,6 @@ export const useChatStorage = (chatId: string | null, onMessagesLoaded: (message
     }
   }, [chatId, fetchChatMessages, onMessagesLoaded]);
 
-  // Create a new chat session
-  const createChatSession = useCallback(async (message: Message) => {
-    if (!user) return null;
-
-    const newChatId = uuidv4();
-    
-    try {
-      // Create a descriptive title based on the message content
-      const title = message.text.length > 30 
-        ? message.text.substring(0, 30) + '...' 
-        : message.text;
-        
-      const { error } = await supabase
-        .from('chat_sessions')
-        .insert({
-          id: newChatId,
-          user_id: user.id,
-          title
-        });
-      
-      if (error) {
-        console.error('Error creating chat session:', error);
-      }
-      
-      return newChatId;
-    } catch (error) {
-      console.error('Error in createChatSession:', error);
-      return newChatId; // Still return ID even if DB operation fails
-    }
-  }, [user]);
-
   // Fetch the last chat session
   const fetchLastChatSession = useCallback(async () => {
     if (!user) return null;
@@ -211,9 +211,9 @@ export const useChatStorage = (chatId: string | null, onMessagesLoaded: (message
   return {
     storeUserMessage,
     storeAIMessage,
-    loadChatMessages,
     createChatSession,
-    fetchLastChatSession,
-    fetchChatMessages
+    loadChatMessages,
+    fetchChatMessages,
+    fetchLastChatSession
   };
 };

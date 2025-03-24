@@ -29,16 +29,6 @@ export const useGuestSession = () => {
     return null;
   }, []);
 
-  // Check if guest session exists
-  const hasGuestSession = useCallback(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEY) !== null;
-    } catch (error) {
-      console.error("Error checking guest session:", error);
-      return false;
-    }
-  }, []);
-
   // Clear guest session from localStorage
   const clearGuestSession = useCallback(() => {
     try {
@@ -46,6 +36,16 @@ export const useGuestSession = () => {
       console.log("Guest session cleared");
     } catch (error) {
       console.error("Error clearing guest session:", error);
+    }
+  }, []);
+
+  // Check if guest session exists
+  const hasGuestSession = useCallback(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY) !== null;
+    } catch (error) {
+      console.error("Error checking guest session:", error);
+      return false;
     }
   }, []);
 
