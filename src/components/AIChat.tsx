@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import ChatContainer from './chat/ChatContainer';
 
 const AIChat: React.FC = () => {
@@ -10,4 +10,4 @@ const AIChat: React.FC = () => {
   );
 };
 
-export default AIChat;
+export default memo(AIChat);

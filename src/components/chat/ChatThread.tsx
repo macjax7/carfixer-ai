@@ -1,5 +1,5 @@
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import ChatMessage from './ChatMessage';
 import LoadingIndicator from './LoadingIndicator';
 import VehicleSuggestions from './VehicleSuggestions';
@@ -21,29 +21,36 @@ const ChatThread: React.FC<ChatThreadProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [userScrolled, setUserScrolled] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const previousMessagesLengthRef = useRef<number>(messages.length);
-  const lastMessageRef = useRef<string | null>(null);
+  const lastMessageIdRef = useRef<string | null>(null);
+  const pendingScrollRef = useRef<boolean>(false);
+  
+  // Memoize messages to prevent unnecessary re-renders
+  const memoizedMessages = useMemo(() => messages, [messages]);
   
   // This effect handles automatic scrolling based on specific conditions
   useEffect(() => {
-    const currentLastMessage = messages.length > 0 ? messages[messages.length - 1].id : null;
-    const isNewMessage = currentLastMessage !== lastMessageRef.current;
+    // Only check for new messages when messages array changes
+    if (messages.length === 0) return;
     
-    // Only auto-scroll if:
-    // 1. There's a new message (not just a re-render)
-    // 2. AND (User hasn't manually scrolled up OR we're loading)
-    if (isNewMessage && (!userScrolled || isLoading) && messagesEndRef.current) {
-      // Use a slight delay to ensure the DOM has updated
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+    const lastMessage = messages[messages.length - 1];
+    const lastMessageId = lastMessage?.id;
+    const isNewMessage = lastMessageId !== lastMessageIdRef.current;
+    
+    // Only scroll if there's a new message and user hasn't scrolled up manually
+    if (isNewMessage && (!userScrolled || isLoading)) {
+      pendingScrollRef.current = true;
       
       // Update last message reference to prevent duplicate scrolling
-      lastMessageRef.current = currentLastMessage;
+      lastMessageIdRef.current = lastMessageId;
+      
+      // Use a slight delay to ensure the DOM has updated
+      setTimeout(() => {
+        if (pendingScrollRef.current && messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+          pendingScrollRef.current = false;
+        }
+      }, 100);
     }
-    
-    // Update previous message length reference
-    previousMessagesLengthRef.current = messages.length;
   }, [messages, isLoading, userScrolled]);
   
   // Reset userScrolled when user explicitly sends a new message
@@ -58,13 +65,13 @@ const ChatThread: React.FC<ChatThreadProps> = ({
     if (!scrollAreaRef.current) return;
     
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    // Check if user has scrolled up (not at bottom)
-    // Use a threshold to determine "close enough" to bottom
     const scrollThreshold = 100; // pixels from bottom to consider "at bottom"
     const isAtBottom = scrollHeight - scrollTop - clientHeight <= scrollThreshold;
     
+    // Only update state if the scrolled status changes to reduce renders
     if (!isAtBottom && !userScrolled) {
       setUserScrolled(true);
+      pendingScrollRef.current = false; // Cancel any pending scrolls
     } else if (isAtBottom && userScrolled) {
       setUserScrolled(false);
     }
@@ -77,7 +84,7 @@ const ChatThread: React.FC<ChatThreadProps> = ({
       ref={scrollAreaRef}
     >
       <div className={`max-w-3xl mx-auto space-y-6 pb-4 ${sidebarState === 'collapsed' ? 'lg:mx-auto' : 'lg:ml-0 lg:mr-auto'}`}>
-        {messages.map((msg) => (
+        {memoizedMessages.map((msg) => (
           <ChatMessage 
             key={msg.id} 
             id={msg.id}
@@ -90,10 +97,8 @@ const ChatThread: React.FC<ChatThreadProps> = ({
           />
         ))}
         
-        {/* Vehicle suggestions when AI has asked for vehicle info */}
         {hasAskedForVehicle && <VehicleSuggestions setUserScrolled={setUserScrolled} />}
         
-        {/* Only show loading indicator when actually sending a message, not during initial load */}
         {isLoading && messages.length > 0 && <LoadingIndicator />}
         
         <div ref={messagesEndRef} />
@@ -102,4 +107,4 @@ const ChatThread: React.FC<ChatThreadProps> = ({
   );
 };
 
-export default ChatThread;
+export default React.memo(ChatThread);

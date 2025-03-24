@@ -1,5 +1,5 @@
 
-import React, { FormEvent } from 'react';
+import React, { FormEvent, memo } from 'react';
 import ChatInput from './ChatInput';
 
 interface ChatInputContainerProps {
@@ -43,4 +43,5 @@ const ChatInputContainer: React.FC<ChatInputContainerProps> = ({
   );
 };
 
-export default ChatInputContainer;
+// Use memo to prevent unnecessary re-renders
+export default memo(ChatInputContainer);

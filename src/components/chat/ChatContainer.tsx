@@ -1,5 +1,5 @@
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useChat } from '@/hooks/chat/useChat';
@@ -38,6 +38,13 @@ const ChatContainer: React.FC = () => {
     }
   }, [chatId, loadChatById, chatIdLoaded]);
   
+  // Memoize the message-related props to prevent unnecessary re-renders
+  const memoizedMessageProps = useMemo(() => ({
+    messages,
+    isLoading,
+    hasAskedForVehicle
+  }), [messages, isLoading, hasAskedForVehicle]);
+  
   // Chat state - empty or has messages
   const isEmptyChat = messages.length === 0;
   
@@ -57,9 +64,9 @@ const ChatContainer: React.FC = () => {
       ) : (
         <>
           <ChatThread 
-            messages={messages}
-            isLoading={isLoading}
-            hasAskedForVehicle={hasAskedForVehicle}
+            messages={memoizedMessageProps.messages}
+            isLoading={memoizedMessageProps.isLoading}
+            hasAskedForVehicle={memoizedMessageProps.hasAskedForVehicle}
             sidebarState={state}
           />
           

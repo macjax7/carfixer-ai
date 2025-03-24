@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useVehicles } from '@/hooks/use-vehicles';
 import { useChat } from '@/hooks/chat/useChat';
 
@@ -12,17 +12,18 @@ const VehicleSuggestions: React.FC<VehicleSuggestionsProps> = ({ setUserScrolled
   const { setInput, handleSendMessage } = useChat();
   
   // Handle setting input while respecting scroll state
-  const handleVehicleSelect = (vehicleText: string) => {
+  const handleVehicleSelect = useCallback((vehicleText: string) => {
     setInput(vehicleText);
     setUserScrolled(false); // Reset scroll state when selecting vehicle
     
     // Create a synthetic event to pass to handleSendMessage
     const syntheticEvent = { preventDefault: () => {} } as React.FormEvent;
-    // Slight delay to ensure state updates before sending
+    
+    // Use a longer delay to ensure state updates properly before sending
     setTimeout(() => {
       handleSendMessage(syntheticEvent);
-    }, 100);
-  };
+    }, 150);
+  }, [setInput, setUserScrolled, handleSendMessage]);
   
   if (vehicles.length === 0) return null;
   
@@ -48,4 +49,4 @@ const VehicleSuggestions: React.FC<VehicleSuggestionsProps> = ({ setUserScrolled
   );
 };
 
-export default VehicleSuggestions;
+export default React.memo(VehicleSuggestions);
