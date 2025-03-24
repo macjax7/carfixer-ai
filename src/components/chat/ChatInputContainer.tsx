@@ -1,15 +1,18 @@
 
-import React, { FormEvent, useMemo, memo } from 'react';
+import React from 'react';
 import ChatInput from './ChatInput';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
 
 interface ChatInputContainerProps {
   input: string;
   setInput: (input: string) => void;
-  handleSendMessage: (e: FormEvent) => void;
-  handleImageUpload: (file: File, prompt?: string) => void;
-  handleListingAnalysis: (url: string) => void;
-  isLoading: boolean;
-  sidebarState: 'expanded' | 'collapsed';
+  handleSendMessage: (e: React.FormEvent) => void;
+  handleImageUpload?: (file: File) => void;
+  handleListingAnalysis?: (url: string) => void;
+  isLoading?: boolean;
+  sidebarState?: 'collapsed' | 'expanded';
+  onNewChat?: () => void;
 }
 
 const ChatInputContainer: React.FC<ChatInputContainerProps> = ({
@@ -18,27 +21,31 @@ const ChatInputContainer: React.FC<ChatInputContainerProps> = ({
   handleSendMessage,
   handleImageUpload,
   handleListingAnalysis,
-  isLoading,
-  sidebarState
+  isLoading = false,
+  sidebarState = 'collapsed',
+  onNewChat
 }) => {
-  // Memoize event handler to prevent unnecessary re-renders
-  const handleSubmit = useMemo(() => (e: FormEvent) => {
-    e.preventDefault();
-    handleSendMessage(e);
-  }, [handleSendMessage]);
-  
-  // Use useMemo for container style classes to prevent unnecessary re-renders
-  const containerClasses = useMemo(() => 
-    `max-w-3xl mx-auto px-4 sm:px-0 ${sidebarState === 'collapsed' ? 'lg:mx-auto' : 'lg:ml-0 lg:mr-auto'}`,
-  [sidebarState]);
-  
   return (
-    <div className="border-t border-border bg-background/95 backdrop-blur-sm py-4 sticky bottom-0 z-10">
-      <div className={containerClasses}>
+    <div className="border-t border-border bg-background/80 backdrop-blur-sm py-4">
+      <div className="max-w-3xl mx-auto px-4">
+        {onNewChat && (
+          <div className="flex justify-center mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+              onClick={onNewChat}
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span>New Chat</span>
+            </Button>
+          </div>
+        )}
+        
         <ChatInput
           input={input}
           setInput={setInput}
-          handleSendMessage={handleSubmit}
+          handleSendMessage={handleSendMessage}
           handleImageUpload={handleImageUpload}
           handleListingAnalysis={handleListingAnalysis}
           isLoading={isLoading}
@@ -48,12 +55,4 @@ const ChatInputContainer: React.FC<ChatInputContainerProps> = ({
   );
 };
 
-// Use memo to prevent unnecessary re-renders with custom comparison
-export default memo(ChatInputContainer, (prevProps, nextProps) => {
-  // Only re-render if these props change
-  return (
-    prevProps.input === nextProps.input &&
-    prevProps.isLoading === nextProps.isLoading &&
-    prevProps.sidebarState === nextProps.sidebarState
-  );
-});
+export default ChatInputContainer;

@@ -1,10 +1,12 @@
 
-import React, { FormEvent } from 'react';
+import React, { FormEvent, useEffect } from 'react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useDirectChatHandler } from '@/hooks/chat/useDirectChatHandler';
 import EmptyChat from './EmptyChat';
 import ChatThread from './ChatThread';
 import ChatInputContainer from './ChatInputContainer';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const SimpleChatContainer: React.FC = () => {
   const {
@@ -12,10 +14,23 @@ const SimpleChatContainer: React.FC = () => {
     input,
     setInput,
     isProcessing,
-    sendMessage
+    sendMessage,
+    resetChat,
+    loadChatById,
+    chatId
   } = useDirectChatHandler();
   
   const { state } = useSidebar();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const params = useParams();
+  
+  // If there's a chat ID in the URL, load that chat
+  useEffect(() => {
+    if (params.id && params.id !== chatId) {
+      loadChatById(params.id);
+    }
+  }, [params.id, loadChatById, chatId]);
   
   const handleSendMessage = (e: FormEvent) => {
     e.preventDefault();
@@ -33,12 +48,22 @@ const SimpleChatContainer: React.FC = () => {
   const handleImageUpload = (file: File) => {
     if (file) {
       const imageUrl = URL.createObjectURL(file);
-      sendMessage(input, imageUrl);
+      
+      // Create a prompt based on the current input or use a default
+      const prompt = input.trim() 
+        ? input 
+        : "Can you identify this car part or issue?";
+        
+      sendMessage(prompt, imageUrl);
     }
   };
   
   const handleListingAnalysis = (url: string) => {
     if (url && !isProcessing) {
+      toast({
+        title: "Analyzing listing",
+        description: "Analyzing vehicle listing data...",
+      });
       sendMessage(`Can you analyze this vehicle listing? ${url}`);
     }
   };
@@ -47,11 +72,23 @@ const SimpleChatContainer: React.FC = () => {
     setInput(prompt);
   };
   
+  const handleNewChat = () => {
+    resetChat();
+    setInput('');
+    navigate('/');
+  };
+  
   // Determine if we're in an empty chat state
   const isEmptyChat = messages.length === 0;
   
-  // Dummy placeholder for vehicle context prompt
-  const hasAskedForVehicle = false;
+  // Check if the user has asked about their vehicle
+  const hasAskedForVehicle = messages.some(msg => 
+    msg.sender === 'user' && 
+    (msg.text.toLowerCase().includes('my car') || 
+     msg.text.toLowerCase().includes('my vehicle') ||
+     msg.text.toLowerCase().includes('my truck') ||
+     msg.text.toLowerCase().includes('my suv'))
+  );
   
   return (
     <div className={`flex flex-col h-full bg-background ${isEmptyChat ? 'justify-center' : ''}`}>
@@ -88,6 +125,7 @@ const SimpleChatContainer: React.FC = () => {
             handleListingAnalysis={handleListingAnalysis}
             isLoading={isProcessing}
             sidebarState={state}
+            onNewChat={handleNewChat}
           />
         </>
       )}

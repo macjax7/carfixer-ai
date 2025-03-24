@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { nanoid } from "nanoid";
 import { supabase } from '@/integrations/supabase/client';
 import { Message } from "@/components/chat/types";
@@ -14,6 +14,7 @@ export const useDirectChatHandler = () => {
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [chatId, setChatId] = useState<string | null>(null);
+  const processedMessagesRef = useRef<Set<string>>(new Set());
   const { user } = useAuth();
   const { toast } = useToast();
   const { chatWithAI } = useOpenAI();
@@ -85,6 +86,7 @@ export const useDirectChatHandler = () => {
     if (!id) return;
     
     try {
+      console.log("Loading messages for chat:", id);
       const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
@@ -103,16 +105,86 @@ export const useDirectChatHandler = () => {
         }));
         
         setMessages(formattedMessages);
+        
+        // Mark all loaded messages as processed
+        formattedMessages.forEach(msg => {
+          processedMessagesRef.current.add(msg.id);
+        });
+        
         console.log(`Loaded ${formattedMessages.length} messages for chat ${id}`);
+      } else {
+        // Clear messages if none found for this chat
+        setMessages([]);
       }
     } catch (error) {
       console.error("Error loading messages:", error);
     }
   }, []);
   
+  // Load chat by ID
+  const loadChatById = useCallback(async (id: string) => {
+    if (!id) return;
+    
+    try {
+      console.log("Loading chat:", id);
+      
+      // Clear current messages
+      setMessages([]);
+      
+      // Set the chat ID
+      setChatId(id);
+      
+      // Load messages for this chat
+      await loadMessages(id);
+    } catch (error) {
+      console.error("Error loading chat:", error);
+    }
+  }, [loadMessages]);
+  
+  // Reset chat
+  const resetChat = useCallback(async () => {
+    // Clear messages
+    setMessages([]);
+    
+    // For logged-in users, create a new chat session
+    if (user) {
+      try {
+        // Create a new chat session
+        const newId = uuidv4();
+        const { error } = await supabase
+          .from('chat_sessions')
+          .insert({
+            id: newId,
+            user_id: user.id,
+            title: 'New Chat'
+          });
+          
+        if (error) throw error;
+        
+        console.log("Created new chat session:", newId);
+        setChatId(newId);
+      } catch (error) {
+        console.error("Error creating new chat session:", error);
+        
+        // Fallback to local ID
+        const fallbackId = uuidv4();
+        setChatId(fallbackId);
+      }
+    } else {
+      // For guests, just generate a new local ID
+      const guestId = nanoid();
+      setChatId(guestId);
+    }
+    
+    // Reset processed messages
+    processedMessagesRef.current = new Set();
+    
+    return chatId;
+  }, [user, chatId]);
+  
   // Set up real-time subscription for new messages
   useEffect(() => {
-    if (!chatId) return;
+    if (!chatId || !user) return;
     
     // Only set up subscription for valid UUIDs (for database operations)
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(chatId)) {
@@ -135,20 +207,24 @@ export const useDirectChatHandler = () => {
         if (payload.new) {
           const { id, content, role, image_url, created_at } = payload.new;
           
-          // Add message to UI if not already present
-          setMessages(current => {
-            if (current.some(m => m.id === id)) return current;
-            
-            const newMessage: Message = {
-              id,
-              sender: role === 'user' ? 'user' : 'ai',
-              text: content || '',
-              timestamp: new Date(created_at),
-              image: image_url
-            };
-            
-            return [...current, newMessage];
-          });
+          // Skip if already processed
+          if (processedMessagesRef.current.has(id)) {
+            console.log("Skipping already processed message:", id);
+            return;
+          }
+          
+          processedMessagesRef.current.add(id);
+          
+          // Add message to UI
+          const newMessage: Message = {
+            id,
+            sender: role === 'user' ? 'user' : 'ai',
+            text: content || '',
+            timestamp: new Date(created_at),
+            image: image_url
+          };
+          
+          setMessages(current => [...current, newMessage]);
         }
       })
       .subscribe((status) => {
@@ -159,7 +235,7 @@ export const useDirectChatHandler = () => {
       console.log("Cleaning up subscription");
       supabase.removeChannel(channel);
     };
-  }, [chatId]);
+  }, [chatId, user]);
   
   // Send a message
   const sendMessage = useCallback(async (text: string, image?: string) => {
@@ -187,6 +263,9 @@ export const useDirectChatHandler = () => {
         timestamp: new Date(),
         image
       };
+      
+      // Mark as processed
+      processedMessagesRef.current.add(userMessageId);
       
       // Add user message to UI
       setMessages(prev => [...prev, userMessage]);
@@ -224,8 +303,9 @@ export const useDirectChatHandler = () => {
           content: text
         }];
         
-        // Use previous messages for context
-        const previousMessages = messages.map(msg => ({
+        // Use previous messages for context (limit to last 10 for performance)
+        const contextMessages = messages.slice(-10);
+        const previousMessages = contextMessages.map(msg => ({
           role: msg.sender === 'user' ? 'user' : 'assistant',
           content: msg.text
         })) as ChatMessage[];
@@ -245,6 +325,9 @@ export const useDirectChatHandler = () => {
           text: aiResponseText || "Sorry, I couldn't process your request",
           timestamp: new Date(),
         };
+        
+        // Mark as processed
+        processedMessagesRef.current.add(aiMessageId);
         
         // Add AI message to UI
         setMessages(prev => [...prev, aiMessage]);
@@ -266,6 +349,11 @@ export const useDirectChatHandler = () => {
             console.error("Error storing AI message:", error);
           }
         }
+        
+        // Update the chat session title if this is the first message
+        if (messages.length <= 2 && user) {
+          updateChatTitle(text.substring(0, 50));
+        }
       } catch (error) {
         console.error("Error processing AI response:", error);
         
@@ -277,6 +365,9 @@ export const useDirectChatHandler = () => {
           text: "I'm sorry, I encountered an error processing your message. Please try again.",
           timestamp: new Date()
         };
+        
+        // Mark as processed
+        processedMessagesRef.current.add(errorMessageId);
         
         setMessages(prev => [...prev, errorMessage]);
         
@@ -292,12 +383,30 @@ export const useDirectChatHandler = () => {
     }
   }, [chatId, messages, toast, user, chatWithAI]);
   
+  // Update chat title
+  const updateChatTitle = useCallback(async (title: string) => {
+    if (!user || !chatId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('chat_sessions')
+        .update({ title: title.length > 50 ? title.substring(0, 47) + '...' : title })
+        .eq('id', chatId);
+        
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error updating chat title:", error);
+    }
+  }, [user, chatId]);
+  
   return {
     messages,
     input,
     setInput,
     isProcessing,
     sendMessage,
-    chatId
+    chatId,
+    resetChat,
+    loadChatById
   };
 };

@@ -1,16 +1,21 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, Loader2 } from 'lucide-react';
-import { Button } from '../ui/button';
-import { useOpenAI } from '@/utils/openai';
-import { toast } from '../ui/use-toast';
+import { useOpenAI } from '@/utils/openai/hook';
+import { useToast } from '@/hooks/use-toast';
 
-const VoiceInput = ({ onTranscription, disabled = false }) => {
+interface VoiceInputProps {
+  onTranscription: (text: string) => void;
+  disabled?: boolean;
+}
+
+const VoiceInput: React.FC<VoiceInputProps> = ({ onTranscription, disabled = false }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const { speechToText } = useOpenAI();
+  const { toast } = useToast();
 
   useEffect(() => {
     return () => {
@@ -23,6 +28,11 @@ const VoiceInput = ({ onTranscription, disabled = false }) => {
 
   const startRecording = async () => {
     try {
+      toast({
+        title: "Recording started",
+        description: "Speak clearly into your microphone",
+      });
+      
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
@@ -60,13 +70,22 @@ const VoiceInput = ({ onTranscription, disabled = false }) => {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       setIsProcessing(true);
+      
+      toast({
+        title: "Processing speech",
+        description: "Converting your speech to text...",
+      });
     }
   };
 
-  const processAudioBlob = async (audioBlob) => {
+  const processAudioBlob = async (audioBlob: Blob) => {
     try {
       const text = await speechToText(audioBlob);
       if (text) {
+        toast({
+          title: "Transcription complete",
+          description: text.length > 30 ? text.substring(0, 30) + "..." : text,
+        });
         onTranscription(text);
       }
     } catch (error) {
@@ -90,25 +109,21 @@ const VoiceInput = ({ onTranscription, disabled = false }) => {
   };
 
   return (
-    <Button
+    <button
       type="button"
-      size="icon"
-      variant="ghost"
+      className={`p-2 rounded-full ${isRecording ? 'text-destructive' : 'text-muted-foreground'} hover:text-primary hover:bg-muted transition-colors`}
       onClick={toggleRecording}
       disabled={disabled || isProcessing}
-      className="flex-shrink-0"
+      aria-label={isRecording ? 'Stop recording' : 'Start recording'}
     >
       {isProcessing ? (
         <Loader2 className="h-5 w-5 animate-spin" />
       ) : isRecording ? (
-        <MicOff className="h-5 w-5 text-destructive" />
+        <MicOff className="h-5 w-5" />
       ) : (
         <Mic className="h-5 w-5" />
       )}
-      <span className="sr-only">
-        {isRecording ? 'Stop recording' : 'Start recording'}
-      </span>
-    </Button>
+    </button>
   );
 };
 
