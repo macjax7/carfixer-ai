@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ChevronDown, ChevronRight, FolderPlus, LogIn, Folder, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,10 +15,11 @@ interface SidebarProjectsProps {
   userProjects: Project[];
   projectStates: ProjectState;
   toggleProject: (projectId: string) => void;
-  handleNewProjectButton: () => void;
+  handleNewProjectButton: (e: React.MouseEvent) => void;
   isLoading?: boolean;
   deleteProject?: (projectId: string) => Promise<void>;
-  onSelectChat?: (chatId: string) => void;
+  // Update the type definition to match the wrapper function
+  onSelectChat?: (chatId: string) => () => void;
   refreshProjects?: () => Promise<void>;
 }
 

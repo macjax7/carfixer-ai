@@ -1,93 +1,128 @@
 
-import React from 'react';
-import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
-import { SidebarMenuItem, SidebarMenuSub } from '@/components/ui/sidebar';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
+import { ChevronDown, ChevronRight, MoreVertical, Trash } from 'lucide-react';
 import { Project } from '@/hooks/chat/sidebar/types';
+import { 
+  SidebarMenuItem, 
+  SidebarMenuButton, 
+  SidebarMenuAction, 
+  SidebarSubMenu, 
+  SidebarSubMenuItem
+} from '@/components/ui/sidebar';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SidebarProjectItemProps {
   project: Project;
   isOpen: boolean;
   onToggle: () => void;
   onDelete?: () => void;
-  onSelectChat?: (chatId: string) => void;
+  // Update to match the new function signature from the parent
+  onSelectChat?: (chatId: string) => () => void;
 }
 
-const SidebarProjectItem = ({ 
-  project, 
-  isOpen, 
-  onToggle, 
+const SidebarProjectItem: React.FC<SidebarProjectItemProps> = ({
+  project,
+  isOpen,
+  onToggle,
   onDelete,
-  onSelectChat 
-}: SidebarProjectItemProps) => {
-  const hasSubItems = project.subItems && project.subItems.length > 0;
-  
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (onDelete) {
-      onDelete();
-    }
-  };
-  
-  const handleProjectClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    onToggle();
-  };
-  
-  const handleChatItemClick = (e: React.MouseEvent, chatId: string) => {
-    e.preventDefault();
-    if (onSelectChat) {
-      onSelectChat(chatId);
-    }
-  };
+  onSelectChat
+}) => {
+  const [isHovering, setIsHovering] = useState(false);
   
   return (
-    <div>
-      <SidebarMenuItem
-        onClick={handleProjectClick}
-        className="flex items-center justify-between group cursor-pointer"
-      >
-        <div className="flex-1 flex items-center">
-          {hasSubItems ? (
-            isOpen ? 
-              <ChevronDown className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" /> : 
-              <ChevronRight className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-          ) : (
-            <span className="w-5" />
+    <ContextMenu>
+      <ContextMenuTrigger className="w-full">
+        <SidebarMenuItem
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+        >
+          <SidebarMenuButton onClick={onToggle}>
+            {isOpen ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+            <span className="truncate max-w-[140px]">{project.title}</span>
+          </SidebarMenuButton>
+          {onDelete && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <SidebarMenuAction
+                    className={`${isHovering ? 'opacity-100' : 'opacity-0'} transition-opacity`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      
+                      // Create a custom event to simulate a right-click
+                      const contextMenuEvent = new MouseEvent('contextmenu', {
+                        bubbles: true,
+                        cancelable: true,
+                        clientX: e.clientX,
+                        clientY: e.clientY
+                      });
+                      
+                      // Dispatch the event on the current target
+                      e.currentTarget.dispatchEvent(contextMenuEvent);
+                    }}
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </SidebarMenuAction>
+                </TooltipTrigger>
+                <TooltipContent>Options</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
-          <span className="truncate">{project.title}</span>
-        </div>
-        
-        {onDelete && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={handleDeleteClick}
-          >
-            <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-          </Button>
-        )}
-      </SidebarMenuItem>
+        </SidebarMenuItem>
+      </ContextMenuTrigger>
       
-      {hasSubItems && isOpen && (
-        <SidebarMenuSub>
+      <ContextMenuContent className="w-56">
+        <ContextMenuItem className="cursor-pointer" onClick={onToggle}>
+          {isOpen ? "Collapse" : "Expand"}
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem 
+          className="text-destructive cursor-pointer"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (onDelete) onDelete();
+          }}
+        >
+          <Trash className="h-4 w-4 mr-2" />
+          <span>Delete Project</span>
+        </ContextMenuItem>
+      </ContextMenuContent>
+      
+      {isOpen && project.subItems && project.subItems.length > 0 && (
+        <SidebarSubMenu>
           {project.subItems.map((item) => (
-            <SidebarMenuItem key={item.id} className="pl-7">
-              <a 
-                href="#" 
-                className="flex-1 truncate"
-                onClick={(e) => handleChatItemClick(e, item.id.toString())}
+            <SidebarSubMenuItem key={item.id.toString()}>
+              <SidebarMenuButton 
+                asChild
+                // Update to use the new function signature
+                onClick={onSelectChat ? onSelectChat(item.path.replace('/chat/', '')) : undefined}
               >
-                {item.title}
-              </a>
-            </SidebarMenuItem>
+                <div>
+                  <span className="truncate max-w-[140px]">{item.title}</span>
+                </div>
+              </SidebarMenuButton>
+            </SidebarSubMenuItem>
           ))}
-        </SidebarMenuSub>
+        </SidebarSubMenu>
       )}
-    </div>
+    </ContextMenu>
   );
 };
 

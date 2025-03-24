@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -55,18 +54,15 @@ const ChatSidebar = () => {
     fetchProjects
   } = useSidebarState();
 
-  // Handle chat selection - update to accept an optional event parameter
   const handleSelectChat = async (chatId: string, e?: React.MouseEvent) => {
     try {
       if (!chatId) {
         throw new Error('Invalid chat ID');
       }
       
-      // Load the chat by ID and update URL
       await loadChatById(chatId);
       navigate(`/chat/${chatId}`);
       
-      // Optionally refresh the chat history to show the latest state
       refreshChatHistory();
     } catch (error) {
       console.error("Error loading chat:", error);
@@ -76,6 +72,10 @@ const ChatSidebar = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleSelectChatWrapper = (chatId: string) => {
+    return () => handleSelectChat(chatId);
   };
 
   return (
@@ -110,7 +110,7 @@ const ChatSidebar = () => {
               handleNewProjectButton={handleNewProjectButton}
               isLoading={isProjectsLoading}
               deleteProject={deleteProject}
-              onSelectChat={handleSelectChat}
+              onSelectChat={handleSelectChatWrapper}
               refreshProjects={fetchProjects}
             />
             
