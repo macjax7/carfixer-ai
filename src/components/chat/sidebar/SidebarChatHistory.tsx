@@ -1,66 +1,89 @@
 
 import React from 'react';
-import { CollapsibleContent } from '@/components/ui/collapsible';
-import { NavLink } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, MessageSquare } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { ChatHistoryItem } from '@/hooks/chat/sidebar/types';
-import { cn } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface SidebarChatHistoryProps {
   chatHistory: ChatHistoryItem[];
-  isLoading: boolean;
-  chatHistoryOpen?: boolean;
-  setChatHistoryOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   onSelectChat?: (chatId: string) => void;
-  refreshChatHistory?: () => Promise<void>;
+  isLoading?: boolean;
 }
 
-const SidebarChatHistory: React.FC<SidebarChatHistoryProps> = ({
-  chatHistory,
-  isLoading,
-  onSelectChat
-}) => {
-  // Handle chat selection
-  const handleChatClick = (chatId: string, e: React.MouseEvent) => {
-    e.preventDefault();
+const SidebarChatHistory = ({ 
+  chatHistory, 
+  onSelectChat,
+  isLoading = false
+}: SidebarChatHistoryProps) => {
+  const navigate = useNavigate();
+  const [chatHistoryOpen, setChatHistoryOpen] = React.useState(chatHistory.length > 0);
+
+  React.useEffect(() => {
+    // If chat history changes and there are items, open the section
+    if (chatHistory.length > 0) {
+      setChatHistoryOpen(true);
+    }
+  }, [chatHistory]);
+
+  const handleChatSelect = (id: string) => {
     if (onSelectChat) {
-      onSelectChat(chatId);
+      onSelectChat(id);
+    } else {
+      navigate(`/chat/${id}`);
     }
   };
 
+  // Only show the chat history section if there are chats or loading
+  if (chatHistory.length === 0 && !isLoading) return null;
+
   return (
-    <CollapsibleContent className="px-1 py-2">
-      {isLoading ? (
-        <div className="flex justify-center py-4">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
-      ) : chatHistory.length > 0 ? (
-        <ul className="space-y-1">
-          {chatHistory.map((item) => (
-            <li key={item.id}>
-              <NavLink
-                to={`/chat/${item.id}`}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center rounded-md py-2 px-3 text-sm w-full",
-                    "hover:bg-accent/50 transition-colors",
-                    isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
-                  )
-                }
-                onClick={(e) => handleChatClick(item.id.toString(), e)}
-              >
-                <div className="flex-1 overflow-hidden">
-                  <p className="truncate">{item.title}</p>
-                  <p className="text-xs text-muted-foreground">{item.timestamp}</p>
-                </div>
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-center text-muted-foreground py-3">No chat history found</p>
-      )}
-    </CollapsibleContent>
+    <SidebarGroup className="mt-4 pt-2 border-t border-border">
+      <Collapsible
+        open={chatHistoryOpen}
+        onOpenChange={setChatHistoryOpen}
+        className="w-full"
+      >
+        <CollapsibleTrigger asChild>
+          <button className="flex items-center w-full p-2 text-sm font-medium hover:bg-sidebar-accent rounded-md transition-colors">
+            <span className="flex-1 flex items-center">
+              {chatHistoryOpen ? 
+                <ChevronDown className="h-4 w-4 mr-2 text-muted-foreground" /> : 
+                <ChevronRight className="h-4 w-4 mr-2 text-muted-foreground" />}
+              Recent Chats
+            </span>
+          </button>
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent className="transition-all duration-200 ease-in-out">
+          <SidebarGroupContent>
+            {isLoading ? (
+              <div className="p-3 text-center">
+                <Loader2 className="h-6 w-6 mx-auto mb-2 animate-spin opacity-50" />
+                <p className="text-sm text-muted-foreground">Loading chats...</p>
+              </div>
+            ) : (
+              <SidebarMenu>
+                {chatHistory.map((chat) => (
+                  <SidebarMenuItem key={chat.id}>
+                    <SidebarMenuButton onClick={() => handleChatSelect(chat.id)}>
+                      <MessageSquare className="h-4 w-4" />
+                      <div className="flex flex-col items-start">
+                        <span className="truncate max-w-[140px]">{chat.title}</span>
+                        <span className="text-xs text-muted-foreground">{chat.timestamp}</span>
+                      </div>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            )}
+          </SidebarGroupContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </SidebarGroup>
   );
 };
 

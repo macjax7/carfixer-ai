@@ -1,46 +1,64 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Car } from 'lucide-react';
-import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-
-interface NavigationItem {
-  title: string;
-  path: string;
-  icon: React.ComponentType<any>;
-}
+import { NavLink } from 'react-router-dom';
+import { Home, Settings, Car, PanelLeftClose } from 'lucide-react';
+import { SidebarGroup, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from '@/components/ui/sidebar';
 
 const NavigationSection = () => {
-  const location = useLocation();
-
-  const primaryNavItems: NavigationItem[] = [
-    {
-      title: "My Vehicles",
-      path: "/vehicles",
-      icon: Car,
-    },
-  ];
+  const { collapse } = useSidebar();
 
   return (
     <SidebarGroup>
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {primaryNavItems.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton 
-                asChild 
-                isActive={location.pathname === item.path}
-                tooltip={item.title}
-              >
-                <Link to={item.path}>
-                  <item.icon />
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton asChild>
+            <NavLink 
+              to="/" 
+              className={({ isActive }) => 
+                isActive ? 'bg-sidebar-accent text-accent-foreground' : ''
+              }
+            >
+              <Home className="h-5 w-5" />
+              <span>Home</span>
+            </NavLink>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        
+        <SidebarMenuItem>
+          <SidebarMenuButton asChild>
+            <NavLink 
+              to="/vehicles" 
+              className={({ isActive }) => 
+                isActive ? 'bg-sidebar-accent text-accent-foreground' : ''
+              }
+            >
+              <Car className="h-5 w-5" />
+              <span>Vehicles</span>
+            </NavLink>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        
+        <SidebarMenuItem>
+          <SidebarMenuButton asChild>
+            <NavLink 
+              to="/settings" 
+              className={({ isActive }) => 
+                isActive ? 'bg-sidebar-accent text-accent-foreground' : ''
+              }
+            >
+              <Settings className="h-5 w-5" />
+              <span>Settings</span>
+            </NavLink>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        
+        <SidebarMenuItem className="mt-auto lg:hidden">
+          <SidebarMenuButton onClick={collapse}>
+            <PanelLeftClose className="h-5 w-5" />
+            <span>Collapse</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
     </SidebarGroup>
   );
 };
