@@ -43,30 +43,44 @@ const AIChat: React.FC = () => {
     }
   }, [chatId, loadChatById, chatIdLoaded]);
   
-  // Scroll to bottom when messages change, but only if not manually scrolled up
+  // Only scroll to bottom for new messages when user is already at the bottom
+  // or when sending a new message (isLoading becomes true)
   useEffect(() => {
-    if (!userScrolled || messages.length <= 1 || isLoading) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if ((!userScrolled && messages.length > 0) || isLoading) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
-  }, [messages, isLoading, userScrolled]);
+  }, [messages.length, isLoading]);
   
-  // Reset user scrolled state when a new message is about to be sent
+  // Reset userScrolled when user sends a new message
   useEffect(() => {
     if (isLoading) {
       setUserScrolled(false);
     }
   }, [isLoading]);
   
-  // Handle scroll events to detect when user manually scrolls
+  // Detect when user has scrolled up
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    const isScrolledUp = scrollHeight - scrollTop - clientHeight > 100;
+    if (!scrollAreaRef.current) return;
     
-    if (isScrolledUp && !userScrolled) {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    // Check if user has scrolled up (not at bottom)
+    // Use a threshold to determine "close enough" to bottom
+    const scrollThreshold = 50; // pixels from bottom to consider "at bottom"
+    const isAtBottom = scrollHeight - scrollTop - clientHeight <= scrollThreshold;
+    
+    if (!isAtBottom && !userScrolled) {
       setUserScrolled(true);
-    } else if (!isScrolledUp && userScrolled) {
+    } else if (isAtBottom && userScrolled) {
       setUserScrolled(false);
     }
+  };
+  
+  // Handle image upload with proper typing
+  const handleImageUploadWrapper = (file: File, prompt?: string) => {
+    setUserScrolled(false);
+    handleImageUpload(file, prompt);
   };
   
   // Generate vehicle suggestions if the AI has asked for vehicle info
@@ -116,7 +130,7 @@ const AIChat: React.FC = () => {
               input={input}
               setInput={setInput}
               handleSendMessage={handleSendMessage}
-              handleImageUpload={handleImageUpload}
+              handleImageUpload={handleImageUploadWrapper}
               handleListingAnalysis={handleListingAnalysis}
               isLoading={isLoading}
             />
@@ -134,7 +148,7 @@ const AIChat: React.FC = () => {
         /* Chat messages - show when there are messages */
         <>
           <div 
-            className="flex-1 pt-4 px-2 md:px-4 pb-4 overflow-auto" 
+            className="flex-1 pt-20 px-2 md:px-4 pb-4 overflow-auto" 
             onScroll={handleScroll}
             ref={scrollAreaRef}
           >
@@ -172,10 +186,7 @@ const AIChat: React.FC = () => {
                   setUserScrolled(false); // Reset scroll state on send
                   handleSendMessage(e);
                 }}
-                handleImageUpload={(file, prompt) => {
-                  setUserScrolled(false); // Reset scroll state on image upload
-                  handleImageUpload(file, prompt);
-                }}
+                handleImageUpload={handleImageUploadWrapper}
                 handleListingAnalysis={(url) => {
                   setUserScrolled(false); // Reset scroll state on listing analysis
                   handleListingAnalysis(url);

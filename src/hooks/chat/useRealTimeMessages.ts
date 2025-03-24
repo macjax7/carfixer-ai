@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from 'react';
 import { Message } from '@/components/chat/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +10,7 @@ export const useRealTimeMessages = (
 ) => {
   // Keep track of subscription with a ref to avoid cleanup issues
   const subscriptionRef = useRef<any>(null);
+  const processedMessageIds = useRef<Set<string>>(new Set());
   
   // Set up real-time subscription to chat messages
   useEffect(() => {
@@ -23,6 +25,9 @@ export const useRealTimeMessages = (
       subscriptionRef.current = null;
     }
     
+    // Reset processed message IDs when chat ID changes
+    processedMessageIds.current = new Set();
+    
     const setupSubscription = async () => {
       const channel = supabase
         .channel(`chat-messages-${chatId}`) // Use unique channel name to avoid conflicts
@@ -35,6 +40,20 @@ export const useRealTimeMessages = (
           }, 
           (payload) => {
             console.log("Received real-time message update:", payload);
+            
+            if (!payload.new || !payload.new.id) {
+              console.warn("Received invalid message payload:", payload);
+              return;
+            }
+            
+            // Skip processing if we've already seen this message ID
+            if (processedMessageIds.current.has(payload.new.id)) {
+              console.log("Skipping already processed message:", payload.new.id);
+              return;
+            }
+            
+            // Add to processed set to prevent duplicate processing
+            processedMessageIds.current.add(payload.new.id);
             
             // Only update if the message is for the current chat session
             if (payload.new && payload.new.session_id === chatId) {
@@ -71,11 +90,12 @@ export const useRealTimeMessages = (
     setupSubscription();
     
     return () => {
-      // Clean up subscription
+      // Clean up subscription and processed message IDs
       if (subscriptionRef.current) {
         console.log("Cleaning up Supabase channel subscription");
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
+        processedMessageIds.current.clear();
       }
     };
   }, [chatId, addMessage, updateMessageHistory]);
