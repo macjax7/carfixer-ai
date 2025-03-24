@@ -73,15 +73,11 @@ export function useAuthEffects(
 
   // Effect for displaying errors
   useEffect(() => {
-    if (error) {
-      toast({
-        title: "Authentication Error",
-        description: error,
-        variant: "destructive"
-      });
-      setError(null);
+    if (setError) {
+      // This effect is specifically for handling changes to the error state
+      // which would be managed outside this hook
     }
-  }, [error, toast, setError]);
+  }, [setError]);
 
   return { shouldPreserveSession };
 }
