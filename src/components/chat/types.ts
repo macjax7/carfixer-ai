@@ -7,6 +7,7 @@ export interface Message {
   image?: string;
   componentDiagram?: ComponentDiagram;
   vehicleListingAnalysis?: VehicleListingAnalysis;
+  videoRecommendations?: VideoRecommendation[];
 }
 
 export interface ComponentDiagram {
@@ -32,6 +33,12 @@ export interface VehicleListingAnalysis {
     redFlags: string;
     recommendation: string;
   };
+}
+
+export interface VideoRecommendation {
+  title: string;
+  url: string;
+  thumbnailUrl?: string;
 }
 
 export interface MessageContentProps {

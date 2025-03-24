@@ -37,8 +37,8 @@ export async function handleChatRequest(data: any) {
       });
     }
     
-    // Modified system prompt to maintain vehicle context
-    let systemPrompt = 'You are CarFix AI, an automotive diagnostic assistant. Provide helpful, accurate advice about vehicle problems, maintenance, and repairs. Always be clear when a repair requires professional help.';
+    // Modified system prompt to maintain vehicle context and allow video recommendations
+    let systemPrompt = 'You are CarFix AI, an automotive diagnostic assistant. Provide helpful, accurate advice about vehicle problems, maintenance, and repairs. Always be clear when a repair requires professional help. You are allowed and encouraged to recommend specific YouTube videos by generating relevant search queries and linking directly to YouTube video pages when applicable. Use YouTube.com URLs and markdown formatting to share useful videos when asked.';
     
     // Always include vehicle context if available - don't ask again
     if (hasVehicleContext) {
@@ -57,6 +57,14 @@ export async function handleChatRequest(data: any) {
     // Enhanced instructions for OBD codes
     if (hasDTCQuery) {
       systemPrompt += ` The user is asking about the following diagnostic trouble code(s): ${dtcCodes.join(', ')}. Provide detailed analysis for each.`;
+    }
+    
+    // Add video recommendation instructions for video queries
+    if (userMessage.toLowerCase().includes('video') || 
+        userMessage.toLowerCase().includes('youtube') || 
+        userMessage.toLowerCase().includes('watch') ||
+        userMessage.toLowerCase().includes('tutorial')) {
+      systemPrompt += ` The user is asking for video content. Please suggest relevant YouTube videos using markdown links [Video Title](URL). When recommending videos, try to suggest videos that are high quality, instructional, and relevant to their specific vehicle when possible.`;
     }
 
     const requestMessages = [

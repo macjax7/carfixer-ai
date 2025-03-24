@@ -35,6 +35,11 @@ interface MessageProps {
       recommendation: string;
     };
   };
+  videoRecommendations?: {
+    title: string;
+    url: string;
+    thumbnailUrl?: string;
+  }[];
 }
 
 const ChatMessage: React.FC<MessageProps> = ({ 
@@ -44,7 +49,8 @@ const ChatMessage: React.FC<MessageProps> = ({
   timestamp, 
   image,
   componentDiagram,
-  vehicleListingAnalysis
+  vehicleListingAnalysis,
+  videoRecommendations
 }) => {
   // Ensure timestamp is a Date object before using Date methods
   const formattedTime = (): string => {
@@ -84,6 +90,7 @@ const ChatMessage: React.FC<MessageProps> = ({
           text={text}
           image={image}
           sender={sender}
+          videoRecommendations={videoRecommendations}
         />
         
         {componentDiagram && <ComponentDiagram componentDiagram={componentDiagram} />}
@@ -110,6 +117,7 @@ export default React.memo(ChatMessage, (prevProps, nextProps) => {
     prevProps.sender === nextProps.sender &&
     prevProps.image === nextProps.image &&
     prevProps.componentDiagram === nextProps.componentDiagram &&
-    prevProps.vehicleListingAnalysis === nextProps.vehicleListingAnalysis
+    prevProps.vehicleListingAnalysis === nextProps.vehicleListingAnalysis &&
+    prevProps.videoRecommendations === nextProps.videoRecommendations
   );
 });
