@@ -18,10 +18,15 @@ export const useChatDatabase = () => {
       return;
     }
     
+    if (!user) {
+      console.error('Cannot add message to chat history: no user logged in');
+      return;
+    }
+    
     try {
       console.log(`Adding ${role} message to chat history:`, message, 'with chat ID:', chatId);
-      // Generate a proper UUID for the message
-      const messageId = uuidv4();
+      // Generate a proper UUID for the message if not already present
+      const messageId = message.id || uuidv4();
       
       const { error } = await supabase
         .from('chat_messages')
@@ -42,7 +47,7 @@ export const useChatDatabase = () => {
     } catch (error) {
       console.error('Error saving message to database:', error);
     }
-  }, []);
+  }, [user]);
 
   const createChatSession = useCallback(async (
     title: string,

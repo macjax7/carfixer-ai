@@ -69,7 +69,7 @@ export const useMessageSender = () => {
     console.log("Processing message:", text, image ? "(with image)" : "");
     
     try {
-      // Ensure we have a chat ID
+      // Ensure we have a chat ID - always generate a valid UUID
       let currentChatId = chatId;
       if (!currentChatId) {
         currentChatId = uuidv4();
@@ -79,6 +79,7 @@ export const useMessageSender = () => {
       
       // Create or ensure chat ID exists with proper UUID format for authenticated users
       if (user && user.id) {
+        console.log("User is authenticated, ensuring chat session exists", { userId: user.id });
         currentChatId = await ensureChatSession(text, user.id);
         console.log("Ensured chat session exists:", currentChatId);
         
@@ -86,8 +87,15 @@ export const useMessageSender = () => {
         await updateSessionTitle(currentChatId, text, user.id);
       }
       
-      // Create user message data
-      const userMessageData = processUserMessage(text, image);
+      // Create user message data with a valid UUID
+      const userMessageId = uuidv4();
+      console.log("Generated message ID:", userMessageId);
+      
+      const userMessageData = {
+        ...processUserMessage(text, image),
+        id: userMessageId
+      };
+      
       console.log("Created user message data:", userMessageData);
       
       // Add user message to the chat UI first, before sending to API
@@ -123,8 +131,12 @@ export const useMessageSender = () => {
         const { text: aiResponseText, extra: aiMessageExtra } = await processAIResponse(text, image, effectiveVehicleInfo);
         console.log("Received AI response:", aiResponseText?.substring(0, 50) + "...");
         
-        // Add AI response to the chat UI
-        const aiMessageData = createAIMessage(aiResponseText, aiMessageExtra);
+        // Add AI response to the chat UI with a valid UUID
+        const aiMessageId = uuidv4();
+        const aiMessageData = {
+          ...createAIMessage(aiResponseText, aiMessageExtra),
+          id: aiMessageId
+        };
         
         console.log("Adding AI response to local UI state:", aiMessageData);
         addAIMessage(aiMessageData);
@@ -146,8 +158,13 @@ export const useMessageSender = () => {
         console.error("AI processing error:", error);
         const errorMessage = handleAIProcessingError(error);
         
-        // Show error message in the chat
-        const errorMessageData = createAIMessage(errorMessage);
+        // Show error message in the chat with a valid UUID
+        const errorMessageId = uuidv4();
+        const errorMessageData = {
+          ...createAIMessage(errorMessage),
+          id: errorMessageId
+        };
+        
         addAIMessage(errorMessageData);
         
         return errorMessageData;
@@ -156,10 +173,14 @@ export const useMessageSender = () => {
       console.error("Error in processAndSendMessage:", error);
       handleChatError(error, "Error processing message");
       
-      // Show error message in the chat
-      const errorMessageData = createAIMessage(
-        "I'm sorry, I encountered an error processing your request. Please try again."
-      );
+      // Show error message in the chat with a valid UUID
+      const errorMessageId = uuidv4();
+      const errorMessageData = {
+        ...createAIMessage(
+          "I'm sorry, I encountered an error processing your request. Please try again."
+        ),
+        id: errorMessageId
+      };
       
       addAIMessage(errorMessageData);
       return errorMessageData;

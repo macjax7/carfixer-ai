@@ -15,11 +15,8 @@ export const useRealTimeMessages = (
   // Set up real-time subscription when chat ID changes
   useEffect(() => {
     // No subscription needed for non-authenticated users or no chatId
-    if (!user || !chatId) {
-      console.log("No real-time subscription needed: user or chatId missing", { 
-        hasUser: !!user, 
-        chatId 
-      });
+    if (!chatId) {
+      console.log("No real-time subscription needed: chatId missing", { chatId });
       return;
     }
     
@@ -27,7 +24,7 @@ export const useRealTimeMessages = (
     
     // Subscribe to new chat messages
     const subscription = supabase
-      .channel(`messages:${chatId}`)
+      .channel(`messages-${chatId}`)
       .on(
         'postgres_changes',
         {
@@ -98,5 +95,5 @@ export const useRealTimeMessages = (
       console.log("Cleaning up real-time messages subscription");
       supabase.removeChannel(subscription);
     };
-  }, [chatId, user, addMessage, updateMessageHistory]);
+  }, [chatId, addMessage, updateMessageHistory]);
 };

@@ -9,15 +9,18 @@ export const useMessageStorage = () => {
   const { user } = useAuth();
 
   const storeUserMessage = useCallback(async (messageData: Message, sessionId: string) => {
-    if (!user || !sessionId) return;
+    if (!user || !sessionId) {
+      console.log("Cannot store user message: missing user or sessionId", { hasUser: !!user, sessionId });
+      return;
+    }
 
     try {
       console.log(`Storing user message to database:`, { message: messageData, sessionId });
       
       // Generate a proper UUID for the message
-      const messageId = uuidv4();
+      const messageId = messageData.id || uuidv4();
       
-      await supabase
+      const { error } = await supabase
         .from('chat_messages')
         .insert({
           id: messageId,
@@ -27,22 +30,30 @@ export const useMessageStorage = () => {
           image_url: messageData.image
         });
         
-      console.log('Successfully stored user message');
+      if (error) {
+        console.error("Error storing user message:", error);
+        return;
+      }
+        
+      console.log('Successfully stored user message with ID:', messageId);
     } catch (error) {
       console.error("Error storing user message:", error);
     }
   }, [user]);
 
   const storeAIMessage = useCallback(async (messageData: Message, sessionId: string) => {
-    if (!user || !sessionId) return;
+    if (!user || !sessionId) {
+      console.log("Cannot store AI message: missing user or sessionId", { hasUser: !!user, sessionId });
+      return;
+    }
 
     try {
       console.log(`Storing AI message to database:`, { message: messageData, sessionId });
       
       // Generate a proper UUID for the message
-      const messageId = uuidv4();
+      const messageId = messageData.id || uuidv4();
       
-      await supabase
+      const { error } = await supabase
         .from('chat_messages')
         .insert({
           id: messageId,
@@ -51,7 +62,12 @@ export const useMessageStorage = () => {
           content: messageData.text
         });
         
-      console.log('Successfully stored AI message');
+      if (error) {
+        console.error("Error storing AI message:", error);
+        return;
+      }
+        
+      console.log('Successfully stored AI message with ID:', messageId);
     } catch (error) {
       console.error("Error storing AI message:", error);
     }
@@ -59,6 +75,11 @@ export const useMessageStorage = () => {
 
   // Add the fetchChatMessages function
   const fetchChatMessages = useCallback(async (sessionId: string) => {
+    if (!sessionId) {
+      console.error("Cannot fetch messages: missing sessionId");
+      return [];
+    }
+    
     try {
       console.log(`Fetching messages for chat session:`, sessionId);
       const { data, error } = await supabase
@@ -73,7 +94,17 @@ export const useMessageStorage = () => {
       }
       
       console.log(`Retrieved ${data?.length || 0} messages for session ${sessionId}`);
-      return data || [];
+      
+      // Map database messages to the application Message format
+      const messages = data?.map(msg => ({
+        id: msg.id,
+        sender: msg.role === 'user' ? 'user' : 'ai',
+        text: msg.content,
+        timestamp: new Date(msg.created_at),
+        image: msg.image_url
+      })) || [];
+      
+      return messages;
     } catch (error) {
       console.error("Error in fetchChatMessages:", error);
       return [];
