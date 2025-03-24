@@ -12,7 +12,11 @@ export const useVehicleExtractor = () => {
   const extractVehicleInfo = (message: string, defaultVehicle: Vehicle | null = null): VehicleInfo | null => {
     // If we already have a selected vehicle, use it as default
     if (defaultVehicle) {
-      return defaultVehicle;
+      return {
+        year: defaultVehicle.year.toString(), // Convert number to string
+        make: defaultVehicle.make,
+        model: defaultVehicle.model
+      };
     }
     
     // Try to extract vehicle info from the message
