@@ -19,7 +19,7 @@ export const useChatDatabase = () => {
     }
     
     try {
-      console.log(`Adding ${role} message to chat history:`, message);
+      console.log(`Adding ${role} message to chat history:`, message, 'with chat ID:', chatId);
       // Generate a proper UUID for the message
       const messageId = uuidv4();
       
@@ -37,7 +37,7 @@ export const useChatDatabase = () => {
         throw error;
       }
       
-      console.log(`Successfully added ${role} message to chat history`);
+      console.log(`Successfully added ${role} message to chat history with ID:`, messageId);
     } catch (error) {
       console.error('Error saving message to database:', error);
     }
@@ -51,7 +51,7 @@ export const useChatDatabase = () => {
       // Generate a proper UUID for the chat session
       const chatId = uuidv4();
       
-      console.log("Creating new chat session in database:", { id: chatId, title });
+      console.log("Creating new chat session in database:", { id: chatId, title, userId });
       const { error } = await supabase
         .from('chat_sessions')
         .insert({
@@ -64,7 +64,7 @@ export const useChatDatabase = () => {
         throw error;
       }
       
-      console.log("Successfully created chat session");
+      console.log("Successfully created chat session with ID:", chatId);
       return chatId;
     } catch (error) {
       console.error('Error creating chat session:', error);
@@ -77,7 +77,7 @@ export const useChatDatabase = () => {
     title: string
   ) => {
     try {
-      console.log("Updating chat session title:", title);
+      console.log("Updating chat session title:", title, "for ID:", chatId);
       const { error } = await supabase
         .from('chat_sessions')
         .update({ title })
@@ -86,6 +86,8 @@ export const useChatDatabase = () => {
       if (error) {
         throw error;
       }
+      
+      console.log("Successfully updated chat session title");
     } catch (error) {
       console.error('Error updating chat session title:', error);
     }

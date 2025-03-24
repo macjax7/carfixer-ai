@@ -21,13 +21,17 @@ export const useChatInitialization = (
     if (!isLoaded) return;
     
     setIsLoading(true);
+    console.log("Initializing chat. User:", user?.email || "guest");
     
     // For guest users, try to load from localStorage
     if (!user) {
       if (hasGuestSession()) {
         const guestSession = loadGuestSession();
         if (guestSession) {
-          console.log("Loaded guest session:", guestSession);
+          console.log("Loaded guest session:", { 
+            chatId: guestSession.chatId,
+            messageCount: guestSession.messages.length
+          });
           updateChatId(guestSession.chatId);
           updateAllMessages(guestSession.messages);
           updateMessageHistory(guestSession.messageHistory || []);
@@ -63,6 +67,7 @@ export const useChatInitialization = (
 
   // Run initialization when dependencies change
   useEffect(() => {
+    console.log("Running chat initialization effect");
     initializeChat();
   }, [initializeChat]);
 

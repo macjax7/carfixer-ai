@@ -1,3 +1,4 @@
+
 import { useCallback, useState } from "react";
 import { useChatMessages } from "./useChatMessages";
 import { useAuth } from '@/context/AuthContext';
@@ -76,7 +77,7 @@ export const useMessageSender = () => {
         console.log("Generated new chat ID:", currentChatId);
       }
       
-      // Create or ensure chat ID exists with proper UUID format
+      // Create or ensure chat ID exists with proper UUID format for authenticated users
       if (user && user.id) {
         currentChatId = await ensureChatSession(text, user.id);
         console.log("Ensured chat session exists:", currentChatId);
@@ -85,8 +86,11 @@ export const useMessageSender = () => {
         await updateSessionTitle(currentChatId, text, user.id);
       }
       
-      // Add user message to the chat UI first, before sending to API
+      // Create user message data
       const userMessageData = processUserMessage(text, image);
+      console.log("Created user message data:", userMessageData);
+      
+      // Add user message to the chat UI first, before sending to API
       console.log("Adding user message to local UI state:", userMessageData);
       addUserMessage(userMessageData);
       
@@ -105,7 +109,7 @@ export const useMessageSender = () => {
       if (user && currentChatId) {
         try {
           await addToChatHistory(currentChatId, userMessageData, 'user');
-          console.log("User message added to database");
+          console.log("User message added to database with chat ID:", currentChatId);
         } catch (error) {
           console.error("Error adding user message to history:", error);
           // Continue even if this fails
@@ -128,7 +132,7 @@ export const useMessageSender = () => {
         if (user && currentChatId) {
           try {
             await addToChatHistory(currentChatId, aiMessageData, 'assistant');
-            console.log("AI message added to database");
+            console.log("AI message added to database with chat ID:", currentChatId);
           } catch (error) {
             console.error("Error adding AI message to history:", error);
             // Continue even if this fails

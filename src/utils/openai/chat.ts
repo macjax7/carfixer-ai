@@ -18,12 +18,10 @@ export async function sendChatMessage(
     console.log("Preparing to invoke Supabase function with payload:", {
       service: 'diagnostic',
       action: 'chat',
-      data: {
-        messages: apiMessages,
-        includeVehicleContext,
-        vehicleInfo,
-        messageHistory
-      }
+      messages: apiMessages.length,
+      includeVehicleContext,
+      hasVehicleInfo: !!vehicleInfo,
+      messageHistoryLength: messageHistory.length
     });
     
     // Check if we're connected to Supabase
@@ -47,7 +45,7 @@ export async function sendChatMessage(
       throw new Error(`OpenAI API error: ${error.message}`);
     }
     
-    console.log("Received response from Supabase function:", data);
+    console.log("Received response from Supabase function:", data ? "success" : "no data");
     
     // Return specifically the message property from the response
     if (data && data.message) {

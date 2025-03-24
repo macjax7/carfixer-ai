@@ -11,6 +11,7 @@ export const useMessageStorage = () => {
     if (!user || !sessionId) return;
 
     try {
+      console.log(`Storing user message to database:`, { message: messageData, sessionId });
       await supabase
         .from('chat_messages')
         .insert({
@@ -20,6 +21,8 @@ export const useMessageStorage = () => {
           content: messageData.text,
           image_url: messageData.image
         });
+        
+      console.log('Successfully stored user message');
     } catch (error) {
       console.error("Error storing user message:", error);
     }
@@ -29,6 +32,7 @@ export const useMessageStorage = () => {
     if (!user || !sessionId) return;
 
     try {
+      console.log(`Storing AI message to database:`, { message: messageData, sessionId });
       await supabase
         .from('chat_messages')
         .insert({
@@ -37,34 +41,15 @@ export const useMessageStorage = () => {
           role: 'assistant',
           content: messageData.text
         });
+        
+      console.log('Successfully stored AI message');
     } catch (error) {
       console.error("Error storing AI message:", error);
     }
   }, [user]);
 
-  const fetchChatMessages = useCallback(async (sessionId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
-      
-      if (error) {
-        console.error("Error loading chat messages:", error);
-        return [];
-      }
-      
-      return data || [];
-    } catch (error) {
-      console.error("Error fetching chat messages:", error);
-      return [];
-    }
-  }, []);
-
   return {
     storeUserMessage,
-    storeAIMessage,
-    fetchChatMessages
+    storeAIMessage
   };
 };
