@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useVehicles } from '@/hooks/use-vehicles';
 import { useVehicleExtractor } from './useVehicleExtractor';
@@ -24,7 +25,7 @@ export const useVehicleContext = () => {
   /**
    * Get current vehicle context from messages if not already available
    */
-  const getVehicleContextFromMessages = useCallback((messages: Message[]) => {
+  const getVehicleContextFromMessages = useCallback((messagesArray: Message[]) => {
     // First check if we already have a vehicle context
     if (vehicleContext) {
       console.log("Using existing vehicle context:", vehicleContext);
@@ -40,8 +41,8 @@ export const useVehicleContext = () => {
     
     // Otherwise scan through messages to find vehicle mentions
     console.log("Scanning message history for vehicle context...");
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const message = messages[i];
+    for (let i = messagesArray.length - 1; i >= 0; i--) {
+      const message = messagesArray[i];
       if (message.sender === 'user') {
         const extractedInfo = extractVehicleInfo(message.text);
         if (extractedInfo) {
@@ -54,7 +55,7 @@ export const useVehicleContext = () => {
     
     console.log("No vehicle context found in message history");
     return null;
-  }, [messages, extractVehicleInfo, selectedVehicle, vehicleContext]);
+  }, [extractVehicleInfo, selectedVehicle, vehicleContext]);
 
   return {
     vehicleContext,
