@@ -26,6 +26,8 @@ export function useOpenAI() {
   ) => {
     try {
       console.log("Starting chatWithAI with messages:", messages);
+      console.log("Vehicle context:", vehicleOverride || selectedVehicle);
+      
       const response = await sendChatMessage(
         messages, 
         includeVehicleContext, 

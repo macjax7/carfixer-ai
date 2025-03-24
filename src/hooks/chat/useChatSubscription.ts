@@ -16,10 +16,6 @@ export const useChatSubscription = ({
 
     const setupMessageSubscription = async () => {
       const { data: session } = await supabase.auth.getSession();
-      if (!session.session?.user) {
-        console.log("No authenticated user session found for real-time updates");
-        return null;
-      }
       
       console.log("Creating channel subscription for chat messages...");
       

@@ -23,6 +23,7 @@ export const useMessageProcessor = () => {
   const processAIResponse = useCallback(async (
     text: string,
     image?: string,
+    vehicleInfo?: any
   ): Promise<{text: string, extra: Record<string, any>}> => {
     let aiResponseText = '';
     let aiMessageExtra = {};
@@ -46,19 +47,19 @@ export const useMessageProcessor = () => {
         } else {
           // If it's not a vehicle listing, just process as a normal query
           console.log("URL doesn't appear to be a vehicle listing, processing as normal text");
-          aiResponseText = await chatWithAI([{ role: 'user', content: text }]);
+          aiResponseText = await chatWithAI([{ role: 'user', content: text }], true, vehicleInfo);
         }
       } else {
         // Process code detection for diagnostic codes
-        console.log("Processing text query");
+        console.log("Processing text query with vehicle info:", vehicleInfo);
         const codeType = processCodeType(text);
         if (codeType) {
           console.log("Detected code type:", codeType);
-          aiResponseText = await chatWithAI([{ role: 'user', content: text }], true, null, [codeType]);
+          aiResponseText = await chatWithAI([{ role: 'user', content: text }], true, vehicleInfo, [codeType]);
         } else {
           // Process normal text query
           console.log("No code detected, processing as normal text");
-          aiResponseText = await chatWithAI([{ role: 'user', content: text }]);
+          aiResponseText = await chatWithAI([{ role: 'user', content: text }], true, vehicleInfo);
         }
       }
       

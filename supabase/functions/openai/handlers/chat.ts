@@ -45,7 +45,7 @@ export async function handleChatRequest(data: any) {
     
     // Only include the user's selected vehicle as context if relevant, but don't assume it's the one they're asking about
     if (includeVehicleContext && vehicleInfo && Object.keys(vehicleInfo).length > 0) {
-      systemPrompt += ` The user's currently selected vehicle is a ${vehicleInfo.year || ''} ${vehicleInfo.make || ''} ${vehicleInfo.model || ''}, but only reference this if they haven't specified another vehicle in their query.`;
+      systemPrompt += ` The user's vehicle is a ${vehicleInfo.year || ''} ${vehicleInfo.make || ''} ${vehicleInfo.model || ''}. Keep this vehicle in the context of the conversation unless they explicitly mention a different vehicle.`;
     }
 
     // If the user is asking about DTCs, add the codes to the system prompt
@@ -112,10 +112,10 @@ function checkForVehicleMention(currentMessage: string, messageHistory: string[]
   const carMakes = [
     'toyota', 'honda', 'ford', 'chevrolet', 'chevy', 'nissan', 'hyundai', 'kia', 
     'subaru', 'bmw', 'mercedes', 'audi', 'lexus', 'acura', 'mazda', 'volkswagen', 
-    'vw', 'jeep', 'ram', 'dodge', 'chrysler', 'buick', 'cadillac', 'gmc'
+    'vw', 'jeep', 'ram', 'dodge', 'chrysler', 'buick', 'cadillac', 'gmc', 'infiniti'
   ];
   
-  // Check for year patterns (like "2018" or "'18")
+  // Check for year patterns (like "2011" or "'18")
   const yearPattern = /\b(19|20)\d{2}\b|'\d{2}\b/i;
   
   // Check for make/model combinations

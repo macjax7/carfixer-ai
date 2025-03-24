@@ -6,10 +6,12 @@ import { useAuth } from '@/context/AuthContext';
 import { useChatDatabase } from "./useChatDatabase";
 import { useMessageProcessor } from "./useMessageProcessor";
 import { useErrorHandler } from "./useErrorHandler";
+import { useVehicles } from '@/hooks/use-vehicles';
 
 export const useMessageSender = () => {
   const { user } = useAuth();
   const { addUserMessage, addAIMessage, chatId, setChatId } = useChatMessages();
+  const { vehicles, selectedVehicle } = useVehicles();
   const { 
     isProcessing, 
     setIsProcessing,
@@ -88,6 +90,9 @@ export const useMessageSender = () => {
       console.log("Adding user message to chat:", userMessageData);
       addUserMessage(userMessageData);
       
+      // Extract vehicle information from the message
+      const vehicleInfo = extractVehicleInfo(text, selectedVehicle);
+      
       // Also add it to the database if user is logged in
       if (user && currentChatId) {
         try {
@@ -100,8 +105,8 @@ export const useMessageSender = () => {
       
       // Process the message and get AI response
       try {
-        console.log("Sending message to OpenAI:", text);
-        const { text: aiResponseText, extra: aiMessageExtra } = await processAIResponse(text, image);
+        console.log("Sending message to OpenAI with vehicle context:", vehicleInfo);
+        const { text: aiResponseText, extra: aiMessageExtra } = await processAIResponse(text, image, vehicleInfo);
         console.log("Received AI response:", aiResponseText?.substring(0, 50) + "...");
         
         // Add AI response to the chat UI
@@ -149,6 +154,7 @@ export const useMessageSender = () => {
     chatId, 
     setChatId, 
     user, 
+    selectedVehicle,
     addUserMessage, 
     addAIMessage, 
     processUserMessage, 
@@ -163,8 +169,72 @@ export const useMessageSender = () => {
     setIsProcessing
   ]);
 
+  // Helper function to extract vehicle information from messages
+  const extractVehicleInfo = (message: string, defaultVehicle: any = null) => {
+    // If we already have a selected vehicle, use it as default
+    if (defaultVehicle) {
+      return defaultVehicle;
+    }
+    
+    // Try to extract vehicle info from the message
+    const yearPattern = /\b(19|20)\d{2}\b/;
+    const yearMatch = message.match(yearPattern);
+    
+    // Common car makes for pattern matching
+    const carMakes = [
+      'toyota', 'honda', 'ford', 'chevrolet', 'chevy', 'nissan', 'hyundai', 'kia', 
+      'subaru', 'bmw', 'mercedes', 'audi', 'lexus', 'acura', 'mazda', 'volkswagen', 
+      'vw', 'jeep', 'ram', 'dodge', 'chrysler', 'buick', 'cadillac', 'gmc', 'infiniti'
+    ];
+    
+    // Create regex pattern for makes
+    const makePattern = new RegExp(`\\b(${carMakes.join('|')})\\b`, 'i');
+    const makeMatch = message.match(makePattern);
+    
+    // If we found both year and make, try to extract model
+    if (yearMatch && makeMatch) {
+      const year = yearMatch[0];
+      const make = makeMatch[0].toLowerCase();
+      
+      // Attempt to extract model - this is a simplified approach
+      // Would need more sophisticated NLP for production use
+      let modelMatch = null;
+      
+      // Common models by make
+      const commonModels: Record<string, string[]> = {
+        'toyota': ['camry', 'corolla', 'rav4', 'tacoma', 'tundra', 'highlander'],
+        'honda': ['civic', 'accord', 'cr-v', 'pilot', 'odyssey'],
+        'ford': ['f-150', 'mustang', 'escape', 'explorer', 'focus'],
+        'chevrolet': ['silverado', 'equinox', 'malibu', 'tahoe'],
+        'chevy': ['silverado', 'equinox', 'malibu', 'tahoe'],
+        'nissan': ['altima', 'sentra', 'rogue', 'pathfinder'],
+        'infiniti': ['g35', 'g37', 'q50', 'qx60', 'qx80', 'fx35']
+        // Add more as needed
+      };
+      
+      if (commonModels[make]) {
+        for (const model of commonModels[make]) {
+          if (message.toLowerCase().includes(model)) {
+            modelMatch = model;
+            break;
+          }
+        }
+      }
+      
+      return {
+        year,
+        make: make.charAt(0).toUpperCase() + make.slice(1), // Capitalize make
+        model: modelMatch || 'Unknown'
+      };
+    }
+    
+    // Return null if we couldn't extract vehicle info
+    return null;
+  };
+
   return {
     processAndSendMessage,
-    isProcessing
+    isProcessing,
+    extractVehicleInfo
   };
 };
