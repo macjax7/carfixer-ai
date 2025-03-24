@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, MessageSquare, MoreVertical, Trash, Pencil, FolderMove } from 'lucide-react';
+import { ChevronDown, ChevronRight, MessageSquare, MoreVertical, Trash, Pencil, FolderCode } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuAction } from '@/components/ui/sidebar';
 import { ChatHistoryItem } from '@/hooks/chat/sidebar/types';
@@ -55,14 +54,12 @@ const SidebarChatHistory = ({
   const { userProjects, fetchProjects } = useProjects();
   
   React.useEffect(() => {
-    // If chat history changes and there are items, open the section
     if (chatHistory.length > 0) {
       setChatHistoryOpen(true);
     }
   }, [chatHistory]);
 
   React.useEffect(() => {
-    // Fetch projects when component mounts
     fetchProjects();
   }, [fetchProjects]);
 
@@ -92,7 +89,6 @@ const SidebarChatHistory = ({
     event.stopPropagation();
 
     try {
-      // Delete the chat session from the database
       const { error } = await supabase
         .from('chat_sessions')
         .delete()
@@ -102,18 +98,15 @@ const SidebarChatHistory = ({
         throw error;
       }
 
-      // Show success toast
       toast({
         title: "Chat deleted",
         description: "The conversation has been removed from your history."
       });
 
-      // Refresh the chat history
       if (refreshChatHistory) {
         await refreshChatHistory();
       }
 
-      // If we're currently viewing this chat, navigate to the main chat page
       const currentPath = window.location.pathname;
       if (currentPath.includes(`/chat/${chatId}`)) {
         navigate('/chat');
@@ -150,7 +143,6 @@ const SidebarChatHistory = ({
         await refreshChatHistory();
       }
 
-      // Close dialog
       setRenameDialogOpen(false);
     } catch (error) {
       console.error("Error renaming chat:", error);
@@ -174,7 +166,6 @@ const SidebarChatHistory = ({
     if (!activeChatId) return;
 
     try {
-      // Insert chat session as a project item
       const { error } = await supabase
         .from('project_items')
         .insert({
@@ -192,7 +183,6 @@ const SidebarChatHistory = ({
         description: "The conversation has been added to the selected project."
       });
 
-      // Close popover
       setMoveToProjectOpen(false);
     } catch (error) {
       console.error("Error moving chat to project:", error);
@@ -209,14 +199,12 @@ const SidebarChatHistory = ({
     event.stopPropagation();
     setActiveChatId(chatId);
     
-    // Find the corresponding context menu and open it
     const menuEl = document.getElementById(`context-menu-${chatId}`);
     if (menuEl) {
       menuEl.click();
     }
   };
 
-  // Only show the chat history section if there are chats or loading
   if (chatHistory.length === 0 && !isLoading) return null;
 
   return (
@@ -288,7 +276,7 @@ const SidebarChatHistory = ({
                           setMoveToProjectOpen(true);
                         }}
                       >
-                        <FolderMove className="h-4 w-4" />
+                        <FolderCode className="h-4 w-4" />
                         <span>Move to project</span>
                       </ContextMenuItem>
 
@@ -310,7 +298,6 @@ const SidebarChatHistory = ({
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Rename Dialog */}
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -339,7 +326,6 @@ const SidebarChatHistory = ({
         </DialogContent>
       </Dialog>
 
-      {/* Move to Project Popover */}
       <Popover open={moveToProjectOpen} onOpenChange={setMoveToProjectOpen}>
         <PopoverContent className="w-60" align="center">
           <div className="space-y-2">
