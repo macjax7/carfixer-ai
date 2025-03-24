@@ -14,15 +14,12 @@ import { useChat } from '@/hooks/chat/useChat';
 const ChatHeader = () => {
   const { state } = useSidebar();
   const { user } = useAuth();
-  const { resetChat, isLoading, canCreateNewChat } = useChat();
+  const { handleNewChat, isLoading } = useChat();
   const navigate = useNavigate();
   
   const onNewChatClick = () => {
-    if (canCreateNewChat) {
-      const newId = resetChat();
-      console.log('Created new chat with ID:', newId);
-      navigate('/');
-    }
+    console.log("New Chat button clicked");
+    handleNewChat();
   };
   
   // Only show these UI elements when the sidebar is collapsed
@@ -34,12 +31,12 @@ const ChatHeader = () => {
           
           {user && (
             <button 
-              className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-border/60 hover:bg-secondary transition-colors mr-3 ${!canCreateNewChat || isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-border/60 hover:bg-secondary transition-colors mr-3 cursor-pointer"
               onClick={onNewChatClick}
-              disabled={!canCreateNewChat || isLoading}
+              disabled={isLoading}
             >
               <PlusCircle className="h-4 w-4" />
-              <span>New Chat</span>
+              <span>{isLoading ? "Creating..." : "New Chat"}</span>
             </button>
           )}
           

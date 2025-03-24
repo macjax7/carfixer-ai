@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { nanoid } from 'nanoid';
+import { v4 as uuidv4 } from 'uuid';
 
 export const useChatReset = (
   updateMessages: (messages: any[]) => void,
@@ -8,15 +8,17 @@ export const useChatReset = (
   setChatId: (id: string) => void,
   user: any
 ) => {
-  // Enhanced resetChat function that properly clears the chat and generates a new ID
+  // Enhanced resetChat function that properly clears the chat and generates a proper UUID
   const resetChat = useCallback(() => {
+    console.log("resetChat called - clearing messages and generating new UUID chat ID");
+    
     // Clear messages and message history
     updateMessages([]);
     updateMessageHistory([]);
     
-    // Generate a new chat ID
-    const newChatId = nanoid();
-    console.log("Generated new chat ID:", newChatId);
+    // Generate a new chat ID using UUID format (important for DB compatibility)
+    const newChatId = uuidv4();
+    console.log("Generated new UUID chat ID:", newChatId);
     
     // Update the chat ID in state
     setChatId(newChatId);
