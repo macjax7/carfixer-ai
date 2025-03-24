@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ChevronDown, ChevronRight, FolderPlus, LogIn, Folder, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,14 +10,15 @@ import { Project, ProjectState } from '@/hooks/chat/sidebar/types';
 
 interface SidebarProjectsProps {
   projectsOpen: boolean;
-  setProjectsOpen: (open: boolean) => void;
+  setProjectsOpen: (value: boolean) => void;
   userProjects: Project[];
   projectStates: ProjectState;
-  toggleProject: (project: string) => void;
-  handleNewProjectButton: (e: React.MouseEvent) => void;
+  toggleProject: (projectId: string) => void;
+  handleNewProjectButton: () => void;
   isLoading?: boolean;
-  deleteProject?: (projectId: string | number) => void;
+  deleteProject?: (projectId: string) => Promise<void>;
   onSelectChat?: (chatId: string) => void;
+  refreshProjects?: () => Promise<void>;
 }
 
 const SidebarProjects = ({
@@ -30,7 +30,8 @@ const SidebarProjects = ({
   handleNewProjectButton,
   isLoading = false,
   deleteProject,
-  onSelectChat
+  onSelectChat,
+  refreshProjects
 }: SidebarProjectsProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();

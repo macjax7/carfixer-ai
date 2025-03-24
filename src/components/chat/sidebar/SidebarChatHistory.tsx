@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { ChevronDown, ChevronRight, MessageSquare, MoreVertical, Trash } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronDown, ChevronRight, MessageSquare, MoreVertical, Trash, Pencil, FolderMove } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuAction } from '@/components/ui/sidebar';
 import { ChatHistoryItem } from '@/hooks/chat/sidebar/types';
@@ -15,6 +15,22 @@ import {
   ContextMenuSeparator
 } from '@/components/ui/context-menu';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useProjects } from '@/hooks/chat/sidebar/useProjects';
 
 interface SidebarChatHistoryProps {
   chatHistory: ChatHistoryItem[];
@@ -32,13 +48,23 @@ const SidebarChatHistory = ({
   const navigate = useNavigate();
   const { toast } = useToast();
   const [chatHistoryOpen, setChatHistoryOpen] = React.useState(chatHistory.length > 0);
-
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [moveToProjectOpen, setMoveToProjectOpen] = useState(false);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [newTitle, setNewTitle] = useState("");
+  const { userProjects, fetchProjects } = useProjects();
+  
   React.useEffect(() => {
     // If chat history changes and there are items, open the section
     if (chatHistory.length > 0) {
       setChatHistoryOpen(true);
     }
   }, [chatHistory]);
+
+  React.useEffect(() => {
+    // Fetch projects when component mounts
+    fetchProjects();
+  }, [fetchProjects]);
 
   const handleChatSelect = (id: string) => {
     try {
@@ -102,6 +128,94 @@ const SidebarChatHistory = ({
     }
   };
 
+  const handleRenameChat = async () => {
+    if (!activeChatId || !newTitle.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('chat_sessions')
+        .update({ title: newTitle })
+        .eq('id', activeChatId);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Chat renamed",
+        description: "The conversation has been renamed successfully."
+      });
+
+      if (refreshChatHistory) {
+        await refreshChatHistory();
+      }
+
+      // Close dialog
+      setRenameDialogOpen(false);
+    } catch (error) {
+      console.error("Error renaming chat:", error);
+      toast({
+        title: "Error renaming chat",
+        description: "Failed to rename the conversation. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleOpenRenameDialog = (chatId: string, currentTitle: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setActiveChatId(chatId);
+    setNewTitle(currentTitle);
+    setRenameDialogOpen(true);
+  };
+
+  const handleMoveToProject = async (projectId: string) => {
+    if (!activeChatId) return;
+
+    try {
+      // Insert chat session as a project item
+      const { error } = await supabase
+        .from('project_items')
+        .insert({
+          project_id: projectId,
+          title: chatHistory.find(chat => chat.id.toString() === activeChatId)?.title || 'Untitled Chat',
+          path: `/chat/${activeChatId}`
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Chat moved to project",
+        description: "The conversation has been added to the selected project."
+      });
+
+      // Close popover
+      setMoveToProjectOpen(false);
+    } catch (error) {
+      console.error("Error moving chat to project:", error);
+      toast({
+        title: "Error moving chat",
+        description: "Failed to move the conversation to the project. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const openContextMenu = (chatId: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setActiveChatId(chatId);
+    
+    // Find the corresponding context menu and open it
+    const menuEl = document.getElementById(`context-menu-${chatId}`);
+    if (menuEl) {
+      menuEl.click();
+    }
+  };
+
   // Only show the chat history section if there are chats or loading
   if (chatHistory.length === 0 && !isLoading) return null;
 
@@ -135,38 +249,57 @@ const SidebarChatHistory = ({
                 {chatHistory.map((chat) => (
                   <ContextMenu key={chat.id}>
                     <ContextMenuTrigger asChild>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton onClick={() => handleChatSelect(chat.id.toString())}>
-                          <MessageSquare className="h-4 w-4" />
-                          <div className="flex flex-col items-start">
-                            <span className="truncate max-w-[140px]">{chat.title}</span>
-                            <span className="text-xs text-muted-foreground">{chat.timestamp}</span>
-                          </div>
-                        </SidebarMenuButton>
-                        <SidebarMenuAction 
-                          className="opacity-0 group-hover/menu-item:opacity-100 transition-opacity" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // This just opens the context menu programmatically
-                            // The actual menu appears via the ContextMenu component
-                          }}
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </SidebarMenuAction>
-                      </SidebarMenuItem>
+                      <div id={`context-menu-${chat.id.toString()}`} className="hidden">
+                        {/* Hidden trigger element for programmatic activation */}
+                      </div>
                     </ContextMenuTrigger>
+
+                    <SidebarMenuItem>
+                      <SidebarMenuButton onClick={() => handleChatSelect(chat.id.toString())}>
+                        <MessageSquare className="h-4 w-4" />
+                        <div className="flex flex-col items-start">
+                          <span className="truncate max-w-[140px]">{chat.title}</span>
+                          <span className="text-xs text-muted-foreground">{chat.timestamp}</span>
+                        </div>
+                      </SidebarMenuButton>
+                      <SidebarMenuAction 
+                        className="opacity-0 group-hover/menu-item:opacity-100 transition-opacity" 
+                        onClick={(e) => openContextMenu(chat.id.toString(), e)}
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </SidebarMenuAction>
+                    </SidebarMenuItem>
+
                     <ContextMenuContent className="w-56">
+                      <ContextMenuItem 
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={(e) => handleOpenRenameDialog(chat.id.toString(), chat.title, e)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                        <span>Rename</span>
+                      </ContextMenuItem>
+                      
+                      <ContextMenuItem 
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setActiveChatId(chat.id.toString());
+                          setMoveToProjectOpen(true);
+                        }}
+                      >
+                        <FolderMove className="h-4 w-4" />
+                        <span>Move to project</span>
+                      </ContextMenuItem>
+
+                      <ContextMenuSeparator />
+                      
                       <ContextMenuItem 
                         className="text-destructive flex items-center gap-2 cursor-pointer"
                         onClick={(e) => handleDeleteChat(chat.id.toString(), e)}
                       >
                         <Trash className="h-4 w-4" />
                         <span>Delete chat</span>
-                      </ContextMenuItem>
-                      <ContextMenuSeparator />
-                      <ContextMenuItem disabled className="flex items-center gap-2 cursor-pointer opacity-50">
-                        <span>Add to folder</span>
-                        <span className="text-xs ml-auto">(Coming soon)</span>
                       </ContextMenuItem>
                     </ContextMenuContent>
                   </ContextMenu>
@@ -176,6 +309,69 @@ const SidebarChatHistory = ({
           </SidebarGroupContent>
         </CollapsibleContent>
       </Collapsible>
+
+      {/* Rename Dialog */}
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rename Chat</DialogTitle>
+            <DialogDescription>
+              Enter a new name for this conversation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input 
+              value={newTitle} 
+              onChange={(e) => setNewTitle(e.target.value)} 
+              placeholder="Chat name" 
+              className="w-full"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRenameChat}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Move to Project Popover */}
+      <Popover open={moveToProjectOpen} onOpenChange={setMoveToProjectOpen}>
+        <PopoverContent className="w-60" align="center">
+          <div className="space-y-2">
+            <h3 className="font-medium">Move to project</h3>
+            {userProjects.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No projects available. Create a project first.</p>
+            ) : (
+              <div className="max-h-48 overflow-y-auto space-y-1">
+                {userProjects.map((project) => (
+                  <Button 
+                    key={project.id.toString()} 
+                    variant="ghost" 
+                    className="w-full justify-start text-sm"
+                    onClick={() => handleMoveToProject(project.id.toString())}
+                  >
+                    {project.title}
+                  </Button>
+                ))}
+              </div>
+            )}
+            <div className="pt-2 flex justify-end">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setMoveToProjectOpen(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
     </SidebarGroup>
   );
 };
