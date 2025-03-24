@@ -116,6 +116,7 @@ const ChatSidebar = () => {
               chatHistory={chatHistory}
               isLoading={isLoadingChatHistory}
               onSelectChat={handleSelectChat}
+              refreshChatHistory={refreshChatHistory}
             />
           </>
         )}
