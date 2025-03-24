@@ -9,7 +9,7 @@ export const useChatOperations = (
   generateNewChatId: () => string,
   loadChatByIdHandler: (id: string, setChatId: (id: string | null) => void, setMessages: (messages: Message[]) => void) => Promise<any>,
   setChatId: (id: string | null) => void,
-  updateAllMessages: (messages: Message[]) => void
+  setMessages: (messages: Message[]) => void
 ) => {
   // Reset chat state and generate new ID
   const resetChat = useCallback(() => {
@@ -33,11 +33,11 @@ export const useChatOperations = (
       // Clear existing messages - they will be loaded via real-time subscription
       resetMessages();
       
-      return await loadChatByIdHandler(id, setChatId, updateAllMessages);
+      return await loadChatByIdHandler(id, setChatId, setMessages);
     } catch (error) {
       console.error("Error loading chat by ID:", error);
     }
-  }, [loadChatByIdHandler, setChatId, resetMessages, updateAllMessages]);
+  }, [loadChatByIdHandler, setChatId, resetMessages, setMessages]);
 
   // Format messages for API
   const getMessagesForAPI = useCallback((userMessage: Message): ChatMessage[] => {
