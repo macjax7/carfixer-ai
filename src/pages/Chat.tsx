@@ -115,12 +115,14 @@ const Chat: React.FC = () => {
   if (!user) {
     return (
       <div className="flex flex-col h-screen bg-background">
-        <div className="flex flex-1 w-full overflow-hidden">
-          <main className="flex-1 overflow-hidden relative">
-            <ChatHeader />
-            <AIChat />
-          </main>
-        </div>
+        <SidebarProvider defaultOpen={false}>
+          <div className="flex flex-1 w-full overflow-hidden">
+            <main className="flex-1 overflow-hidden relative">
+              <ChatHeader />
+              <AIChat />
+            </main>
+          </div>
+        </SidebarProvider>
       </div>
     );
   }
