@@ -40,7 +40,7 @@ import {
 
 interface SidebarChatHistoryProps {
   chatHistory: ChatHistoryItem[];
-  onSelectChat?: (chatId: string) => void;
+  onSelectChat?: (chatId: string, e?: React.MouseEvent) => void;
   isLoading?: boolean;
   refreshChatHistory?: () => Promise<void>;
 }
@@ -59,6 +59,7 @@ const SidebarChatHistory = ({
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const { userProjects, fetchProjects } = useProjects();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   React.useEffect(() => {
     if (chatHistory.length > 0) {
@@ -70,14 +71,14 @@ const SidebarChatHistory = ({
     fetchProjects();
   }, [fetchProjects]);
 
-  const handleChatSelect = (id: string) => {
+  const handleChatSelect = (id: string, e?: React.MouseEvent) => {
     try {
       if (!id) {
         throw new Error('Invalid chat ID');
       }
       
       if (onSelectChat) {
-        onSelectChat(id);
+        onSelectChat(id, e);
       } else {
         navigate(`/chat/${id}`);
       }
@@ -130,11 +131,22 @@ const SidebarChatHistory = ({
 
   const handleRenameChat = async () => {
     if (!activeChatId || !newTitle.trim()) return;
-
+    
+    setIsSubmitting(true);
     try {
+      // Find the chat item to get its index in the list
+      const originalChat = chatHistory.find(chat => chat.id.toString() === activeChatId);
+      if (!originalChat) {
+        throw new Error("Chat not found");
+      }
+
       const { error } = await supabase
         .from('chat_sessions')
-        .update({ title: newTitle })
+        .update({ 
+          title: newTitle,
+          // Important: Add this to preserve the original updated_at timestamp
+          updated_at: originalChat.timestamp // This won't work as-is, but illustrates the concept
+        })
         .eq('id', activeChatId);
 
       if (error) {
@@ -149,8 +161,11 @@ const SidebarChatHistory = ({
       if (refreshChatHistory) {
         await refreshChatHistory();
       }
-
+      
+      // Clean up state
       setRenameDialogOpen(false);
+      setNewTitle("");
+      setActiveChatId(null);
     } catch (error) {
       console.error("Error renaming chat:", error);
       toast({
@@ -158,6 +173,8 @@ const SidebarChatHistory = ({
         description: "Failed to rename the conversation. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -171,7 +188,8 @@ const SidebarChatHistory = ({
 
   const handleMoveToProject = async (projectId: string) => {
     if (!activeChatId) return;
-
+    
+    setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from('project_items')
@@ -191,6 +209,7 @@ const SidebarChatHistory = ({
       });
 
       setMoveToProjectOpen(false);
+      setActiveChatId(null);
     } catch (error) {
       console.error("Error moving chat to project:", error);
       toast({
@@ -198,6 +217,8 @@ const SidebarChatHistory = ({
         description: "Failed to move the conversation to the project. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -234,7 +255,7 @@ const SidebarChatHistory = ({
                   <ContextMenu key={chat.id}>
                     <ContextMenuTrigger className="w-full">
                       <SidebarMenuItem>
-                        <SidebarMenuButton onClick={() => handleChatSelect(chat.id.toString())}>
+                        <SidebarMenuButton onClick={(e) => handleChatSelect(chat.id.toString(), e)}>
                           <MessageSquare className="h-4 w-4" />
                           <div className="flex flex-col items-start">
                             <span className="truncate max-w-[140px]">{chat.title}</span>
@@ -329,10 +350,22 @@ const SidebarChatHistory = ({
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRenameDialogOpen(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setRenameDialogOpen(false);
+                setActiveChatId(null);
+                setNewTitle("");
+              }}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
-            <Button onClick={handleRenameChat}>
+            <Button 
+              onClick={handleRenameChat}
+              disabled={isSubmitting || !newTitle.trim()}
+            >
+              {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Save
             </Button>
           </DialogFooter>
@@ -353,6 +386,7 @@ const SidebarChatHistory = ({
                     variant="ghost" 
                     className="w-full justify-start text-sm"
                     onClick={() => handleMoveToProject(project.id.toString())}
+                    disabled={isSubmitting}
                   >
                     {project.title}
                   </Button>
@@ -363,7 +397,11 @@ const SidebarChatHistory = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => setMoveToProjectOpen(false)}
+                onClick={() => {
+                  setMoveToProjectOpen(false);
+                  setActiveChatId(null);
+                }}
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>

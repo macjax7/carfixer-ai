@@ -55,8 +55,8 @@ const ChatSidebar = () => {
     fetchProjects
   } = useSidebarState();
 
-  // Handle chat selection - fix the type here by ensuring it accepts a React.MouseEvent parameter
-  const handleSelectChat = async (chatId: string) => {
+  // Handle chat selection - update to accept an optional event parameter
+  const handleSelectChat = async (chatId: string, e?: React.MouseEvent) => {
     try {
       if (!chatId) {
         throw new Error('Invalid chat ID');

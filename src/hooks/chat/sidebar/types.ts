@@ -1,4 +1,3 @@
-
 export interface ProjectSubItem {
   id: number | string;
   title: string;
@@ -13,10 +12,11 @@ export interface Project {
 }
 
 export interface ChatHistoryItem {
-  id: number | string;
+  id: string | number;
   title: string;
   timestamp: string;
   path: string;
+  updated_at?: string;
 }
 
 export interface SearchResults {

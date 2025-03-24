@@ -39,7 +39,9 @@ export const useChatHistory = () => {
           id: session.id,
           title: session.title || 'Untitled Chat',
           timestamp: formatRelativeTime(session.updated_at),
-          path: `/chat/${session.id}`
+          path: `/chat/${session.id}`,
+          // Store the original updated_at for sorting preservation
+          updated_at: session.updated_at
         }));
         
         setChatHistory(formattedData);
@@ -84,12 +86,13 @@ export const useChatHistory = () => {
         return;
       }
       
-      // Format the data into ChatHistoryItem format
+      // Format the data into ChatHistoryItem format while preserving the original order
       const formattedData = data.map(session => ({
         id: session.id,
         title: session.title || 'Untitled Chat',
         timestamp: formatRelativeTime(session.updated_at),
-        path: `/chat/${session.id}`
+        path: `/chat/${session.id}`,
+        updated_at: session.updated_at
       }));
       
       setChatHistory(formattedData);
