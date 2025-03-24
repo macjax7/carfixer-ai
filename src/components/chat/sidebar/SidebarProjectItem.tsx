@@ -6,8 +6,8 @@ import {
   SidebarMenuItem, 
   SidebarMenuButton, 
   SidebarMenuAction, 
-  SidebarSubMenu, 
-  SidebarSubMenuItem
+  SidebarMenu,
+  SidebarGroup
 } from '@/components/ui/sidebar';
 import {
   ContextMenu,
@@ -28,7 +28,6 @@ interface SidebarProjectItemProps {
   isOpen: boolean;
   onToggle: () => void;
   onDelete?: () => void;
-  // Update to match the new function signature from the parent
   onSelectChat?: (chatId: string) => () => void;
 }
 
@@ -106,21 +105,22 @@ const SidebarProjectItem: React.FC<SidebarProjectItemProps> = ({
       </ContextMenuContent>
       
       {isOpen && project.subItems && project.subItems.length > 0 && (
-        <SidebarSubMenu>
-          {project.subItems.map((item) => (
-            <SidebarSubMenuItem key={item.id.toString()}>
-              <SidebarMenuButton 
-                asChild
-                // Update to use the new function signature
-                onClick={onSelectChat ? onSelectChat(item.path.replace('/chat/', '')) : undefined}
-              >
-                <div>
-                  <span className="truncate max-w-[140px]">{item.title}</span>
-                </div>
-              </SidebarMenuButton>
-            </SidebarSubMenuItem>
-          ))}
-        </SidebarSubMenu>
+        <SidebarGroup className="ml-4 mt-1">
+          <SidebarMenu>
+            {project.subItems.map((item) => (
+              <SidebarMenuItem key={item.id.toString()}>
+                <SidebarMenuButton 
+                  asChild
+                  onClick={onSelectChat ? onSelectChat(item.path.replace('/chat/', '')) : undefined}
+                >
+                  <div>
+                    <span className="truncate max-w-[140px]">{item.title}</span>
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
       )}
     </ContextMenu>
   );
