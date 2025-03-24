@@ -1,4 +1,3 @@
-
 import { corsHeaders, createSuccessResponse, createErrorResponse } from '../utils.ts';
 import { ListingExtractorService } from '../services/listing-extractor.ts';
 import { VehicleAnalyzerService } from '../services/vehicle-analyzer.ts';
