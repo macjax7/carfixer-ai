@@ -11,7 +11,7 @@ import VehicleProvider from './providers/VehicleProvider';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from './components/ui/toaster';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './context/auth/AuthContext';
 
 const queryClient = new QueryClient();
 
