@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useChatStorage } from './useChatStorage';
 import { Message } from '@/components/chat/types';
