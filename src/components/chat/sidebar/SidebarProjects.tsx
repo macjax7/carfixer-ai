@@ -82,7 +82,7 @@ const SidebarProjects = ({
                       project={project}
                       isOpen={projectStates[project.title]}
                       onToggle={() => toggleProject(project.title)}
-                      onDelete={deleteProject ? () => deleteProject(project.id) : undefined}
+                      onDelete={deleteProject ? () => deleteProject(project.id.toString()) : undefined}
                       onSelectChat={onSelectChat}
                     />
                   ))}

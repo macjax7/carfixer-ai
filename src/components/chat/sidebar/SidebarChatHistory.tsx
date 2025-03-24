@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, MessageSquare, MoreVertical, Trash, Pencil, FolderCode } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -30,6 +31,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useProjects } from '@/hooks/chat/sidebar/useProjects';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SidebarChatHistoryProps {
   chatHistory: ChatHistoryItem[];
@@ -194,17 +201,6 @@ const SidebarChatHistory = ({
     }
   };
 
-  const openContextMenu = (chatId: string, event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setActiveChatId(chatId);
-    
-    const menuEl = document.getElementById(`context-menu-${chatId}`);
-    if (menuEl) {
-      menuEl.click();
-    }
-  };
-
   if (chatHistory.length === 0 && !isLoading) return null;
 
   return (
@@ -236,27 +232,44 @@ const SidebarChatHistory = ({
               <SidebarMenu>
                 {chatHistory.map((chat) => (
                   <ContextMenu key={chat.id}>
-                    <ContextMenuTrigger asChild>
-                      <div id={`context-menu-${chat.id.toString()}`} className="hidden">
-                        {/* Hidden trigger element for programmatic activation */}
-                      </div>
+                    <ContextMenuTrigger className="w-full">
+                      <SidebarMenuItem>
+                        <SidebarMenuButton onClick={() => handleChatSelect(chat.id.toString())}>
+                          <MessageSquare className="h-4 w-4" />
+                          <div className="flex flex-col items-start">
+                            <span className="truncate max-w-[140px]">{chat.title}</span>
+                            <span className="text-xs text-muted-foreground">{chat.timestamp}</span>
+                          </div>
+                        </SidebarMenuButton>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <SidebarMenuAction 
+                                className="opacity-0 group-hover/menu-item:opacity-100 transition-opacity" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveChatId(chat.id.toString());
+                                  
+                                  // Create a custom event to simulate a right-click
+                                  const contextMenuEvent = new MouseEvent('contextmenu', {
+                                    bubbles: true,
+                                    cancelable: true,
+                                    clientX: e.clientX,
+                                    clientY: e.clientY
+                                  });
+                                  
+                                  // Dispatch the event on the current target
+                                  e.currentTarget.dispatchEvent(contextMenuEvent);
+                                }}
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </SidebarMenuAction>
+                            </TooltipTrigger>
+                            <TooltipContent>Options</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </SidebarMenuItem>
                     </ContextMenuTrigger>
-
-                    <SidebarMenuItem>
-                      <SidebarMenuButton onClick={() => handleChatSelect(chat.id.toString())}>
-                        <MessageSquare className="h-4 w-4" />
-                        <div className="flex flex-col items-start">
-                          <span className="truncate max-w-[140px]">{chat.title}</span>
-                          <span className="text-xs text-muted-foreground">{chat.timestamp}</span>
-                        </div>
-                      </SidebarMenuButton>
-                      <SidebarMenuAction 
-                        className="opacity-0 group-hover/menu-item:opacity-100 transition-opacity" 
-                        onClick={(e) => openContextMenu(chat.id.toString(), e)}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </SidebarMenuAction>
-                    </SidebarMenuItem>
 
                     <ContextMenuContent className="w-56">
                       <ContextMenuItem 
