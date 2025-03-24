@@ -26,36 +26,6 @@ const ChatThread: React.FC<ChatThreadProps> = ({
   // Memoize messages to prevent unnecessary re-renders
   const memoizedMessages = useMemo(() => messages, [messages]);
   
-  // Improved scroll management: only auto-scroll if user is near bottom
-  useEffect(() => {
-    if (!scrollAreaRef.current || messages.length === 0) return;
-    
-    const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
-    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    
-    // Only auto-scroll if user is already near the bottom (within 150px)
-    const userIsNearBottom = distanceFromBottom < 150;
-    
-    if (userIsNearBottom && !userScrolled) {
-      // Use requestAnimationFrame for smoother scrolling
-      requestAnimationFrame(() => {
-        if (scrollAreaRef.current) {
-          scrollAreaRef.current.scrollTop = scrollHeight;
-        }
-      });
-    }
-    
-    // Track the last message ID to avoid redundant scrolling
-    lastMessageIdRef.current = messages[messages.length - 1]?.id ?? null;
-  }, [messages, userScrolled]);
-  
-  // Reset userScrolled when user explicitly sends a new message
-  useEffect(() => {
-    if (isLoading) {
-      setUserScrolled(false);
-    }
-  }, [isLoading]);
-  
   // Improved scroll detection with debounce-like behavior
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (!scrollAreaRef.current) return;
