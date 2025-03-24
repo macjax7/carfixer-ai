@@ -13,6 +13,7 @@ export const useDirectChatHandler = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [chatId, setChatId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -137,6 +138,9 @@ export const useDirectChatHandler = () => {
     try {
       console.log("Loading chat:", id);
       
+      // Set loading state
+      setIsLoading(true);
+      
       // Clear current messages
       setMessages([]);
       
@@ -145,11 +149,38 @@ export const useDirectChatHandler = () => {
       
       // Load messages for this chat
       const loadedMessages = await loadMessages(id);
+      
+      // Verify the chat exists and has messages
+      if (loadedMessages.length === 0) {
+        // If authenticated user but no messages found
+        if (user) {
+          const { count } = await supabase
+            .from('chat_sessions')
+            .select('*', { count: 'exact' })
+            .eq('id', id)
+            .eq('user_id', user.id);
+            
+          if (count === 0) {
+            throw new Error('Chat session not found or access denied');
+          }
+        }
+      }
+      
       setMessages(loadedMessages);
     } catch (error) {
       console.error("Error loading chat:", error);
+      toast({
+        title: "Error loading chat",
+        description: "Unable to load the selected conversation. The chat may not exist or you may not have access to it.",
+        variant: "destructive"
+      });
+      
+      // If loading fails, reset to a new chat
+      resetChat();
+    } finally {
+      setIsLoading(false);
     }
-  }, [loadMessages]);
+  }, [loadMessages, user, toast, resetChat]);
   
   // Send a message
   const sendMessage = useCallback(async (text: string, image?: string) => {
@@ -196,6 +227,11 @@ export const useDirectChatHandler = () => {
       setInput('');
     } catch (error) {
       console.error("Error in sendMessage:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive"
+      });
     }
   }, [
     chatId, 
@@ -215,6 +251,7 @@ export const useDirectChatHandler = () => {
     input,
     setInput,
     isProcessing,
+    isLoading,
     sendMessage,
     chatId,
     resetChat,

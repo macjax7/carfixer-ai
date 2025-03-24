@@ -1,5 +1,5 @@
 
-import React, { FormEvent, useEffect } from 'react';
+import React, { FormEvent, useEffect, useRef } from 'react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useDirectChatHandler } from '@/hooks/chat/useDirectChatHandler';
 import EmptyChat from './EmptyChat';
@@ -7,6 +7,7 @@ import ChatThread from './ChatThread';
 import ChatInputContainer from './ChatInputContainer';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 
 const SimpleChatContainer: React.FC = () => {
   const {
@@ -17,31 +18,65 @@ const SimpleChatContainer: React.FC = () => {
     sendMessage,
     resetChat,
     loadChatById,
-    chatId
+    chatId,
+    isLoading
   } = useDirectChatHandler();
   
   const { state } = useSidebar();
   const { toast } = useToast();
   const navigate = useNavigate();
   const params = useParams();
+  const chatThreadRef = useRef<HTMLDivElement>(null);
+  const hasManuallyScrolled = useRef(false);
+  
+  // Scroll to bottom of chat when messages change
+  useEffect(() => {
+    if (chatThreadRef.current && !hasManuallyScrolled.current) {
+      const scrollElement = chatThreadRef.current;
+      scrollElement.scrollTop = scrollElement.scrollHeight;
+    }
+  }, [messages]);
+  
+  // Track when user manually scrolls up
+  useEffect(() => {
+    const handleScroll = () => {
+      if (chatThreadRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = chatThreadRef.current;
+        // If user has scrolled up more than 100px from bottom, mark as manually scrolled
+        hasManuallyScrolled.current = scrollHeight - scrollTop - clientHeight > 100;
+      }
+    };
+    
+    const scrollElement = chatThreadRef.current;
+    if (scrollElement) {
+      scrollElement.addEventListener('scroll', handleScroll);
+      return () => scrollElement.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
   
   // If there's a chat ID in the URL, load that chat
   useEffect(() => {
-    if (params.id && params.id !== chatId) {
-      loadChatById(params.id);
+    if (params.chatId && params.chatId !== chatId) {
+      loadChatById(params.chatId);
+      // Reset manual scroll flag when loading a new chat
+      hasManuallyScrolled.current = false;
     }
-  }, [params.id, loadChatById, chatId]);
+  }, [params.chatId, loadChatById, chatId]);
   
   const handleSendMessage = (e: FormEvent) => {
     e.preventDefault();
     if (input.trim() && !isProcessing) {
       sendMessage(input);
+      // Reset manual scroll flag when sending a new message
+      hasManuallyScrolled.current = false;
     }
   };
   
   const handleTextInput = (text: string) => {
     if (text.trim() && !isProcessing) {
       sendMessage(text);
+      // Reset manual scroll flag when sending a new message
+      hasManuallyScrolled.current = false;
     }
   };
   
@@ -55,6 +90,8 @@ const SimpleChatContainer: React.FC = () => {
         : "Can you identify this car part or issue?";
         
       sendMessage(prompt, imageUrl);
+      // Reset manual scroll flag when sending a new message
+      hasManuallyScrolled.current = false;
     }
   };
   
@@ -65,6 +102,8 @@ const SimpleChatContainer: React.FC = () => {
         description: "Analyzing vehicle listing data...",
       });
       sendMessage(`Can you analyze this vehicle listing? ${url}`);
+      // Reset manual scroll flag when sending a new message
+      hasManuallyScrolled.current = false;
     }
   };
   
@@ -76,6 +115,8 @@ const SimpleChatContainer: React.FC = () => {
     resetChat();
     setInput('');
     navigate('/');
+    // Reset manual scroll flag when starting a new chat
+    hasManuallyScrolled.current = false;
   };
   
   // Determine if we're in an empty chat state
@@ -89,6 +130,16 @@ const SimpleChatContainer: React.FC = () => {
      msg.text.toLowerCase().includes('my truck') ||
      msg.text.toLowerCase().includes('my suv'))
   );
+  
+  // Show loading state while retrieving chat history
+  if (isLoading && !isEmptyChat) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Loading conversation...</p>
+      </div>
+    );
+  }
   
   return (
     <div className={`flex flex-col h-full bg-background ${isEmptyChat ? 'justify-center' : ''}`}>
@@ -111,12 +162,17 @@ const SimpleChatContainer: React.FC = () => {
         />
       ) : (
         <>
-          <ChatThread 
-            messages={messages}
-            isLoading={isProcessing}
-            hasAskedForVehicle={hasAskedForVehicle}
-            sidebarState={state}
-          />
+          <div 
+            ref={chatThreadRef} 
+            className="flex-1 overflow-y-auto"
+          >
+            <ChatThread 
+              messages={messages}
+              isLoading={isProcessing}
+              hasAskedForVehicle={hasAskedForVehicle}
+              sidebarState={state}
+            />
+          </div>
           <ChatInputContainer
             input={input}
             setInput={setInput}

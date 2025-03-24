@@ -1,12 +1,12 @@
 
 import React from 'react';
 import { ChevronDown, ChevronRight, MessageSquare } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { ChatHistoryItem } from '@/hooks/chat/sidebar/types';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface SidebarChatHistoryProps {
   chatHistory: ChatHistoryItem[];
@@ -20,6 +20,7 @@ const SidebarChatHistory = ({
   isLoading = false
 }: SidebarChatHistoryProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [chatHistoryOpen, setChatHistoryOpen] = React.useState(chatHistory.length > 0);
 
   React.useEffect(() => {
@@ -30,10 +31,23 @@ const SidebarChatHistory = ({
   }, [chatHistory]);
 
   const handleChatSelect = (id: string) => {
-    if (onSelectChat) {
-      onSelectChat(id);
-    } else {
-      navigate(`/chat/${id}`);
+    try {
+      if (!id) {
+        throw new Error('Invalid chat ID');
+      }
+      
+      if (onSelectChat) {
+        onSelectChat(id);
+      } else {
+        navigate(`/chat/${id}`);
+      }
+    } catch (error) {
+      console.error("Error selecting chat:", error);
+      toast({
+        title: "Error loading chat",
+        description: "Failed to load the selected conversation. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 

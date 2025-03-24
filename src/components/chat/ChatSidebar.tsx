@@ -18,11 +18,13 @@ import NewProjectDialog from './sidebar/NewProjectDialog';
 import { useSidebarState } from '@/hooks/chat/sidebar/useSidebarState';
 import { useNavigate } from 'react-router-dom';
 import { useChat } from '@/hooks/chat/useChat';
+import { useToast } from '@/hooks/use-toast';
 
 const ChatSidebar = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { loadChatById } = useChat();
+  const { toast } = useToast();
   
   const {
     projectsOpen,
@@ -53,8 +55,26 @@ const ChatSidebar = () => {
   } = useSidebarState();
 
   // Handle chat selection
-  const handleSelectChat = (chatId: string) => {
-    loadChatById(chatId);
+  const handleSelectChat = async (chatId: string) => {
+    try {
+      if (!chatId) {
+        throw new Error('Invalid chat ID');
+      }
+      
+      // Load the chat by ID and update URL
+      await loadChatById(chatId);
+      navigate(`/chat/${chatId}`);
+      
+      // Optionally refresh the chat history to show the latest state
+      refreshChatHistory();
+    } catch (error) {
+      console.error("Error loading chat:", error);
+      toast({
+        title: "Error loading chat",
+        description: "Failed to load the selected conversation. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

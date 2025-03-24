@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import AIChat from '../components/AIChat';
 import ChatSidebar from '../components/chat/ChatSidebar';
 import { SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
@@ -110,6 +110,15 @@ const ChatHeader = () => {
 
 const Chat: React.FC = () => {
   const { user } = useAuth();
+  const params = useParams();
+  const { loadChatById } = useChat();
+  
+  // Load specific chat if chatId is in the URL
+  useEffect(() => {
+    if (user && params.chatId) {
+      loadChatById(params.chatId);
+    }
+  }, [user, params.chatId, loadChatById]);
 
   // For guest users, render a simplified layout without the sidebar
   if (!user) {
