@@ -39,6 +39,16 @@ export const useGuestSession = () => {
     }
   }, []);
 
+  // Clear guest session from localStorage
+  const clearGuestSession = useCallback(() => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      console.log("Guest session cleared");
+    } catch (error) {
+      console.error("Error clearing guest session:", error);
+    }
+  }, []);
+
   // Save guest session to localStorage with quota protection
   const saveGuestSession = useCallback((chatId: string, messages: Message[], messageHistory: string[]) => {
     try {
@@ -97,6 +107,7 @@ export const useGuestSession = () => {
     saveGuestSession,
     hasGuestSession,
     generateGuestChatId,
+    clearGuestSession,
     isLoaded
   };
 };

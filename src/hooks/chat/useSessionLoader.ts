@@ -15,7 +15,11 @@ export const useSessionLoader = (
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { loadGuestSession, hasGuestSession, generateGuestChatId } = useGuestSession();
-  const { fetchLastChatSession, fetchChatMessages } = useChatStorage(chatId, setChatId);
+  
+  // Correctly pass a function that handles the messages loaded
+  const { fetchLastChatSession, fetchChatMessages } = useChatStorage(chatId, (messages: Message[]) => {
+    console.log("Messages loaded callback:", messages.length);
+  });
 
   // Load initial session or load a specific chat by ID
   const loadChatById = useCallback(async (id: string) => {
@@ -28,16 +32,16 @@ export const useSessionLoader = (
         console.log(`Found ${chatMessages.length} messages for chat ${id}`);
         const formattedMessages = chatMessages.map(msg => ({
           id: msg.id,
-          sender: msg.role === 'user' ? 'user' as const : 'ai' as const,
-          text: msg.content,
-          timestamp: new Date(msg.created_at),
-          image: msg.image_url
+          sender: msg.sender,
+          text: msg.text,
+          timestamp: new Date(msg.timestamp),
+          image: msg.image
         }));
         
         // Update message history with user messages
         const userMsgHistory = chatMessages
-          .filter(msg => msg.role === 'user')
-          .map(msg => msg.content);
+          .filter(msg => msg.sender === 'user')
+          .map(msg => msg.text);
         
         return {
           messages: formattedMessages,
@@ -106,16 +110,16 @@ export const useSessionLoader = (
           console.log(`Retrieved ${chatMessages.length} messages for session ${chatSession.id}`);
           const formattedMessages = chatMessages.map(msg => ({
             id: msg.id,
-            sender: msg.role === 'user' ? 'user' as const : 'ai' as const,
-            text: msg.content,
-            timestamp: new Date(msg.created_at),
-            image: msg.image_url
+            sender: msg.sender,
+            text: msg.text,
+            timestamp: new Date(msg.timestamp),
+            image: msg.image
           }));
           
           // Update message history with user messages
           const userMsgHistory = chatMessages
-            .filter(msg => msg.role === 'user')
-            .map(msg => msg.content);
+            .filter(msg => msg.sender === 'user')
+            .map(msg => msg.text);
           
           setIsLoading(false);
           return {

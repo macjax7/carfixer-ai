@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { nanoid } from 'nanoid';
+import { v4 as uuidv4 } from 'uuid';
 import { Message } from '@/components/chat/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -9,9 +9,9 @@ export const useSessionStorage = (setChatId: (id: string) => void) => {
   const { user } = useAuth();
 
   const createChatSession = useCallback(async (message: Message) => {
-    if (!user) return;
+    if (!user) return undefined;
 
-    const newChatId = nanoid();
+    const newChatId = uuidv4();
     setChatId(newChatId);
 
     try {

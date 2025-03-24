@@ -127,7 +127,7 @@ export const useMessageStorage = () => {
       // Map database messages to the application Message format
       const messages = data?.map(msg => ({
         id: msg.id,
-        sender: msg.role === 'user' ? 'user' : 'ai',
+        sender: msg.role === 'user' ? 'user' as const : 'ai' as const,
         text: msg.content,
         timestamp: new Date(msg.created_at),
         image: msg.image_url

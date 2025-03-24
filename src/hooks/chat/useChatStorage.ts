@@ -2,9 +2,18 @@
 import { useCallback } from 'react';
 import { Message } from '@/components/chat/types';
 import { useMessageStorage } from './useMessageStorage';
+import { useSessionStorage } from './useSessionStorage';
 
 export const useChatStorage = (chatId: string | null, onMessagesLoaded: (messages: Message[]) => void) => {
   const { storeUserMessage, storeAIMessage, fetchChatMessages } = useMessageStorage();
+  const { createChatSession, fetchLastChatSession } = useSessionStorage((id) => {
+    // Properly handle the id to messages conversion
+    fetchChatMessages(id).then(messages => {
+      if (messages && messages.length > 0) {
+        onMessagesLoaded(messages);
+      }
+    });
+  });
 
   const loadChatMessages = useCallback(async () => {
     if (!chatId) return [];
@@ -30,6 +39,9 @@ export const useChatStorage = (chatId: string | null, onMessagesLoaded: (message
   return {
     storeUserMessage,
     storeAIMessage,
-    loadChatMessages
+    loadChatMessages,
+    createChatSession,
+    fetchLastChatSession,
+    fetchChatMessages
   };
 };

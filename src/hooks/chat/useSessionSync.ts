@@ -18,11 +18,16 @@ export const useSessionSync = (
     saveGuestSession
   } = useGuestSession();
 
+  // Define a function to handle messages loaded from storage
+  const handleMessagesLoaded = useCallback((messages: Message[]) => {
+    console.log("Messages loaded from storage:", messages.length);
+  }, []);
+
   const {
     createChatSession,
     storeUserMessage,
     storeAIMessage
-  } = useChatStorage(chatId, setChatId);
+  } = useChatStorage(chatId, handleMessagesLoaded);
 
   // Save guest session
   const saveCurrentGuestSession = useCallback((
