@@ -111,14 +111,6 @@ const SimpleChatContainer: React.FC = () => {
     setInput(prompt);
   };
   
-  const handleNewChat = () => {
-    resetChat();
-    setInput('');
-    navigate('/');
-    // Reset manual scroll flag when starting a new chat
-    hasManuallyScrolled.current = false;
-  };
-  
   // Determine if we're in an empty chat state
   const isEmptyChat = messages.length === 0;
   
@@ -181,7 +173,6 @@ const SimpleChatContainer: React.FC = () => {
             handleListingAnalysis={handleListingAnalysis}
             isLoading={isProcessing}
             sidebarState={state}
-            onNewChat={handleNewChat}
           />
         </>
       )}

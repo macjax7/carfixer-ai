@@ -5,7 +5,6 @@ import AIChat from '../components/AIChat';
 import ChatSidebar from '../components/chat/ChatSidebar';
 import { SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { PlusCircle, Wrench } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import ProfileMenu from '@/components/ProfileMenu';
@@ -18,6 +17,13 @@ const ChatHeader = () => {
   const { handleNewChat, canCreateNewChat } = useChat();
   const navigate = useNavigate();
   
+  const onNewChatClick = () => {
+    if (canCreateNewChat) {
+      handleNewChat();
+      navigate('/');
+    }
+  };
+  
   // Only show these UI elements when the sidebar is collapsed
   if (state === 'collapsed') {
     return (
@@ -28,7 +34,7 @@ const ChatHeader = () => {
           {user && (
             <button 
               className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-border/60 hover:bg-secondary transition-colors mr-3 ${!canCreateNewChat ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-              onClick={handleNewChat}
+              onClick={onNewChatClick}
               disabled={!canCreateNewChat}
             >
               <PlusCircle className="h-4 w-4" />
