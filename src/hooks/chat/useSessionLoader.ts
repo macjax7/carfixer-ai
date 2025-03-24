@@ -46,6 +46,7 @@ export const useSessionLoader = (
     if (!user) return;
     
     setIsLoading(true);
+    console.log("Loading user session for:", user.email);
     
     try {
       const session = await fetchLastChatSession();
@@ -56,8 +57,11 @@ export const useSessionLoader = (
         
         const messages = await fetchChatMessages(session.id);
         if (messages && messages.length > 0) {
+          console.log(`Loaded ${messages.length} messages for user session`);
           setMessages(messages);
         }
+      } else {
+        console.log("No previous sessions found for user");
       }
     } catch (error) {
       console.error("Error loading user session:", error);
@@ -68,17 +72,18 @@ export const useSessionLoader = (
   
   // Function to load the initial session based on user state
   const loadInitialSession = useCallback(async () => {
+    console.log("Loading initial session. User:", user?.email || "none", "ChatId:", chatId);
+    
     if (chatId) {
+      console.log("Using existing chatId:", chatId);
       await loadChatById(chatId);
     } else if (user) {
+      console.log("Loading user session for authenticated user");
       await loadUserSession();
+    } else {
+      console.log("No session to load - user is not authenticated and no chatId provided");
     }
   }, [chatId, user, loadChatById, loadUserSession]);
-  
-  // Initial loading of session data
-  useEffect(() => {
-    loadInitialSession();
-  }, [loadInitialSession]);
   
   return { 
     loadUserSession,

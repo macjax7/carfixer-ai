@@ -4,17 +4,20 @@ import { Message } from '@/components/chat/types';
 import { useGuestSession } from './useGuestSession';
 import { useAuth } from '@/context/AuthContext';
 import { useChatStorage } from './useChatStorage';
+import { useToast } from '@/hooks/use-toast';
 
 export const useSessionSync = (
   chatId: string | null, 
   setChatId: (id: string) => void
 ) => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  
   const {
     loadGuestSession,
-    clearGuestSession,
     hasGuestSession,
     isLoaded: isGuestSessionLoaded,
+    clearGuestSession,
     saveGuestSession
   } = useGuestSession();
 
@@ -45,18 +48,30 @@ export const useSessionSync = (
     const syncGuestSession = async () => {
       // Only run this effect when a user logs in and there's a guest session
       if (user && hasGuestSession() && isGuestSessionLoaded) {
+        console.log("Detected guest session and user login, syncing data...");
+        
         const guestSession = loadGuestSession();
         
         if (guestSession && guestSession.messages.length > 0) {
           try {
+            toast({
+              title: "Syncing guest session",
+              description: "Your previous messages are being saved to your account",
+            });
+            
             // Create a new chat session for the authenticated user
             const firstUserMessage = guestSession.messages.find(m => m.sender === 'user');
-            if (!firstUserMessage) return;
+            if (!firstUserMessage) {
+              console.log("No user messages found in guest session");
+              return;
+            }
             
             // Create a new chat session
             const newSessionId = await createChatSession(firstUserMessage);
             
             if (newSessionId) {
+              console.log("Created new session for synced data:", newSessionId);
+              
               // Upload all messages from the guest session
               for (const msg of guestSession.messages) {
                 if (msg.sender === 'user') {
@@ -74,6 +89,11 @@ export const useSessionSync = (
               
               console.log('Guest session synchronized to user account');
               
+              toast({
+                title: "Session Synced",
+                description: "Your conversations have been saved to your account",
+              });
+              
               return {
                 chatId: newSessionId,
                 messages: guestSession.messages,
@@ -82,6 +102,11 @@ export const useSessionSync = (
             }
           } catch (error) {
             console.error('Error syncing guest session:', error);
+            toast({
+              title: "Sync Error",
+              description: "Failed to sync your previous messages",
+              variant: "destructive"
+            });
           }
         }
       }
@@ -89,7 +114,7 @@ export const useSessionSync = (
     };
     
     syncGuestSession();
-  }, [user, isGuestSessionLoaded, loadGuestSession, clearGuestSession, hasGuestSession, createChatSession, storeUserMessage, storeAIMessage, setChatId]);
+  }, [user, isGuestSessionLoaded, loadGuestSession, clearGuestSession, hasGuestSession, createChatSession, storeUserMessage, storeAIMessage, setChatId, toast]);
 
   return {
     saveGuestSession: saveCurrentGuestSession

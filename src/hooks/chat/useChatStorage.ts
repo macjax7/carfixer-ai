@@ -46,6 +46,8 @@ export const useChatStorage = (chatId: string | null, onMessagesLoaded: (message
           description: "Failed to save message to database",
           variant: "destructive"
         });
+      } else {
+        console.log("Successfully stored user message to database");
       }
     } catch (error) {
       console.error("Error in storeUserMessage:", error);
@@ -82,6 +84,8 @@ export const useChatStorage = (chatId: string | null, onMessagesLoaded: (message
         
       if (error) {
         console.error("Error storing AI message:", error);
+      } else {
+        console.log("Successfully stored AI message to database");
       }
     } catch (error) {
       console.error("Error in storeAIMessage:", error);
@@ -90,7 +94,10 @@ export const useChatStorage = (chatId: string | null, onMessagesLoaded: (message
 
   // Create a chat session for a user message
   const createChatSession = useCallback(async (messageData: Message) => {
-    if (!user) return null;
+    if (!user) {
+      console.log("Cannot create chat session: not authenticated");
+      return null;
+    }
 
     const newChatId = uuidv4();
     
@@ -100,6 +107,8 @@ export const useChatStorage = (chatId: string | null, onMessagesLoaded: (message
         ? messageData.text.substring(0, 30) + '...' 
         : messageData.text;
         
+      console.log("Creating new chat session with title:", title);
+      
       const { error } = await supabase
         .from('chat_sessions')
         .insert({
@@ -110,6 +119,8 @@ export const useChatStorage = (chatId: string | null, onMessagesLoaded: (message
       
       if (error) {
         console.error('Error creating chat session:', error);
+      } else {
+        console.log('Successfully created chat session with ID:', newChatId);
       }
       
       return newChatId;
@@ -147,6 +158,13 @@ export const useChatStorage = (chatId: string | null, onMessagesLoaded: (message
         return [];
       }
       
+      if (!data || data.length === 0) {
+        console.log("No messages found for session:", sessionId);
+        return [];
+      }
+      
+      console.log(`Fetched ${data.length} messages for session:`, sessionId);
+      
       // Map database messages to app Message format
       const messages: Message[] = data.map(msg => ({
         id: msg.id,
@@ -165,7 +183,10 @@ export const useChatStorage = (chatId: string | null, onMessagesLoaded: (message
 
   // Load messages for current chat
   const loadChatMessages = useCallback(async () => {
-    if (!chatId) return [];
+    if (!chatId) {
+      console.log("Cannot load chat messages: no chatId");
+      return [];
+    }
     
     try {
       console.log("Loading chat messages for ID:", chatId);
@@ -174,6 +195,8 @@ export const useChatStorage = (chatId: string | null, onMessagesLoaded: (message
       if (messages && messages.length > 0) {
         console.log(`Loaded ${messages.length} messages`);
         onMessagesLoaded(messages);
+      } else {
+        console.log("No messages found for chat ID:", chatId);
       }
       
       return messages;
@@ -185,9 +208,14 @@ export const useChatStorage = (chatId: string | null, onMessagesLoaded: (message
 
   // Fetch the last chat session
   const fetchLastChatSession = useCallback(async () => {
-    if (!user) return null;
+    if (!user) {
+      console.log("Cannot fetch last chat session: not authenticated");
+      return null;
+    }
     
     try {
+      console.log("Fetching last chat session for user:", user.email);
+      
       const { data, error } = await supabase
         .from('chat_sessions')
         .select('*')
@@ -196,11 +224,17 @@ export const useChatStorage = (chatId: string | null, onMessagesLoaded: (message
         .limit(1)
         .single();
       
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // This error means no rows were returned, which is not an error for us
+          console.log("No previous chat sessions found for user");
+          return null;
+        }
         console.error("Error loading chat session:", error);
         return null;
       }
       
+      console.log("Found last session:", data?.id);
       return data || null;
     } catch (error) {
       console.error("Error in fetchLastChatSession:", error);
