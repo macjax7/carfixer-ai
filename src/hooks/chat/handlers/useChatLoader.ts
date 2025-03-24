@@ -1,18 +1,13 @@
 
 import { useCallback } from "react";
 import { useMessageLoading } from "./useMessageLoading";
-import { Message } from "@/components/chat/types";
 
 export const useChatLoader = () => {
   const { loadMessages } = useMessageLoading();
   
   // Load chat by ID
-  const loadChatById = useCallback(async (
-    id: string, 
-    setChatId: (id: string | null) => void, 
-    setMessages: (messages: Message[]) => void
-  ) => {
-    if (!id) return [];
+  const loadChatById = useCallback(async (id: string, setChatId: (id: string | null) => void, setMessages: (messages: any[]) => void) => {
+    if (!id) return;
     
     try {
       console.log("Loading chat:", id);
