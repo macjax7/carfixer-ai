@@ -45,14 +45,14 @@ export const useChat = () => {
   }, []);
 
   // Specialized handlers - fixing the signature mismatch
-  const { handleImageUpload, isProcessing: imageProcessing } = useImageHandler((message: Message) => {
+  const { handleImageUpload, isProcessingImage } = useImageHandler((message: Message) => {
     // Add the message directly to the chat
     addUserMessage(message);
     // Process the message for AI response
     return processAndSendMessage(message.text, message.image);
   });
   
-  const { handleListingAnalysis, isProcessing: listingProcessing } = useListingHandler((message: Message) => {
+  const { handleListingAnalysis, isProcessingListing } = useListingHandler((message: Message) => {
     // Add the message directly to the chat
     addUserMessage(message);
     // Process the message for AI response
@@ -90,8 +90,8 @@ export const useChat = () => {
     resetInput();
   }, [processAndSendMessage, resetInput, setInput]);
   
-  // Combine loading states
-  const isLoading = messagesLoading || inputLoading || imageProcessing || listingProcessing || isProcessing;
+  // Combine loading states - updated property names here
+  const isLoading = messagesLoading || inputLoading || isProcessingImage || isProcessingListing || isProcessing;
   
   // Check AI responses for vehicle request patterns
   useEffect(() => {
