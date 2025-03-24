@@ -70,23 +70,35 @@ export const useChat = () => {
     setIsCreatingNewChat(false);
   }, [resetChatMessages, resetInput]);
   
-  // Handle sending a message
+  // Handle sending a message - optimized to prevent UI flickering
   const handleSendMessage = useCallback(async (e) => {
     if (e && e.preventDefault) e.preventDefault(); // Ensure form doesn't refresh page
     
     if (!canSendMessage || !input.trim()) return;
     
-    // Process and send the message
-    await processAndSendMessage(input);
+    // Cache current input before resetting to prevent UI glitches
+    const currentInput = input;
+    
+    // Reset input immediately to improve UI responsiveness
     resetInput();
+    
+    // Process and send the message using the cached input
+    await processAndSendMessage(currentInput);
   }, [canSendMessage, input, processAndSendMessage, resetInput]);
   
-  // Handle clicking on a suggested prompt
+  // Handle clicking on a suggested prompt - optimized
   const handleSuggestedPrompt = useCallback(async (promptText: string) => {
-    setInput(promptText);
-    // Create a synthetic event to pass to handleSendMessage
-    await processAndSendMessage(promptText);
-    resetInput();
+    // Cache the prompt text for processing
+    const textToProcess = promptText;
+    
+    // Set input but don't wait
+    setInput(textToProcess);
+    
+    // Reset input immediately to improve UI responsiveness
+    setTimeout(() => resetInput(), 0);
+    
+    // Process the message using the cached prompt text
+    await processAndSendMessage(textToProcess);
   }, [processAndSendMessage, resetInput, setInput]);
   
   // Combine loading states - updated property names here

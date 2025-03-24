@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { nanoid } from 'nanoid';
 import { Message } from '@/components/chat/types';
 import { useAuth } from '@/context/AuthContext';
@@ -12,6 +12,7 @@ export const useChatMessages = () => {
   const [chatId, setChatId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [chatIdLoaded, setChatIdLoaded] = useState<string | null>(null);
+  const processedMessageIdsRef = useRef<Set<string>>(new Set());
   
   const { user } = useAuth();
   const { 
@@ -39,6 +40,11 @@ export const useChatMessages = () => {
             setMessages(guestSession.messages);
             setMessageHistory(guestSession.messageHistory || []);
             setChatIdLoaded(guestSession.chatId);
+            
+            // Initialize processed message IDs from loaded messages
+            const processedIds = new Set<string>();
+            guestSession.messages.forEach(msg => processedIds.add(msg.id));
+            processedMessageIdsRef.current = processedIds;
           } else {
             // Create a new guest chat ID
             const newId = generateGuestChatId();
@@ -69,25 +75,36 @@ export const useChatMessages = () => {
     initializeChat();
   }, [user, isLoaded, hasGuestSession, loadGuestSession, generateGuestChatId, chatId]);
   
-  // Set up real-time subscription - with improved handling
-  useRealTimeMessages(
-    chatId, 
-    // Add message callback - prevent duplicates
-    (message) => {
-      console.log("Adding message from real-time update:", message);
-      setMessages(prev => {
-        // Check if message already exists to avoid duplicates
-        if (prev.some(msg => msg.id === message.id)) {
-          return prev;
-        }
-        return [...prev, message];
-      });
-    },
-    // Update message history callback
-    (newHistoryItems) => {
-      console.log("Updating message history from real-time update:", newHistoryItems);
-      setMessageHistory(prev => [...prev, ...newHistoryItems]);
+  // Create a stable callback function for adding messages
+  const stableAddMessage = useCallback((message: Message) => {
+    // Skip if we've already processed this message
+    if (processedMessageIdsRef.current.has(message.id)) {
+      return;
     }
+    
+    // Add to processed set
+    processedMessageIdsRef.current.add(message.id);
+    
+    // Add to messages state with functional update to prevent race conditions
+    setMessages(prev => {
+      // Double check to avoid duplicates in case of concurrent updates
+      if (prev.some(msg => msg.id === message.id)) {
+        return prev;
+      }
+      return [...prev, message];
+    });
+  }, []);
+  
+  // Create a stable callback for updating message history
+  const stableUpdateHistory = useCallback((newHistoryItems: string[]) => {
+    setMessageHistory(prev => [...prev, ...newHistoryItems]);
+  }, []);
+  
+  // Set up real-time subscription with stable callbacks
+  useRealTimeMessages(
+    chatId,
+    stableAddMessage,
+    stableUpdateHistory
   );
   
   // Save guest session when messages change
@@ -99,36 +116,66 @@ export const useChatMessages = () => {
   
   const addUserMessage = useCallback((messageData: Message) => {
     console.log("Adding user message:", messageData);
+    
+    // Skip if already processed
+    if (processedMessageIdsRef.current.has(messageData.id)) {
+      return messageData;
+    }
+    
+    // Add to processed set
+    processedMessageIdsRef.current.add(messageData.id);
+    
+    // Use functional update to prevent race conditions
     setMessages(prevMessages => {
-      // Check if message already exists to avoid duplicates
+      // Double check to avoid duplicates
       if (prevMessages.some(msg => msg.id === messageData.id)) {
         return prevMessages;
       }
       return [...prevMessages, messageData];
     });
+    
     setMessageHistory(prev => [...prev, messageData.text]);
     return messageData;
   }, []);
   
   const addAIMessage = useCallback((messageData: Message) => {
     console.log("Adding AI message:", messageData);
+    
+    // Skip if already processed
+    if (processedMessageIdsRef.current.has(messageData.id)) {
+      return messageData;
+    }
+    
+    // Add to processed set
+    processedMessageIdsRef.current.add(messageData.id);
+    
+    // Use functional update to prevent race conditions
     setMessages(prev => {
-      // Check if message already exists to avoid duplicates
+      // Double check to avoid duplicates
       if (prev.some(msg => msg.id === messageData.id)) {
         return prev;
       }
       return [...prev, messageData];
     });
+    
     return messageData;
   }, []);
   
   const resetChat = useCallback(() => {
     console.log("Resetting chat");
+    
+    // Clear messages and history
     setMessages([]);
     setMessageHistory([]);
+    
+    // Clear processed message IDs
+    processedMessageIdsRef.current.clear();
+    
+    // Generate new chat ID
     const newId = nanoid();
     setChatId(newId);
     setChatIdLoaded(newId);
+    
     return newId;
   }, []);
   
@@ -139,14 +186,16 @@ export const useChatMessages = () => {
     console.log("Loading chat by ID:", id);
     
     try {
-      // For now, just set the chat ID
-      // Later we'll add loading messages from the database
+      // Set chat ID first
       setChatId(id);
       setChatIdLoaded(id);
       
       // Clear existing messages - they will be loaded via real-time subscription
       setMessages([]);
       setMessageHistory([]);
+      
+      // Clear processed message IDs for the new chat
+      processedMessageIdsRef.current.clear();
     } catch (error) {
       console.error("Error loading chat by ID:", error);
     } finally {

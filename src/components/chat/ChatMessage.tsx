@@ -101,5 +101,15 @@ const ChatMessage: React.FC<MessageProps> = ({
   );
 };
 
-// Wrap with React.memo to prevent unnecessary re-renders
-export default React.memo(ChatMessage);
+// Wrap with React.memo with custom comparison to prevent unnecessary re-renders
+export default React.memo(ChatMessage, (prevProps, nextProps) => {
+  // Only re-render if any of these key properties change
+  return (
+    prevProps.id === nextProps.id &&
+    prevProps.text === nextProps.text &&
+    prevProps.sender === nextProps.sender &&
+    prevProps.image === nextProps.image &&
+    prevProps.componentDiagram === nextProps.componentDiagram &&
+    prevProps.vehicleListingAnalysis === nextProps.vehicleListingAnalysis
+  );
+});

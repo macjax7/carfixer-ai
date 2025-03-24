@@ -48,5 +48,12 @@ const ChatInputContainer: React.FC<ChatInputContainerProps> = ({
   );
 };
 
-// Use memo to prevent unnecessary re-renders
-export default memo(ChatInputContainer);
+// Use memo to prevent unnecessary re-renders with custom comparison
+export default memo(ChatInputContainer, (prevProps, nextProps) => {
+  // Only re-render if these props change
+  return (
+    prevProps.input === nextProps.input &&
+    prevProps.isLoading === nextProps.isLoading &&
+    prevProps.sidebarState === nextProps.sidebarState
+  );
+});
