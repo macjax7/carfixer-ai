@@ -23,16 +23,18 @@ const ChatHeader = () => {
     return (
       <div className="absolute top-0 left-0 right-0 z-10 px-2 py-3 flex items-center justify-between bg-background/80 backdrop-blur-sm">
         <div className="flex items-center transition-all duration-200 ml-2">
-          <SidebarTrigger className="bg-background/80 backdrop-blur-sm rounded-md shadow-sm mr-2" />
+          {user && <SidebarTrigger className="bg-background/80 backdrop-blur-sm rounded-md shadow-sm mr-2" />}
           
-          <button 
-            className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-border/60 hover:bg-secondary transition-colors mr-3 ${!canCreateNewChat ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-            onClick={handleNewChat}
-            disabled={!canCreateNewChat}
-          >
-            <PlusCircle className="h-4 w-4" />
-            <span>New Chat</span>
-          </button>
+          {user && (
+            <button 
+              className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-border/60 hover:bg-secondary transition-colors mr-3 ${!canCreateNewChat ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              onClick={handleNewChat}
+              disabled={!canCreateNewChat}
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span>New Chat</span>
+            </button>
+          )}
           
           <div className="flex items-center gap-2">
             <div className="rounded-md bg-carfix-600 p-1">
@@ -107,6 +109,23 @@ const ChatHeader = () => {
 };
 
 const Chat: React.FC = () => {
+  const { user } = useAuth();
+
+  // For guest users, render a simplified layout without the sidebar
+  if (!user) {
+    return (
+      <div className="flex flex-col h-screen bg-background">
+        <div className="flex flex-1 w-full overflow-hidden">
+          <main className="flex-1 overflow-hidden relative">
+            <ChatHeader />
+            <AIChat />
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // For authenticated users, show the full layout with sidebar
   return (
     <div className="flex flex-col h-screen bg-background">
       <SidebarProvider defaultOpen={false}>
