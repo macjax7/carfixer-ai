@@ -1,4 +1,3 @@
-
 import { Vehicle } from '@/types/vehicle';
 
 interface VehicleInfo {
