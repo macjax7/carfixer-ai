@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AIChat from '../components/AIChat';
 import ChatSidebar from '../components/chat/ChatSidebar';
@@ -52,14 +52,14 @@ const ChatHeader = () => {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/login', { state: { preserveSession: true } })}
               >
                 Log in
               </Button>
               <Button 
                 variant="default" 
                 size="sm"
-                onClick={() => navigate('/signup')}
+                onClick={() => navigate('/signup', { state: { preserveSession: true } })}
               >
                 Sign up
               </Button>
@@ -90,14 +90,14 @@ const ChatHeader = () => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/login', { state: { preserveSession: true } })}
             >
               Log in
             </Button>
             <Button 
               variant="default" 
               size="sm" 
-              onClick={() => navigate('/signup')}
+              onClick={() => navigate('/signup', { state: { preserveSession: true } })}
             >
               Sign up
             </Button>

@@ -4,6 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import type { UserWithCustomAttributes } from '@/integrations/supabase/client';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 
 interface AuthContextType {
   user: UserWithCustomAttributes | null;
@@ -32,13 +35,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showSessionDialog, setShowSessionDialog] = useState(false);
   const { toast } = useToast();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Check if we should preserve the session
+  const shouldPreserveSession = location.state?.preserveSession;
 
   useEffect(() => {
     // First, set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.email);
+        
+        // Show dialog when user logs in with preserve session flag
+        if (event === 'SIGNED_IN' && shouldPreserveSession && 
+            localStorage.getItem('carfix_guest_session')) {
+          setShowSessionDialog(true);
+        }
+        
         setSession(currentSession);
         if (currentSession?.user) {
           // Create a modified user object with displayName and uid for Firebase compatibility
@@ -77,7 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [shouldPreserveSession]);
 
   useEffect(() => {
     if (error) {
@@ -161,6 +177,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const handleSessionKeep = () => {
+    setShowSessionDialog(false);
+    navigate('/', { replace: true });
+    toast({
+      title: "Session Preserved",
+      description: "Your chat history has been saved to your account."
+    });
+  };
+
+  const handleSessionDiscard = () => {
+    // Clear the guest session
+    localStorage.removeItem('carfix_guest_session');
+    setShowSessionDialog(false);
+    navigate('/', { replace: true });
+    toast({
+      title: "New Session Started",
+      description: "You're starting with a fresh chat."
+    });
+  };
+
   const value = {
     user,
     session,
@@ -174,6 +210,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <AuthContext.Provider value={value}>
       {children}
+      
+      {/* Session preservation dialog */}
+      <AlertDialog open={showSessionDialog} onOpenChange={setShowSessionDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save your chat session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Would you like to save your current chat session and continue where you left off?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={handleSessionDiscard}>
+              Start Fresh
+            </Button>
+            <Button onClick={handleSessionKeep}>
+              Save Session
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AuthContext.Provider>
   );
 };

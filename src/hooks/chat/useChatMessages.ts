@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { nanoid } from 'nanoid';
 import { Message } from '@/components/chat/types';
@@ -6,12 +7,24 @@ import { useChatStorage } from './useChatStorage';
 import { useChatSubscription } from './useChatSubscription';
 import { UseChatMessagesResult } from './types';
 import { supabase } from '@/integrations/supabase/client';
+import { useGuestSession } from './useGuestSession';
+import { useAuth } from '@/context/AuthContext';
 
 export const useChatMessages = (): UseChatMessagesResult => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageHistory, setMessageHistory] = useState<string[]>([]);
   const [chatId, setChatId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  const { user } = useAuth();
+  const {
+    saveGuestSession,
+    loadGuestSession,
+    clearGuestSession,
+    hasGuestSession,
+    generateGuestChatId,
+    isLoaded: isGuestSessionLoaded
+  } = useGuestSession();
 
   const {
     createChatSession,
@@ -28,6 +41,59 @@ export const useChatMessages = (): UseChatMessagesResult => {
     setMessageHistory
   });
   
+  // Sync guest session with database when user logs in
+  useEffect(() => {
+    const syncGuestSession = async () => {
+      // Only run this effect when a user logs in and there's a guest session
+      if (user && hasGuestSession() && isGuestSessionLoaded) {
+        const guestSession = loadGuestSession();
+        
+        if (guestSession && guestSession.messages.length > 0) {
+          try {
+            // Create a new chat session for the authenticated user
+            const firstUserMessage = guestSession.messages.find(m => m.sender === 'user');
+            if (!firstUserMessage) return;
+            
+            // Create a new chat session
+            const newSessionId = await createChatSession(firstUserMessage);
+            
+            if (newSessionId) {
+              // Upload all messages from the guest session
+              for (const msg of guestSession.messages) {
+                if (msg.sender === 'user') {
+                  await storeUserMessage(msg, newSessionId);
+                } else {
+                  await storeAIMessage(msg, newSessionId);
+                }
+              }
+              
+              // Set the current chat to the new session
+              setChatId(newSessionId);
+              setMessages(guestSession.messages);
+              setMessageHistory(guestSession.messageHistory);
+              
+              // Clear the guest session
+              clearGuestSession();
+              
+              console.log('Guest session synchronized to user account');
+            }
+          } catch (error) {
+            console.error('Error syncing guest session:', error);
+          }
+        }
+      }
+    };
+    
+    syncGuestSession();
+  }, [user, isGuestSessionLoaded]);
+  
+  // Auto-save guest session when messages change
+  useEffect(() => {
+    if (!user && chatId && messages.length > 0) {
+      saveGuestSession(chatId, messages, messageHistory);
+    }
+  }, [user, messages, messageHistory, chatId]);
+  
   // Load initial messages - don't show loading state for homepage
   useEffect(() => {
     let isMounted = true;
@@ -35,13 +101,25 @@ export const useChatMessages = (): UseChatMessagesResult => {
     const loadMessages = async () => {
       try {
         const { data: session } = await supabase.auth.getSession();
+        
+        // Handle guest user - check if we have a saved session
         if (!session.session?.user) {
-          // If no user is logged in, just create a new chat ID without loading state
-          setChatId(nanoid());
+          if (hasGuestSession()) {
+            const guestSession = loadGuestSession();
+            if (guestSession) {
+              setChatId(guestSession.chatId);
+              setMessages(guestSession.messages);
+              setMessageHistory(guestSession.messageHistory);
+              return;
+            }
+          }
+          
+          // No existing guest session, create a new chat ID
+          setChatId(generateGuestChatId());
           return;
         }
         
-        // Only set loading if loading an existing chat, not for new session
+        // Handle logged in user
         const chatSession = await fetchLastChatSession();
         
         if (chatSession && isMounted) {
@@ -89,30 +167,30 @@ export const useChatMessages = (): UseChatMessagesResult => {
     return () => {
       isMounted = false;
     };
-  }, []); // Empty dependency array to run only once on mount
+  }, [user]); // Added user as a dependency to reload when auth changes
   
   const addUserMessage = useCallback((messageData: Message) => {
     setMessages(prevMessages => [...prevMessages, messageData]);
     setMessageHistory(prev => [...prev, messageData.text]);
     
     // Store the message in the database if user is logged in
-    if (chatId) {
+    if (chatId && user) {
       storeUserMessage(messageData, chatId);
     }
     
     return messageData;
-  }, [chatId, storeUserMessage]);
+  }, [chatId, storeUserMessage, user]);
   
   const addAIMessage = useCallback((messageData: Message) => {
     setMessages(prev => [...prev, messageData]);
     
     // Store AI response in the database if user is logged in
-    if (chatId) {
+    if (chatId && user) {
       storeAIMessage(messageData, chatId);
     }
     
     return messageData;
-  }, [chatId, storeAIMessage]);
+  }, [chatId, storeAIMessage, user]);
   
   const getMessagesForAPI = useCallback((userMessage: Message): ChatMessage[] => {
     return messages
@@ -128,8 +206,14 @@ export const useChatMessages = (): UseChatMessagesResult => {
     // In a complete implementation, we would save the messages to history here
     setMessages([]);
     setMessageHistory([]);
-    setChatId(nanoid()); // Generate a new chat ID for the new conversation
-  }, []);
+    const newChatId = nanoid();
+    setChatId(newChatId);
+    
+    // If user is not logged in, clear the guest session
+    if (!user) {
+      clearGuestSession();
+    }
+  }, [user]);
   
   const addMessage = useCallback((message: Message) => {
     setMessages(prev => [...prev, message]);
