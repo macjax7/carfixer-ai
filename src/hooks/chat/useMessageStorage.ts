@@ -48,8 +48,32 @@ export const useMessageStorage = () => {
     }
   }, [user]);
 
+  // Add the missing fetchChatMessages function
+  const fetchChatMessages = useCallback(async (sessionId: string) => {
+    try {
+      console.log(`Fetching messages for chat session:`, sessionId);
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+        
+      if (error) {
+        console.error("Error fetching chat messages:", error);
+        return [];
+      }
+      
+      console.log(`Retrieved ${data?.length || 0} messages for session ${sessionId}`);
+      return data || [];
+    } catch (error) {
+      console.error("Error in fetchChatMessages:", error);
+      return [];
+    }
+  }, []);
+
   return {
     storeUserMessage,
-    storeAIMessage
+    storeAIMessage,
+    fetchChatMessages
   };
 };
