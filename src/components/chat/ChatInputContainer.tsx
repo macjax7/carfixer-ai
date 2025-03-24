@@ -21,25 +21,20 @@ const ChatInputContainer: React.FC<ChatInputContainerProps> = ({
   isLoading,
   sidebarState
 }) => {
-  // Handle sending message with proper scroll reset
-  const handleSendWithScrollReset = (e: FormEvent) => {
-    // Reset scroll state on send
+  // Wrapper for sending message that creates a proper synthetic event
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
     handleSendMessage(e);
   };
   
-  // Handle image upload with proper typing
-  const handleImageUploadWrapper = (file: File, prompt?: string) => {
-    handleImageUpload(file, prompt);
-  };
-  
   return (
-    <div className="border-t border-border bg-background/95 backdrop-blur-sm py-4">
+    <div className="border-t border-border bg-background/95 backdrop-blur-sm py-4 sticky bottom-0 z-10">
       <div className={`max-w-3xl mx-auto px-4 sm:px-0 ${sidebarState === 'collapsed' ? 'lg:mx-auto' : 'lg:ml-0 lg:mr-auto'}`}>
         <ChatInput
           input={input}
           setInput={setInput}
-          handleSendMessage={handleSendWithScrollReset}
-          handleImageUpload={handleImageUploadWrapper}
+          handleSendMessage={handleSubmit}
+          handleImageUpload={handleImageUpload}
           handleListingAnalysis={handleListingAnalysis}
           isLoading={isLoading}
         />

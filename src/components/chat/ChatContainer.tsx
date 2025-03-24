@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useChat } from '@/hooks/chat/useChat';
@@ -26,8 +26,13 @@ const ChatContainer: React.FC = () => {
   
   const { state } = useSidebar();
   
+  // Memoized function to reduce re-renders
+  const memoizedHandleSendMessage = useCallback((e: React.FormEvent) => {
+    handleSendMessage(e);
+  }, [handleSendMessage]);
+  
   // Load specific chat if chatId is provided in URL - but don't show loading state
-  React.useEffect(() => {
+  useEffect(() => {
     if (chatId && chatId !== chatIdLoaded) {
       loadChatById(chatId);
     }
@@ -42,7 +47,7 @@ const ChatContainer: React.FC = () => {
         <EmptyChat 
           input={input}
           setInput={setInput}
-          handleSendMessage={handleSendMessage}
+          handleSendMessage={memoizedHandleSendMessage}
           handleImageUpload={handleImageUpload}
           handleListingAnalysis={handleListingAnalysis}
           handleSuggestedPrompt={handleSuggestedPrompt}
@@ -61,7 +66,7 @@ const ChatContainer: React.FC = () => {
           <ChatInputContainer
             input={input}
             setInput={setInput}
-            handleSendMessage={handleSendMessage}
+            handleSendMessage={memoizedHandleSendMessage}
             handleImageUpload={handleImageUpload}
             handleListingAnalysis={handleListingAnalysis}
             isLoading={isLoading}

@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useVehicles } from '@/hooks/use-vehicles';
+import { useChat } from '@/hooks/chat/useChat';
 
 interface VehicleSuggestionsProps {
   setUserScrolled: (scrolled: boolean) => void;
@@ -8,10 +9,18 @@ interface VehicleSuggestionsProps {
 
 const VehicleSuggestions: React.FC<VehicleSuggestionsProps> = ({ setUserScrolled }) => {
   const { vehicles } = useVehicles();
+  const { setInput, handleSendMessage } = useChat();
   
   // Handle setting input while respecting scroll state
-  const handleVehicleSelect = (input: string) => {
+  const handleVehicleSelect = (vehicleText: string) => {
+    setInput(vehicleText);
     setUserScrolled(false); // Reset scroll state when selecting vehicle
+    
+    // Create a synthetic event to pass to handleSendMessage
+    const syntheticEvent = { preventDefault: () => {} } as React.FormEvent;
+    setTimeout(() => {
+      handleSendMessage(syntheticEvent);
+    }, 50);
   };
   
   if (vehicles.length === 0) return null;

@@ -21,16 +21,20 @@ const ChatThread: React.FC<ChatThreadProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [userScrolled, setUserScrolled] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const previousMessagesLengthRef = useRef<number>(messages.length);
   
-  // Only scroll to bottom for new messages when user is already at the bottom
-  // or when sending a new message (isLoading becomes true)
+  // Scroll to bottom only when new messages are added or when loading state changes
   useEffect(() => {
-    if ((!userScrolled && messages.length > 0) || isLoading) {
+    // Only scroll if user hasn't manually scrolled up or when a new message is added
+    if ((!userScrolled || messages.length > previousMessagesLengthRef.current || isLoading) && 
+        messagesEndRef.current) {
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     }
-  }, [messages.length, isLoading]);
+    // Update previous message length after checking
+    previousMessagesLengthRef.current = messages.length;
+  }, [messages.length, isLoading, userScrolled]);
   
   // Reset userScrolled when user sends a new message
   useEffect(() => {
@@ -46,7 +50,7 @@ const ChatThread: React.FC<ChatThreadProps> = ({
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
     // Check if user has scrolled up (not at bottom)
     // Use a threshold to determine "close enough" to bottom
-    const scrollThreshold = 50; // pixels from bottom to consider "at bottom"
+    const scrollThreshold = 100; // pixels from bottom to consider "at bottom"
     const isAtBottom = scrollHeight - scrollTop - clientHeight <= scrollThreshold;
     
     if (!isAtBottom && !userScrolled) {
@@ -63,9 +67,9 @@ const ChatThread: React.FC<ChatThreadProps> = ({
       ref={scrollAreaRef}
     >
       <div className={`max-w-3xl mx-auto space-y-6 pb-4 ${sidebarState === 'collapsed' ? 'lg:mx-auto' : 'lg:ml-0 lg:mr-auto'}`}>
-        {messages.map((msg, index) => (
+        {messages.map((msg) => (
           <ChatMessage 
-            key={`${msg.id}-${index}`} // Using index to force re-render if needed
+            key={msg.id} 
             id={msg.id}
             sender={msg.sender}
             text={msg.text}
