@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { Message } from '@/components/chat/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { v4 as uuidv4 } from 'uuid';
 
 export const useMessageStorage = () => {
   const { user } = useAuth();
@@ -12,10 +13,14 @@ export const useMessageStorage = () => {
 
     try {
       console.log(`Storing user message to database:`, { message: messageData, sessionId });
+      
+      // Generate a proper UUID for the message
+      const messageId = uuidv4();
+      
       await supabase
         .from('chat_messages')
         .insert({
-          id: messageData.id,
+          id: messageId,
           session_id: sessionId,
           role: 'user',
           content: messageData.text,
@@ -33,10 +38,14 @@ export const useMessageStorage = () => {
 
     try {
       console.log(`Storing AI message to database:`, { message: messageData, sessionId });
+      
+      // Generate a proper UUID for the message
+      const messageId = uuidv4();
+      
       await supabase
         .from('chat_messages')
         .insert({
-          id: messageData.id,
+          id: messageId,
           session_id: sessionId,
           role: 'assistant',
           content: messageData.text
@@ -48,7 +57,7 @@ export const useMessageStorage = () => {
     }
   }, [user]);
 
-  // Add the missing fetchChatMessages function
+  // Add the fetchChatMessages function
   const fetchChatMessages = useCallback(async (sessionId: string) => {
     try {
       console.log(`Fetching messages for chat session:`, sessionId);

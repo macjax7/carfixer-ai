@@ -8,7 +8,7 @@ import { useErrorHandler } from "./useErrorHandler";
 import { useVehicles } from '@/hooks/use-vehicles';
 import { useChatSession } from "./useChatSession";
 import { useVehicleExtractor } from "./useVehicleExtractor";
-import { nanoid } from "nanoid";
+import { v4 as uuidv4 } from 'uuid';
 
 export const useMessageSender = () => {
   const { user } = useAuth();
@@ -72,7 +72,7 @@ export const useMessageSender = () => {
       // Ensure we have a chat ID
       let currentChatId = chatId;
       if (!currentChatId) {
-        currentChatId = nanoid();
+        currentChatId = uuidv4();
         setChatId(currentChatId);
         console.log("Generated new chat ID:", currentChatId);
       }
@@ -108,6 +108,7 @@ export const useMessageSender = () => {
       // Also add it to the database if user is logged in
       if (user && currentChatId) {
         try {
+          console.log("Attempting to add user message to database history...");
           await addToChatHistory(currentChatId, userMessageData, 'user');
           console.log("User message added to database with chat ID:", currentChatId);
         } catch (error) {
@@ -131,6 +132,7 @@ export const useMessageSender = () => {
         // Also add it to the database if user is logged in
         if (user && currentChatId) {
           try {
+            console.log("Attempting to add AI response to database history...");
             await addToChatHistory(currentChatId, aiMessageData, 'assistant');
             console.log("AI message added to database with chat ID:", currentChatId);
           } catch (error) {

@@ -34,6 +34,7 @@ export const useChatDatabase = () => {
         });
         
       if (error) {
+        console.error("Database error:", error);
         throw error;
       }
       
@@ -61,6 +62,7 @@ export const useChatDatabase = () => {
         });
         
       if (error) {
+        console.error("Database error:", error);
         throw error;
       }
       

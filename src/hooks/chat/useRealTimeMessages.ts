@@ -15,7 +15,13 @@ export const useRealTimeMessages = (
   // Set up real-time subscription when chat ID changes
   useEffect(() => {
     // No subscription needed for non-authenticated users or no chatId
-    if (!user || !chatId) return;
+    if (!user || !chatId) {
+      console.log("No real-time subscription needed: user or chatId missing", { 
+        hasUser: !!user, 
+        chatId 
+      });
+      return;
+    }
     
     console.log("Setting up real-time messages subscription for chat ID:", chatId);
     
@@ -83,7 +89,9 @@ export const useRealTimeMessages = (
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Realtime subscription status:", status);
+      });
     
     // Clean up subscription
     return () => {
