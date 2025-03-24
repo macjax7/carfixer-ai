@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { nanoid } from 'nanoid';
 import { Message } from '@/components/chat/types';
 
 export const useGuestSession = () => {
@@ -55,6 +56,11 @@ export const useGuestSession = () => {
       return false;
     }
   };
+
+  // Generate a new chat ID for guest users
+  const generateGuestChatId = () => {
+    return nanoid();
+  };
   
   // Initialize state when component mounts
   useEffect(() => {
@@ -73,6 +79,7 @@ export const useGuestSession = () => {
     saveGuestSession,
     clearGuestSession,
     hasGuestSession,
+    generateGuestChatId,
     isLoaded
   };
 };
