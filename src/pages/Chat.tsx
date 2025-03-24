@@ -14,12 +14,13 @@ import { useChat } from '@/hooks/chat/useChat';
 const ChatHeader = () => {
   const { state } = useSidebar();
   const { user } = useAuth();
-  const { handleNewChat, canCreateNewChat } = useChat();
+  const { resetChat, isLoading, canCreateNewChat } = useChat();
   const navigate = useNavigate();
   
   const onNewChatClick = () => {
     if (canCreateNewChat) {
-      handleNewChat();
+      const newId = resetChat();
+      console.log('Created new chat with ID:', newId);
       navigate('/');
     }
   };
@@ -33,9 +34,9 @@ const ChatHeader = () => {
           
           {user && (
             <button 
-              className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-border/60 hover:bg-secondary transition-colors mr-3 ${!canCreateNewChat ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-border/60 hover:bg-secondary transition-colors mr-3 ${!canCreateNewChat || isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
               onClick={onNewChatClick}
-              disabled={!canCreateNewChat}
+              disabled={!canCreateNewChat || isLoading}
             >
               <PlusCircle className="h-4 w-4" />
               <span>New Chat</span>

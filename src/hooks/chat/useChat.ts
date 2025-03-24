@@ -25,8 +25,9 @@ export const useChat = () => {
   const { loadChatById, chatIdLoaded } = useChatMessages();
 
   const handleNewChat = useCallback(() => {
-    resetChat();
+    const newId = resetChat();
     setInput('');
+    return newId;
   }, [resetChat, setInput]);
 
   // Determine if a new chat can be created (not loading and has messages)

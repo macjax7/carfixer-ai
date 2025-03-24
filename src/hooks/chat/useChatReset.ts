@@ -10,14 +10,20 @@ export const useChatReset = (
 ) => {
   // Enhanced resetChat function that properly clears the chat and generates a new ID
   const resetChat = useCallback(() => {
-    // In a complete implementation, we would save the messages to history here
+    // Clear messages and message history
     updateMessages([]);
     updateMessageHistory([]);
+    
+    // Generate a new chat ID
     const newChatId = nanoid();
+    console.log("Generated new chat ID:", newChatId);
+    
+    // Update the chat ID in state
     setChatId(newChatId);
     
+    // Return the new chat ID so it can be used for navigation if needed
     return newChatId;
-  }, [user, updateMessages, updateMessageHistory, setChatId]);
+  }, [updateMessages, updateMessageHistory, setChatId]);
   
   return { resetChat };
 };
