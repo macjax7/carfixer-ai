@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { useOpenAI } from "@/utils/openai/hook";
+import { ChatMessage } from "@/utils/openai/types";
 
 export const useDirectChatHandler = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -15,7 +16,7 @@ export const useDirectChatHandler = () => {
   const [chatId, setChatId] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { chat } = useOpenAI();
+  const { chatWithAI } = useOpenAI();
 
   // Initialize or retrieve chat session
   useEffect(() => {
@@ -217,16 +218,31 @@ export const useDirectChatHandler = () => {
       // Process AI response
       try {
         console.log("Sending message to AI...");
-        const aiResponseData = await chat(text, messages);
+        // Convert the message to the format expected by chatWithAI
+        const chatMessages: ChatMessage[] = [{
+          role: 'user',
+          content: text
+        }];
         
-        if (!aiResponseData) throw new Error("No response from AI");
+        // Use previous messages for context
+        const previousMessages = messages.map(msg => ({
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.text
+        })) as ChatMessage[];
+        
+        // Combine previous messages with current message
+        const allMessages = [...previousMessages, ...chatMessages];
+        
+        const aiResponseText = await chatWithAI(allMessages);
+        
+        if (!aiResponseText) throw new Error("No response from AI");
         
         // Create AI message
         const aiMessageId = uuidv4();
         const aiMessage: Message = {
           id: aiMessageId,
           sender: 'ai',
-          text: aiResponseData.text || "Sorry, I couldn't process your request",
+          text: aiResponseText || "Sorry, I couldn't process your request",
           timestamp: new Date(),
         };
         
@@ -274,7 +290,7 @@ export const useDirectChatHandler = () => {
       setIsProcessing(false);
       setInput('');
     }
-  }, [chatId, messages, toast, user, chat]);
+  }, [chatId, messages, toast, user, chatWithAI]);
   
   return {
     messages,
