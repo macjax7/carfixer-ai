@@ -1,5 +1,5 @@
 
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { Message } from '@/components/chat/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -13,13 +13,11 @@ export const useRealTimeMessages = (
     if (!chatId) return;
 
     console.log("Setting up real-time subscription for chat ID:", chatId);
-
-    const setupMessageSubscription = async () => {
-      const { data: session } = await supabase.auth.getSession();
-      
-      console.log("Creating channel subscription for chat messages...");
-      
-      const subscription = supabase
+    
+    let subscription: any = null;
+    
+    const setupSubscription = async () => {
+      subscription = supabase
         .channel('chat-messages-changes')
         .on('postgres_changes', 
           { 
@@ -49,8 +47,8 @@ export const useRealTimeMessages = (
               addMessage(newMsg);
               
               if (payload.new.role === 'user') {
-                // Get current history from the database to maintain context
-                updateMessageHistory([...payload.new.content]);
+                // Update message history with the new user message
+                updateMessageHistory([payload.new.content]);
               }
             }
           }
@@ -58,20 +56,18 @@ export const useRealTimeMessages = (
         .subscribe((status) => {
           console.log("Supabase channel subscription status:", status);
         });
-        
+      
       return subscription;
     };
     
-    const subscriptionPromise = setupMessageSubscription();
+    setupSubscription();
     
     return () => {
       // Clean up subscription
-      subscriptionPromise.then(sub => {
-        if (sub) {
-          console.log("Cleaning up Supabase channel subscription");
-          supabase.removeChannel(sub);
-        }
-      });
+      if (subscription) {
+        console.log("Cleaning up Supabase channel subscription");
+        supabase.removeChannel(subscription);
+      }
     };
   }, [chatId, addMessage, updateMessageHistory]);
 };

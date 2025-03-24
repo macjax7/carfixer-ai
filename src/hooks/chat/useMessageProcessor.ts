@@ -32,11 +32,13 @@ export const useMessageProcessor = () => {
     try {
       // Store vehicle context when it's provided
       if (vehicleInfo && Object.keys(vehicleInfo).length > 0) {
+        console.log("Storing vehicle context:", vehicleInfo);
         setCurrentVehicleContext(vehicleInfo);
       }
       
       // Use stored vehicle context if available and no new context is provided
       const effectiveVehicleInfo = vehicleInfo || currentVehicleContext;
+      console.log("Using effective vehicle context:", effectiveVehicleInfo);
       
       if (image) {
         // Process image-based query

@@ -1,3 +1,4 @@
+
 import { corsHeaders, createSuccessResponse, createErrorResponse } from '../utils.ts';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -6,7 +7,7 @@ export async function handleChatRequest(data: any) {
   try {
     console.log("Chat handler received data:", JSON.stringify(data));
     
-    const { messages, includeVehicleContext = false, vehicleInfo = {}, messageHistory = [] } = data;
+    const { messages, includeVehicleContext = false, vehicleInfo = null, messageHistory = [] } = data;
     
     if (!messages || messages.length === 0) {
       throw new Error('No messages provided for chat request');
@@ -29,6 +30,7 @@ export async function handleChatRequest(data: any) {
     const hasVehicleContext = vehicleInfo && Object.keys(vehicleInfo).length > 0;
     
     if ((isRepairOrDiagnosticQuery || hasDTCQuery) && !hasVehicleMention && !hasVehicleContext) {
+      console.log("No vehicle context, prompting for vehicle info");
       return createSuccessResponse({
         message: generateVehiclePrompt(),
         requestVehicleInfo: true
@@ -40,12 +42,15 @@ export async function handleChatRequest(data: any) {
     
     // Always include vehicle context if available - don't ask again
     if (hasVehicleContext) {
+      console.log("Using provided vehicle context:", vehicleInfo);
       systemPrompt += ` The user is asking about their ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}. Keep this vehicle in context throughout the entire conversation and do not ask for vehicle information again unless they explicitly mention a different vehicle.`;
     } else if (hasVehicleMention) {
       // If they mentioned a vehicle but we don't have structured info, still avoid asking again
+      console.log("User mentioned a vehicle but no structured info provided");
       systemPrompt += ` The user has mentioned a specific vehicle. Don't ask for vehicle information again unless they explicitly mention a different vehicle.`;
     } else {
       // Only in this case should we potentially ask for vehicle info
+      console.log("No vehicle context detected");
       systemPrompt += ' If the user has not specified a vehicle and you need vehicle-specific information to provide an accurate answer, politely ask which vehicle they are working on.';
     }
     

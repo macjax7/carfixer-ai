@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import { Message } from "@/components/chat/types";
 import { supabase } from '@/integrations/supabase/client';
@@ -13,27 +13,35 @@ export const useChatDatabase = () => {
     message: Message, 
     role: 'user' | 'assistant'
   ) => {
-    if (user) {
-      try {
-        console.log(`Adding ${role} message to chat history:`, message);
-        // Generate a proper UUID for the message
-        const messageId = uuidv4();
-        
-        await supabase
-          .from('chat_messages')
-          .insert({
-            id: messageId,
-            session_id: chatId,
-            content: message.text,
-            role: role,
-            image_url: message.image
-          });
-        console.log(`Successfully added ${role} message to chat history`);
-      } catch (error) {
-        console.error('Error saving message to database:', error);
-      }
+    if (!chatId) {
+      console.error('Cannot add message to chat history: no chatId provided');
+      return;
     }
-  }, [user]);
+    
+    try {
+      console.log(`Adding ${role} message to chat history:`, message);
+      // Generate a proper UUID for the message
+      const messageId = uuidv4();
+      
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          id: messageId,
+          session_id: chatId,
+          content: message.text,
+          role: role,
+          image_url: message.image
+        });
+        
+      if (error) {
+        throw error;
+      }
+      
+      console.log(`Successfully added ${role} message to chat history`);
+    } catch (error) {
+      console.error('Error saving message to database:', error);
+    }
+  }, []);
 
   const createChatSession = useCallback(async (
     title: string,
@@ -44,13 +52,18 @@ export const useChatDatabase = () => {
       const chatId = uuidv4();
       
       console.log("Creating new chat session in database:", { id: chatId, title });
-      await supabase
+      const { error } = await supabase
         .from('chat_sessions')
         .insert({
           id: chatId,
           user_id: userId,
           title
         });
+        
+      if (error) {
+        throw error;
+      }
+      
       console.log("Successfully created chat session");
       return chatId;
     } catch (error) {
@@ -65,10 +78,14 @@ export const useChatDatabase = () => {
   ) => {
     try {
       console.log("Updating chat session title:", title);
-      await supabase
+      const { error } = await supabase
         .from('chat_sessions')
         .update({ title })
         .eq('id', chatId);
+        
+      if (error) {
+        throw error;
+      }
     } catch (error) {
       console.error('Error updating chat session title:', error);
     }
