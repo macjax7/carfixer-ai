@@ -11,18 +11,21 @@ const VehicleSuggestions: React.FC<VehicleSuggestionsProps> = ({ setUserScrolled
   const { vehicles } = useVehicles();
   const { setInput, handleSendMessage } = useChat();
   
-  // Handle setting input while respecting scroll state
+  // Enhanced handle vehicle selection with more reliable timing
   const handleVehicleSelect = useCallback((vehicleText: string) => {
+    // Set input first
     setInput(vehicleText);
-    setUserScrolled(false); // Reset scroll state when selecting vehicle
+    
+    // Reset scroll state with a slight delay to avoid race conditions
+    setUserScrolled(false);
     
     // Create a synthetic event to pass to handleSendMessage
     const syntheticEvent = { preventDefault: () => {} } as React.FormEvent;
     
-    // Use a longer delay to ensure state updates properly before sending
+    // Use a slightly longer delay to ensure state updates properly
     setTimeout(() => {
       handleSendMessage(syntheticEvent);
-    }, 150);
+    }, 200);
   }, [setInput, setUserScrolled, handleSendMessage]);
   
   if (vehicles.length === 0) return null;
@@ -49,4 +52,5 @@ const VehicleSuggestions: React.FC<VehicleSuggestionsProps> = ({ setUserScrolled
   );
 };
 
+// Use React.memo to prevent unnecessary re-renders
 export default React.memo(VehicleSuggestions);

@@ -66,7 +66,10 @@ const ChatMessage: React.FC<MessageProps> = ({
   };
 
   return (
-    <div className={cn("flex", sender === 'user' ? "justify-end" : "justify-start")}>
+    <div className={cn(
+      "flex chat-message", 
+      sender === 'user' ? "justify-end" : "justify-start"
+    )}>
       <div 
         className={cn(
           "max-w-[70%] rounded-2xl px-4 py-3",
@@ -98,4 +101,5 @@ const ChatMessage: React.FC<MessageProps> = ({
   );
 };
 
-export default ChatMessage;
+// Wrap with React.memo to prevent unnecessary re-renders
+export default React.memo(ChatMessage);

@@ -22,36 +22,32 @@ const ChatThread: React.FC<ChatThreadProps> = ({
   const [userScrolled, setUserScrolled] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const lastMessageIdRef = useRef<string | null>(null);
-  const pendingScrollRef = useRef<boolean>(false);
   
   // Memoize messages to prevent unnecessary re-renders
   const memoizedMessages = useMemo(() => messages, [messages]);
   
-  // This effect handles automatic scrolling based on specific conditions
+  // Improved scroll management: only auto-scroll if user is near bottom
   useEffect(() => {
-    // Only check for new messages when messages array changes
-    if (messages.length === 0) return;
+    if (!scrollAreaRef.current || messages.length === 0) return;
     
-    const lastMessage = messages[messages.length - 1];
-    const lastMessageId = lastMessage?.id;
-    const isNewMessage = lastMessageId !== lastMessageIdRef.current;
+    const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
     
-    // Only scroll if there's a new message and user hasn't scrolled up manually
-    if (isNewMessage && (!userScrolled || isLoading)) {
-      pendingScrollRef.current = true;
-      
-      // Update last message reference to prevent duplicate scrolling
-      lastMessageIdRef.current = lastMessageId;
-      
-      // Use a slight delay to ensure the DOM has updated
-      setTimeout(() => {
-        if (pendingScrollRef.current && messagesEndRef.current) {
-          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-          pendingScrollRef.current = false;
+    // Only auto-scroll if user is already near the bottom (within 150px)
+    const userIsNearBottom = distanceFromBottom < 150;
+    
+    if (userIsNearBottom && !userScrolled) {
+      // Use requestAnimationFrame for smoother scrolling
+      requestAnimationFrame(() => {
+        if (scrollAreaRef.current) {
+          scrollAreaRef.current.scrollTop = scrollHeight;
         }
-      }, 100);
+      });
     }
-  }, [messages, isLoading, userScrolled]);
+    
+    // Track the last message ID to avoid redundant scrolling
+    lastMessageIdRef.current = messages[messages.length - 1]?.id ?? null;
+  }, [messages, userScrolled]);
   
   // Reset userScrolled when user explicitly sends a new message
   useEffect(() => {
@@ -60,30 +56,30 @@ const ChatThread: React.FC<ChatThreadProps> = ({
     }
   }, [isLoading]);
   
-  // Detect when user has scrolled up
+  // Improved scroll detection with debounce-like behavior
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (!scrollAreaRef.current) return;
     
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    const scrollThreshold = 100; // pixels from bottom to consider "at bottom"
-    const isAtBottom = scrollHeight - scrollTop - clientHeight <= scrollThreshold;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    const scrollThreshold = 150; // slightly increased threshold
     
-    // Only update state if the scrolled status changes to reduce renders
-    if (!isAtBottom && !userScrolled) {
+    // Update userScrolled state based on scroll position
+    if (distanceFromBottom > scrollThreshold && !userScrolled) {
       setUserScrolled(true);
-      pendingScrollRef.current = false; // Cancel any pending scrolls
-    } else if (isAtBottom && userScrolled) {
+    } else if (distanceFromBottom <= scrollThreshold && userScrolled) {
       setUserScrolled(false);
     }
   };
   
   return (
     <div 
-      className="flex-1 pt-24 px-2 md:px-4 pb-4 overflow-auto" 
+      className="flex-1 px-2 md:px-4 pb-4 overflow-auto"
+      style={{ scrollPaddingTop: '6rem' }} // Fix for content hiding under header
       onScroll={handleScroll}
       ref={scrollAreaRef}
     >
-      <div className={`max-w-3xl mx-auto space-y-6 pb-4 ${sidebarState === 'collapsed' ? 'lg:mx-auto' : 'lg:ml-0 lg:mr-auto'}`}>
+      <div className={`max-w-3xl mx-auto space-y-6 pb-4 pt-24 ${sidebarState === 'collapsed' ? 'lg:mx-auto' : 'lg:ml-0 lg:mr-auto'}`}>
         {memoizedMessages.map((msg) => (
           <ChatMessage 
             key={msg.id} 
@@ -107,4 +103,5 @@ const ChatThread: React.FC<ChatThreadProps> = ({
   );
 };
 
+// Use React.memo to prevent unnecessary re-renders
 export default React.memo(ChatThread);

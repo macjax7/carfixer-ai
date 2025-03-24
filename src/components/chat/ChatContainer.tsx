@@ -31,19 +31,43 @@ const ChatContainer: React.FC = () => {
     handleSendMessage(e);
   }, [handleSendMessage]);
   
-  // Load specific chat if chatId is provided in URL - but don't show loading state
+  // Load specific chat if chatId is provided in URL
   useEffect(() => {
     if (chatId && chatId !== chatIdLoaded) {
       loadChatById(chatId);
     }
   }, [chatId, loadChatById, chatIdLoaded]);
   
-  // Memoize the message-related props to prevent unnecessary re-renders
-  const memoizedMessageProps = useMemo(() => ({
+  // Memoize message props to prevent unnecessary re-renders
+  const chatThreadProps = useMemo(() => ({
     messages,
     isLoading,
-    hasAskedForVehicle
-  }), [messages, isLoading, hasAskedForVehicle]);
+    hasAskedForVehicle,
+    sidebarState: state
+  }), [messages, isLoading, hasAskedForVehicle, state]);
+  
+  // Memoize input props to prevent unnecessary re-renders
+  const inputContainerProps = useMemo(() => ({
+    input,
+    setInput,
+    handleSendMessage: memoizedHandleSendMessage,
+    handleImageUpload,
+    handleListingAnalysis,
+    isLoading,
+    sidebarState: state
+  }), [input, setInput, memoizedHandleSendMessage, handleImageUpload, handleListingAnalysis, isLoading, state]);
+  
+  // Memoize empty chat props to prevent unnecessary re-renders
+  const emptyChatProps = useMemo(() => ({
+    input,
+    setInput,
+    handleSendMessage: memoizedHandleSendMessage,
+    handleImageUpload,
+    handleListingAnalysis,
+    handleSuggestedPrompt,
+    suggestedPrompts,
+    isLoading
+  }), [input, setInput, memoizedHandleSendMessage, handleImageUpload, handleListingAnalysis, handleSuggestedPrompt, suggestedPrompts, isLoading]);
   
   // Chat state - empty or has messages
   const isEmptyChat = messages.length === 0;
@@ -51,38 +75,15 @@ const ChatContainer: React.FC = () => {
   return (
     <div className={`flex flex-col h-full bg-background ${isEmptyChat ? 'justify-center' : ''}`}>
       {isEmptyChat ? (
-        <EmptyChat 
-          input={input}
-          setInput={setInput}
-          handleSendMessage={memoizedHandleSendMessage}
-          handleImageUpload={handleImageUpload}
-          handleListingAnalysis={handleListingAnalysis}
-          handleSuggestedPrompt={handleSuggestedPrompt}
-          suggestedPrompts={suggestedPrompts}
-          isLoading={isLoading}
-        />
+        <EmptyChat {...emptyChatProps} />
       ) : (
         <>
-          <ChatThread 
-            messages={memoizedMessageProps.messages}
-            isLoading={memoizedMessageProps.isLoading}
-            hasAskedForVehicle={memoizedMessageProps.hasAskedForVehicle}
-            sidebarState={state}
-          />
-          
-          <ChatInputContainer
-            input={input}
-            setInput={setInput}
-            handleSendMessage={memoizedHandleSendMessage}
-            handleImageUpload={handleImageUpload}
-            handleListingAnalysis={handleListingAnalysis}
-            isLoading={isLoading}
-            sidebarState={state}
-          />
+          <ChatThread {...chatThreadProps} />
+          <ChatInputContainer {...inputContainerProps} />
         </>
       )}
     </div>
   );
 };
 
-export default ChatContainer;
+export default React.memo(ChatContainer);
