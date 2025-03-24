@@ -148,7 +148,7 @@ const AIChat: React.FC = () => {
         /* Chat messages - show when there are messages */
         <>
           <div 
-            className="flex-1 pt-20 px-2 md:px-4 pb-4 overflow-auto" 
+            className="flex-1 pt-24 px-2 md:px-4 pb-4 overflow-auto" 
             onScroll={handleScroll}
             ref={scrollAreaRef}
           >

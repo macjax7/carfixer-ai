@@ -66,29 +66,34 @@ const ChatMessage: React.FC<MessageProps> = ({
   };
 
   return (
-    <div 
-      className={cn(
-        "max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3",
-        sender === 'user' 
-          ? "bg-carfix-600 text-white" 
-          : "bg-secondary/80 border border-border"
-      )}
-    >
-      <MessageHeader sender={sender} />
-      
-      <MessageContent 
-        text={text}
-        image={image}
-        sender={sender}
-      />
-      
-      {componentDiagram && <ComponentDiagram componentDiagram={componentDiagram} />}
-      
-      {vehicleListingAnalysis && <VehicleListingAnalysis vehicleListingAnalysis={vehicleListingAnalysis} />}
-      
-      <p className="text-xs opacity-70 mt-1 text-right">
-        {formattedTime()}
-      </p>
+    <div className={cn("flex", sender === 'user' ? "justify-end" : "justify-start")}>
+      <div 
+        className={cn(
+          "max-w-[70%] rounded-2xl px-4 py-3",
+          sender === 'user' 
+            ? "bg-carfix-600 text-white rounded-tr-sm" 
+            : "bg-secondary/80 border border-border rounded-tl-sm shadow-sm"
+        )}
+      >
+        <MessageHeader sender={sender} />
+        
+        <MessageContent 
+          text={text}
+          image={image}
+          sender={sender}
+        />
+        
+        {componentDiagram && <ComponentDiagram componentDiagram={componentDiagram} />}
+        
+        {vehicleListingAnalysis && <VehicleListingAnalysis vehicleListingAnalysis={vehicleListingAnalysis} />}
+        
+        <p className={cn(
+          "text-xs opacity-70 mt-1",
+          sender === 'user' ? "text-right" : "text-left"
+        )}>
+          {formattedTime()}
+        </p>
+      </div>
     </div>
   );
 };
