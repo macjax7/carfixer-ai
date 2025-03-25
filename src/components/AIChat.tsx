@@ -4,6 +4,7 @@ import ChatContainer from './chat/ChatContainer';
 import SimpleChatContainer from './chat/SimpleChatContainer';
 import { useAuth } from '@/context/AuthContext';
 import { useLocation } from 'react-router-dom';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 const AIChat: React.FC = () => {
   const { user } = useAuth();
@@ -16,7 +17,9 @@ const AIChat: React.FC = () => {
   // This ensures consistent behavior for all users
   return (
     <div className={`h-full ${isLandingPage && !user ? 'landing-chat' : ''}`}>
-      <SimpleChatContainer />
+      <SidebarProvider defaultOpen={false}>
+        <SimpleChatContainer />
+      </SidebarProvider>
     </div>
   );
 };
