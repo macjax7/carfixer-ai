@@ -1,7 +1,6 @@
-
 import { corsHeaders, createSuccessResponse, createErrorResponse } from '../utils.ts';
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY') || '';
 
 export async function handleChatRequest(data: any) {
   try {
@@ -118,27 +117,21 @@ export async function handleChatRequest(data: any) {
   }
 }
 
-// Helper functions - keep these unchanged
 function checkForVehicleMention(currentMessage: string, messageHistory: string[] = []): boolean {
-  // Common car makes
   const carMakes = [
     'toyota', 'honda', 'ford', 'chevrolet', 'chevy', 'nissan', 'hyundai', 'kia', 
     'subaru', 'bmw', 'mercedes', 'audi', 'lexus', 'acura', 'mazda', 'volkswagen', 
     'vw', 'jeep', 'ram', 'dodge', 'chrysler', 'buick', 'cadillac', 'gmc', 'infiniti'
   ];
   
-  // Check for year patterns (like "2011" or "'18")
   const yearPattern = /\b(19|20)\d{2}\b|'\d{2}\b/i;
   
-  // Check for make/model combinations
   const makeModelPattern = new RegExp(`\\b(${carMakes.join('|')})\\s+[a-z0-9]+\\b`, 'i');
   
-  // Check current message
   if (yearPattern.test(currentMessage) || makeModelPattern.test(currentMessage)) {
     return true;
   }
   
-  // Check message history
   for (const message of messageHistory) {
     if (yearPattern.test(message) || makeModelPattern.test(message)) {
       return true;
@@ -161,22 +154,17 @@ function checkForRepairOrDiagnosticQuery(message: string): boolean {
     'ignition', 'sensor', 'pump', 'belt', 'hose', 'light', 'fuse'
   ];
   
-  // Check for repair terms
   const repairPattern = new RegExp(`\\b(${repairTerms.join('|')})\\b`, 'i');
   
-  // Check for part terms
   const partPattern = new RegExp(`\\b(${partTerms.join('|')})\\b`, 'i');
   
-  // If message contains both a repair term and a part term, it's likely a repair query
   return repairPattern.test(message) && partPattern.test(message);
 }
 
 function extractDTCCodes(message: string): string[] {
-  // Pattern for OBD-II codes: P, B, C, or U followed by 4 digits
   const dtcPattern = /\b[PBCU][0-9]{4}\b/gi;
   const matches = message.match(dtcPattern) || [];
   
-  // Return unique codes only
   return [...new Set(matches.map(code => code.toUpperCase()))];
 }
 
