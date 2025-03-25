@@ -34,6 +34,11 @@ export async function sendChatMessage(
       setTimeout(() => reject(new Error("API request timed out")), 30000)
     );
     
+    // Log if we're using a system prompt
+    if (systemPrompt) {
+      console.log("Using custom system prompt:", systemPrompt.substring(0, 100) + "...");
+    }
+
     const apiPromise = supabase.functions.invoke('openai', {
       body: {
         service: 'diagnostic',
