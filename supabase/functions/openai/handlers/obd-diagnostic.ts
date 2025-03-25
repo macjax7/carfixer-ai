@@ -54,35 +54,45 @@ Please provide a layered explanation of what these codes mean (in simple terms f
 
     console.log("Sending OBD diagnostic request to OpenAI");
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',  // Using the most capable model for technical diagnostics
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.3,  // Lower temperature for more factual, consistent responses
-      }),
-    });
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',  // Using the most capable model for technical diagnostics
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.3,  // Lower temperature for more factual, consistent responses
+        }),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('OpenAI API error:', errorData);
+        throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const result = await response.json();
+      console.log("Received OBD diagnostic response from OpenAI");
+      
+      return createSuccessResponse({
+        analysis: result.choices[0].message.content,
+        usage: result.usage
+      });
+    } catch (error) {
+      console.error('Error in OpenAI API request:', error);
+      
+      // Return a fallback response that mentions the API error
+      return createSuccessResponse({
+        analysis: `I'm sorry, I encountered an error connecting to the diagnostic service. Please try again in a moment. If the problem persists, you can try these general steps for the codes ${codes.join(', ')}:\n\n1. Check your vehicle's service manual for these specific codes\n2. Consider using an OBD scanner to clear the codes and see if they return\n3. For more specific help, please try your request again later`,
+        error: error.message
+      });
     }
-
-    const result = await response.json();
-    console.log("Received OBD diagnostic response from OpenAI");
-    
-    return createSuccessResponse({
-      analysis: result.choices[0].message.content,
-      usage: result.usage
-    });
   } catch (error) {
     console.error('Error in OBD diagnostic handler:', error);
     return createErrorResponse(error);
