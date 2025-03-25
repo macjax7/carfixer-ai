@@ -2,6 +2,7 @@
 import { useCallback, useState } from "react";
 import { useOpenAI } from "@/utils/openai/hook";
 import { useVehicleContext } from "./useVehicleContext";
+import { ChatMessage } from "@/utils/openai/types";
 
 export const useAIResponseProcessor = () => {
   const { chatWithAI, identifyPart } = useOpenAI();
@@ -39,7 +40,8 @@ Respond with mechanic-level accuracy and include only details specific to this v
           return { text: response, extra: { image } };
         } else {
           console.log("Processing text-based query");
-          const messages = [
+          // Explicitly type the messages array to match ChatMessage type
+          const messages: ChatMessage[] = [
             { role: "user", content: enhancedUserMessage }
           ];
           const response = await chatWithAI(messages, true, effectiveVehicleInfo);
