@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import AIChat from '../components/AIChat';
@@ -14,11 +13,11 @@ import { useChat } from '@/hooks/chat/useChat';
 const ChatHeader = () => {
   const { state } = useSidebar();
   const { user } = useAuth();
-  const { handleNewChat } = useChat();
+  const { handleNewChat, canCreateNewChat } = useChat();
   const navigate = useNavigate();
   
   const onNewChatClick = () => {
-    console.log("New Chat button clicked - triggering handleNewChat");
+    console.log("New Chat button clicked in ChatHeader - triggering handleNewChat");
     handleNewChat();
   };
   
@@ -30,13 +29,16 @@ const ChatHeader = () => {
           {user && <SidebarTrigger className="bg-background/80 backdrop-blur-sm rounded-md shadow-sm mr-2" />}
           
           {user && (
-            <button 
-              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-border/60 hover:bg-secondary transition-colors mr-3 cursor-pointer"
+            <Button 
+              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-border/60 hover:bg-secondary transition-colors mr-3"
               onClick={onNewChatClick}
+              disabled={!canCreateNewChat}
+              variant="outline"
+              size="sm"
             >
               <PlusCircle className="h-4 w-4" />
               <span>New Chat</span>
-            </button>
+            </Button>
           )}
           
           <div className="flex items-center gap-2">
