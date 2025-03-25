@@ -1,13 +1,10 @@
 
 import React, { useState } from 'react';
 import { ExternalLink, Play } from 'lucide-react';
+import { VideoRecommendation } from './types';
 
 interface VideoCardProps {
-  video: {
-    title: string;
-    url: string;
-    thumbnailUrl?: string;
-  };
+  video: VideoRecommendation;
 }
 
 const VideoCard: React.FC<VideoCardProps> = ({ video }) => {

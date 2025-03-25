@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MessageContentProps } from './types';
+import { MessageContentProps, VideoRecommendation } from './types';
 import RepairInstructions from './RepairInstructions';
 import ComponentDiagram from './ComponentDiagram';
 import TextWithLinks from './message-content/TextWithLinks';
@@ -10,13 +10,7 @@ import VideoRecommendationsList from './message-content/VideoRecommendationsList
 import UploadedImage from './message-content/UploadedImage';
 import YouTubeExtractor from './message-content/YouTubeExtractor';
 
-const MessageContent: React.FC<MessageContentProps & { 
-  videoRecommendations?: any[];
-  repairGuidance?: {
-    content: string;
-    format?: string;
-  };
-}> = ({
+const MessageContent: React.FC<MessageContentProps> = ({
   text,
   image,
   sender,
@@ -33,7 +27,7 @@ const MessageContent: React.FC<MessageContentProps & {
   const markdownVideos = YouTubeExtractor({ text: cleanedText });
   
   // Combine explicitly passed videos with those extracted from markdown
-  const allVideoRecommendations = [
+  const allVideoRecommendations: VideoRecommendation[] = [
     ...(videoRecommendations || []),
     ...markdownVideos
   ];

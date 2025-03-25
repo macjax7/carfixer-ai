@@ -5,46 +5,9 @@ import MessageHeader from './MessageHeader';
 import ComponentDiagram from './ComponentDiagram';
 import VehicleListingAnalysis from './VehicleListingAnalysis';
 import MessageContent from './MessageContent';
+import { Message, VideoRecommendation } from './types';
 
-interface MessageProps {
-  id: string;
-  sender: 'user' | 'ai';
-  text: string;
-  timestamp: Date;
-  image?: string;
-  componentDiagram?: {
-    componentName: string;
-    location: string;
-    diagramUrl: string;
-  };
-  vehicleListingAnalysis?: {
-    url: string;
-    make?: string;
-    model?: string;
-    year?: number;
-    mileage?: number;
-    price?: number;
-    vin?: string;
-    description?: string;
-    imageUrl?: string;
-    analysis: {
-      reliability: string;
-      marketValue: string;
-      maintenanceNeeds: string;
-      redFlags: string;
-      recommendation: string;
-    };
-  };
-  videoRecommendations?: {
-    title: string;
-    url: string;
-    thumbnailUrl?: string;
-  }[];
-  repairGuidance?: {
-    content: string;
-    format?: string;
-  };
-}
+type MessageProps = Message;
 
 const ChatMessage: React.FC<MessageProps> = ({ 
   id, 
@@ -98,16 +61,6 @@ const ChatMessage: React.FC<MessageProps> = ({
           videoRecommendations={videoRecommendations}
           repairGuidance={repairGuidance}
         />
-        
-        {componentDiagram && (
-          <ComponentDiagram 
-            componentName={componentDiagram.componentName} 
-            location={componentDiagram.location} 
-            diagramUrl={componentDiagram.diagramUrl} 
-          />
-        )}
-        
-        {vehicleListingAnalysis && <VehicleListingAnalysis vehicleListingAnalysis={vehicleListingAnalysis} />}
         
         <p className={cn(
           "text-xs opacity-70 mt-1",
