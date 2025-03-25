@@ -55,7 +55,24 @@ export const useImageProcessor = () => {
       };
     } catch (error) {
       console.error("Error processing image:", error);
-      throw error;
+      
+      // Create a more user-friendly error message
+      let errorMessage = "I couldn't analyze this image.";
+      
+      if (error.message.includes("timed out")) {
+        errorMessage += " The analysis took too long. Please try a smaller or clearer image.";
+      } else if (error.message.includes("too large")) {
+        errorMessage += " The image is too large. Please use an image smaller than 8MB.";
+      } else if (error.message.includes("Invalid image")) {
+        errorMessage += " The image format appears to be invalid. Please try a different image.";
+      } else {
+        errorMessage += " Please try again with a clearer image of the car part.";
+      }
+      
+      return {
+        text: errorMessage,
+        extra: { error: true }
+      };
     }
   }, [identifyPart]);
 

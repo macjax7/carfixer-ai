@@ -20,43 +20,79 @@ export async function analyzeImage(imageUrl: string, prompt?: string, vehicleInf
       throw new Error('No image URL provided');
     }
     
-    // Check if the image is a data URL or an object URL
-    if (!imageUrl.startsWith('data:') && !imageUrl.startsWith('blob:') && !imageUrl.startsWith('http')) {
-      console.error("Invalid image URL format:", imageUrl.substring(0, 20) + '...');
-      throw new Error('Invalid image URL format');
-    }
+    // Process the image data - handle different formats properly
+    let processedImageData = imageUrl;
     
-    // For object URLs created with URL.createObjectURL, we need to fetch them first
-    let processedImageUrl = imageUrl;
+    // For blob URLs created with URL.createObjectURL, we need special handling
     if (imageUrl.startsWith('blob:')) {
-      console.log("Converting blob URL to data URL");
+      console.log("Processing blob URL...");
       try {
+        // Fetch the blob content
         const response = await fetch(imageUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch blob (status ${response.status})`);
+        }
+        
+        // Get the blob data
         const blob = await response.blob();
-        const reader = new FileReader();
-        processedImageUrl = await new Promise((resolve) => {
+        console.log("Blob fetched successfully:", {
+          type: blob.type,
+          size: `${(blob.size / 1024).toFixed(2)} KB`
+        });
+        
+        // Check if the blob is too large (8MB limit for edge functions)
+        if (blob.size > 8 * 1024 * 1024) {
+          throw new Error('Image is too large. Maximum size is 8MB');
+        }
+        
+        // Convert blob to base64 data URL
+        processedImageData = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Failed to read image data'));
           reader.readAsDataURL(blob);
         });
-        console.log("Successfully converted blob URL to data URL");
+        
+        console.log("Successfully converted blob to data URL:", {
+          dataLength: processedImageData.length,
+          preview: processedImageData.substring(0, 50) + '...'
+        });
       } catch (error) {
-        console.error("Error converting blob URL to data URL:", error);
-        throw new Error('Failed to process image URL');
+        console.error("Error processing blob URL:", error);
+        throw new Error(`Failed to process image: ${error.message}`);
       }
     }
     
-    // Ensure we're sending the complete data to the edge function
-    const { data, error } = await supabase.functions.invoke('openai', {
+    // Ensure we're sending a valid format to the edge function
+    if (!processedImageData.startsWith('data:') && !processedImageData.startsWith('http')) {
+      console.error("Invalid image data format after processing");
+      throw new Error('Image data is in an invalid format');
+    }
+    
+    console.log("Sending image to OpenAI edge function:", { 
+      dataLength: processedImageData.length,
+      promptLength: effectivePrompt.length
+    });
+    
+    // Call the edge function with a timeout
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Image analysis timed out after 30 seconds')), 30000)
+    );
+    
+    const analysisPromise = supabase.functions.invoke('openai', {
       body: {
         service: 'image',
         action: 'analyze',
         data: {
-          image: processedImageUrl,
+          image: processedImageData,
           prompt: effectivePrompt,
           vehicleInfo
         }
       }
     });
+    
+    // Race the analysis promise against the timeout
+    const { data, error } = await Promise.race([analysisPromise, timeoutPromise]) as any;
 
     if (error) {
       console.error("Error from Supabase image analysis function:", error);

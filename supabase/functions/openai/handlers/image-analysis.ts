@@ -10,8 +10,8 @@ export async function handleImageAnalysis(data: any) {
     const { image, prompt = 'Identify this car part and explain its purpose.', vehicleInfo = null } = data;
     
     if (!image) {
-      console.error("No image URL provided");
-      return createErrorResponse(new Error("No image URL provided"));
+      console.error("No image data provided");
+      return createErrorResponse(new Error("No image data provided"));
     }
     
     console.log("Processing image with prompt:", prompt);
@@ -33,14 +33,26 @@ export async function handleImageAnalysis(data: any) {
     
     // For image analysis, we use GPT-4o with vision capabilities
     try {
-      console.log("Sending request to OpenAI vision API with image URL length:", image.length);
-      
-      // Ensure the image URL is properly formatted for the vision model
+      // Process and validate the image data
       let imageUrl = image;
-      // Check if the image is a base64 string and not a URL
-      if (!imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
-        console.log("Image appears to be a raw base64 string, adding proper header");
-        imageUrl = `data:image/jpeg;base64,${image}`;
+      let imageType = 'unknown';
+      
+      if (typeof image === 'string') {
+        if (image.startsWith('data:image/')) {
+          imageType = 'data-url';
+        } else if (image.startsWith('http')) {
+          imageType = 'remote-url';
+        } else if (image.match(/^[A-Za-z0-9+/=]+$/)) {
+          // Looks like a raw base64 string without the data: prefix
+          imageType = 'raw-base64';
+          imageUrl = `data:image/jpeg;base64,${image}`;
+        }
+      }
+      
+      console.log(`Image detected as type: ${imageType}, length: ${typeof image === 'string' ? image.length : 'unknown'}`);
+      
+      if (imageType === 'unknown') {
+        return createErrorResponse(new Error("Unsupported image format"));
       }
       
       // Verify the request format is correct for the vision model
@@ -65,14 +77,7 @@ export async function handleImageAnalysis(data: any) {
         temperature: 0.2, // Lower temperature for more deterministic, factual responses
       };
       
-      console.log("OpenAI request structure:", JSON.stringify({
-        model: requestBody.model,
-        messageCount: requestBody.messages.length,
-        systemPromptLength: systemPrompt.length,
-        hasImageUrl: !!imageUrl,
-        imageUrlType: typeof imageUrl,
-        imageUrlStart: imageUrl.substring(0, 30) + '...'
-      }));
+      console.log("Sending request to OpenAI vision API");
       
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
