@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Set up auth effects
   useAuthEffects(setUser, setSession, setLoading, setError, setShowSessionDialog);
 
-  const value: AuthContextType = {
+  const value = {
     user,
     session,
     loading,

@@ -1,40 +1,47 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
-import ProfileMenu from '@/components/ProfileMenu';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Menu } from 'lucide-react';
-import { MobileNav } from './MobileNav';
-import { ModeToggle } from './ModeToggle';
-import { Logo } from './Logo';
 
-const Header = () => {
-  const { user } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
+
+interface HeaderProps {
+  title?: string;
+  showBackButton?: boolean;
+  showMenu?: boolean;
+  showNotifications?: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({
+  title = 'CarFix',
+  showBackButton = false,
+  showMenu = false,
+  showNotifications = false,
+}) => {
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    navigate(-1);
+  };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-background/90 backdrop-blur-sm border-b">
-      <div className="container flex h-16 items-center px-4 sm:px-6">
-        <div className="mr-4 hidden md:flex">
-          <Link to="/" className="flex items-center space-x-2 mr-6">
-            <Logo />
-          </Link>
+    <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border py-4 px-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          {showBackButton && (
+            <button
+              onClick={handleBack}
+              className="p-1 rounded-full hover:bg-secondary transition-colors"
+              aria-label="Go back"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+          )}
           
-          <nav className="flex items-center space-x-4 lg:space-x-6">
-            <Link to="/" className="text-sm font-medium transition-colors hover:text-primary">
-              Home
-            </Link>
-            
-            {/* Add Dashboard Link */}
-            <Link to="/dashboard" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
-              Dashboard
-            </Link>
-            
-          </nav>
+          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
         </div>
         
-        <MobileNav />
+        <div className="flex items-center space-x-3">
+          {/* Menu and notification icons have been removed as requested */}
+        </div>
       </div>
     </header>
   );

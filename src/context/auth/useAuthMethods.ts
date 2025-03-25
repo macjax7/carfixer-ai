@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export function useAuthMethods() {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null); // Changed from string to Error
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const signIn = async (email: string, password: string) => {
@@ -20,9 +20,9 @@ export function useAuthMethods() {
     } catch (error) {
       console.error('Sign in error:', error);
       if (error instanceof Error) {
-        setError(error);
+        setError(error.message);
       } else {
-        setError(new Error('An unknown error occurred during sign in'));
+        setError('An unknown error occurred during sign in');
       }
       throw error; // Rethrow to let the Login component handle it
     } finally {
@@ -47,9 +47,9 @@ export function useAuthMethods() {
     } catch (error) {
       console.error('Sign up error:', error);
       if (error instanceof Error) {
-        setError(error);
+        setError(error.message);
       } else {
-        setError(new Error('An unknown error occurred during sign up'));
+        setError('An unknown error occurred during sign up');
       }
       throw error; // Rethrow to let the SignUp component handle it
     } finally {
@@ -70,9 +70,9 @@ export function useAuthMethods() {
     } catch (error) {
       console.error('Sign out error:', error);
       if (error instanceof Error) {
-        setError(error);
+        setError(error.message);
       } else {
-        setError(new Error('An unknown error occurred during sign out'));
+        setError('An unknown error occurred during sign out');
       }
     } finally {
       setLoading(false);
