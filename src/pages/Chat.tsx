@@ -18,7 +18,8 @@ const ChatHeader = () => {
   const navigate = useNavigate();
   
   const onNewChatClick = () => {
-    console.log("New Chat button clicked");
+    console.log("New Chat button clicked - attempting to create new chat");
+    // Call handleNewChat without any conditions
     handleNewChat();
   };
   
@@ -33,7 +34,6 @@ const ChatHeader = () => {
             <button 
               className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-border/60 hover:bg-secondary transition-colors mr-3 cursor-pointer"
               onClick={onNewChatClick}
-              disabled={isLoading}
             >
               <PlusCircle className="h-4 w-4" />
               <span>{isLoading ? "Creating..." : "New Chat"}</span>
