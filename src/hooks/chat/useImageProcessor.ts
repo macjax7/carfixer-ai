@@ -24,7 +24,8 @@ export const useImageProcessor = () => {
       const effectivePrompt = text.trim() || "Can you identify this car part?";
       
       // Process the image with the OpenAI vision API
-      const imageResult = await identifyPart(image, effectivePrompt, vehicleInfo);
+      // Note: Fixing the mismatch - only passing the allowed number of arguments
+      const imageResult = await identifyPart(image, effectivePrompt);
       console.log("Image identification result received, length:", imageResult?.length || 0);
       
       // Look for component diagram data in the response
