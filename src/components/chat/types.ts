@@ -51,4 +51,6 @@ export interface MessageContentProps {
   text: string;
   image?: string;
   sender: 'user' | 'ai';
+  videoRecommendations?: VideoRecommendation[];
+  repairGuidance?: RepairGuidance;
 }
