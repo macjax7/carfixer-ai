@@ -1,81 +1,101 @@
-
-import { useCallback } from 'react';
-import { useMessageHandlers } from './useMessageHandlers';
-import { useSuggestedPrompts } from './useSuggestedPrompts';
-import { useChatMessages } from './useChatMessages';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useChatMessages } from './useChatMessages';
+import { useMessageSender } from './useMessageSender';
+import { useAuth } from '@/context/AuthContext';
+import { useChatDatabase } from './useChatDatabase';
+import { useToast } from '@/hooks/use-toast';
+import { isValidUUID } from '@/utils/uuid';
 
 export const useChat = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
+  
+  // Get chat state and message handling functions
   const {
     messages,
-    input,
-    setInput,
+    messageHistory,
+    chatId,
     isLoading,
-    handleSendMessage,
-    handleTextInput,
-    handleImageUpload,
-    handleListingAnalysis,
-    handleSuggestedPrompt,
-    hasAskedForVehicle,
+    addUserMessage,
+    addAIMessage,
     resetChat,
-    saveCurrentChat,
-    chatId
-  } = useMessageHandlers();
+    setChatId,
+    loadChatById,
+    chatIdLoaded
+  } = useChatMessages();
   
-  const navigate = useNavigate();
-  const { suggestedPrompts } = useSuggestedPrompts();
-  const { loadChatById, chatIdLoaded, resetChat: resetChatMessages } = useChatMessages();
-
-  const handleNewChat = useCallback(() => {
-    console.log("handleNewChat called - beginning new chat creation process");
+  // Get message sending functionality
+  const {
+    processAndSendMessage,
+    isProcessing,
+    vehicleContext
+  } = useMessageSender();
+  
+  // Get database operations
+  const { createChatSession } = useChatDatabase();
+  
+  // Create a new chat and navigate to it
+  const handleNewChat = useCallback(async () => {
+    if (isCreatingChat) {
+      console.log("Already creating a new chat, ignoring duplicate request");
+      return;
+    }
+    
+    setIsCreatingChat(true);
+    console.log("Creating new chat");
     
     try {
-      // First, ensure we reset messages properly using useChatMessages resetChat
-      resetChatMessages();
+      // Reset the chat state and get new chat ID
+      const newChatId = resetChat();
+      console.log("New chat created with ID:", newChatId);
       
-      // Then reset other chat state with messageHandlers resetChat
-      const newId = resetChat();
-      console.log("Chat reset completed, new ID generated:", newId);
-      
-      // Clear the input field
-      setInput('');
-      
-      // Navigate to the new chat URL to ensure all components are reset
-      if (newId) {
-        console.log("Navigating to new chat path:", `/chat/${newId}`);
-        navigate(`/chat/${newId}`, { replace: true });
+      // For authenticated users, create a session in the database
+      if (user && user.id) {
+        console.log("Creating database session for authenticated user");
+        const dbChatId = await createChatSession("New Chat", user.id);
+        
+        if (dbChatId && isValidUUID(dbChatId)) {
+          console.log("Using database-generated chat ID:", dbChatId);
+          setChatId(dbChatId);
+          navigate(`/chat/${dbChatId}`);
+        } else {
+          console.log("Using locally-generated chat ID:", newChatId);
+          navigate(`/chat/${newChatId}`);
+        }
       } else {
-        console.log("Navigating to root path");
-        navigate('/', { replace: true });
+        // For guest users, just navigate to the new chat
+        console.log("Guest user - using locally-generated chat ID");
+        navigate(`/chat/${newChatId}`);
       }
-      
-      console.log("New chat creation process completed successfully");
-      return newId;
     } catch (error) {
       console.error("Error creating new chat:", error);
-      return null;
+      toast({
+        title: "Error",
+        description: "Failed to create a new chat. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingChat(false);
     }
-  }, [resetChat, resetChatMessages, setInput, navigate]);
-
-  // Always enable the new chat button
-  const canCreateNewChat = true;
-
+  }, [isCreatingChat, resetChat, user, createChatSession, setChatId, navigate, toast]);
+  
+  // Check if user can create a new chat (not processing a message)
+  const canCreateNewChat = !isProcessing && !isCreatingChat;
+  
   return {
     messages,
-    input,
-    setInput,
+    messageHistory,
+    chatId,
     isLoading,
-    handleSendMessage,
-    handleImageUpload,
-    handleListingAnalysis,
-    handleSuggestedPrompt,
-    suggestedPrompts,
-    hasAskedForVehicle,
-    resetChat,
+    isProcessing,
+    vehicleContext,
+    processAndSendMessage,
     handleNewChat,
     canCreateNewChat,
     loadChatById,
-    chatId,
     chatIdLoaded
   };
 };
