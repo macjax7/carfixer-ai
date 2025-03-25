@@ -2,8 +2,6 @@
 import React from 'react';
 import { MessageContentProps } from './types';
 import VideoCard from './VideoCard';
-import OBDCodeInfo from './OBDCodeInfo';
-import { useOpenAI } from '@/utils/openai/hook';
 
 const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: any[] }> = ({
   text,
@@ -11,11 +9,6 @@ const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: an
   sender,
   videoRecommendations
 }) => {
-  const { extractOBDCodes } = useOpenAI();
-  
-  // Extract OBD codes from the message text
-  const obdCodes = sender === 'user' ? extractOBDCodes(text) : [];
-  
   // Enhanced URL regex that matches more URL formats, specifically targeting vehicle listing platforms and YouTube
   const renderTextWithLinks = (content: string) => {
     // Enhanced URL regex that matches more URL formats
@@ -66,19 +59,6 @@ const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: an
       );
     };
     
-    const isPartsUrl = (url: string) => {
-      const lowerUrl = url.toLowerCase();
-      return (
-        lowerUrl.includes('rockauto.com') ||
-        lowerUrl.includes('autozone.com') ||
-        lowerUrl.includes('advanceautoparts.com') ||
-        lowerUrl.includes('oreillys.com') ||
-        lowerUrl.includes('napaonline.com') ||
-        lowerUrl.includes('amazon.com') && lowerUrl.includes('automotive') ||
-        lowerUrl.includes('ebay.com') && lowerUrl.includes('parts')
-      );
-    };
-    
     // Extract YouTube links for later conversion to video cards
     const youtubeLinks = extractYouTubeLinks(content);
     
@@ -94,7 +74,6 @@ const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: an
         // Add special styling for different URL types
         const isVehicleListing = isVehicleListingUrl(part);
         const isYouTube = isYouTubeUrl(part);
-        const isParts = isPartsUrl(part);
         
         return (
           <a 
@@ -109,27 +88,21 @@ const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: an
                   ? 'text-carfix-600 font-medium hover:underline' 
                   : isYouTube
                     ? 'text-red-600 font-medium hover:underline'
-                    : isParts
-                      ? 'text-green-600 font-medium hover:underline'
-                      : 'text-blue-500 hover:underline'
+                    : 'text-blue-500 hover:underline'
             }`}
             title={
               isVehicleListing 
                 ? "Vehicle listing URL - Ask me to analyze it!" 
                 : isYouTube
                   ? "YouTube video - Click to watch"
-                  : isParts
-                    ? "Replacement parts link - Click to view"
-                    : part
+                  : part
             }
           >
             {isVehicleListing && sender === 'user' ? "📃 " : ""}
             {isYouTube && sender === 'ai' ? "🎬 " : ""}
-            {isParts && sender === 'ai' ? "🔧 " : ""}
             {truncatedUrl}
             {isVehicleListing && sender === 'user' ? " 🚗" : ""}
             {isYouTube && sender === 'ai' ? " 📹" : ""}
-            {isParts && sender === 'ai' ? " 🛒" : ""}
           </a>
         );
       }
@@ -170,19 +143,6 @@ const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: an
             alt="Uploaded" 
             className="rounded-lg max-h-48 w-auto object-contain bg-black/10"
           />
-        </div>
-      )}
-      
-      {/* Display OBD codes if present in user message */}
-      {sender === 'user' && obdCodes.length > 0 && (
-        <div className="mb-3 space-y-2">
-          {obdCodes.map((code, idx) => (
-            <OBDCodeInfo 
-              key={idx} 
-              code={code} 
-              severity={code.startsWith('P0') ? 'medium' : 'high'}
-            />
-          ))}
         </div>
       )}
       

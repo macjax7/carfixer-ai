@@ -11,8 +11,6 @@ import { speechToText } from './speech';
 import { ChatMessage } from './types';
 import { useCodeDetection } from '@/hooks/chat/useCodeDetection';
 import { useSystemPrompt } from '@/hooks/chat/useSystemPrompt';
-import { getOBDDiagnostics, extractOBDCodes } from './obd';
-import { fetchRepairData } from './repair-data';
 
 /**
  * Custom hook to use the CarFix API with vehicle context
@@ -32,27 +30,6 @@ export function useOpenAI() {
       console.log("Starting chatWithAI with messages:", messages);
       console.log("Vehicle context:", vehicleOverride || selectedVehicle);
       console.log("Using system prompt:", systemPrompt);
-      
-      // Extract OBD codes from the last user message
-      const lastUserMessage = messages.filter(m => m.role === 'user').pop();
-      const obdCodes = lastUserMessage ? extractOBDCodes(lastUserMessage.content) : [];
-      
-      // If OBD codes are detected, use the specialized OBD diagnostic flow
-      if (obdCodes.length > 0 && (vehicleOverride || selectedVehicle)) {
-        console.log("OBD codes detected, using specialized diagnostic flow:", obdCodes);
-        try {
-          // Get detailed OBD analysis from specialized endpoint
-          const analysis = await getOBDDiagnostics({
-            codes: obdCodes,
-            vehicleInfo: vehicleOverride || selectedVehicle,
-            symptoms: [] // Could extract symptoms from message in the future
-          });
-          return analysis;
-        } catch (error) {
-          console.error("Error in OBD analysis, falling back to standard chat:", error);
-          // Fall back to regular chat if OBD analysis fails
-        }
-      }
       
       const response = await sendChatMessage(
         messages, 
@@ -92,14 +69,6 @@ export function useOpenAI() {
     });
   };
   
-  const getOBDAnalysis = async (codes: string[], symptoms: string[] = []) => {
-    return getOBDDiagnostics({
-      codes,
-      vehicleInfo: selectedVehicle,
-      symptoms
-    });
-  };
-  
   const findParts = async (params: {
     partName: string;
     partNumber?: string;
@@ -123,10 +92,6 @@ export function useOpenAI() {
     });
   };
   
-  const getRepairInfo = async (vehicleInfo: any, task?: string) => {
-    return fetchRepairData(vehicleInfo, task);
-  };
-  
   const decodeVehicleVIN = async (vin: string) => {
     return decodeVIN(vin);
   };
@@ -144,14 +109,11 @@ export function useOpenAI() {
     identifyPart,
     analyzeListing,
     getDiagnostics,
-    getOBDAnalysis,
     findParts,
     getRepairSteps,
-    getRepairInfo,
     decodeVehicleVIN,
     getOBDData,
     speechToText: convertSpeechToText,
-    processCodeType,
-    extractOBDCodes
+    processCodeType
   };
 }

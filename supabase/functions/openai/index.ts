@@ -1,4 +1,3 @@
-
 import { corsHeaders, createSuccessResponse, createErrorResponse } from './utils.ts';
 
 // Import handlers
@@ -9,7 +8,6 @@ import { handleRepairRequest } from './handlers/repair.ts';
 import { handleVehicleInfoRequest } from './handlers/vehicle-info.ts';
 import { handleVehicleListingRequest } from './handlers/vehicle-listing.ts';
 import { handleRepairDataRequest } from './handlers/repair-data.ts';
-import { handleOBDDiagnosticRequest } from './handlers/obd-diagnostic.ts';
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -28,8 +26,6 @@ Deno.serve(async (req) => {
       case 'diagnostic':
         if (action === 'chat') {
           return await handleChatRequest(data);
-        } else if (action === 'obd') {
-          return await handleOBDDiagnosticRequest(data);
         }
         break;
       case 'image':
