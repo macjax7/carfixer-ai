@@ -1,54 +1,50 @@
 
 import React from 'react';
-import { ExternalLink, Play } from 'lucide-react';
-import { VideoRecommendation } from './types';
+import { ExternalLink } from 'lucide-react';
 
 interface VideoCardProps {
-  video: VideoRecommendation;
+  video: {
+    title: string;
+    url: string;
+    thumbnailUrl?: string;
+  };
 }
 
 const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
-  const { title, url, thumbnailUrl } = video;
-  
-  // Extract video ID from YouTube URL for thumbnail if not provided
-  const getYouTubeVideoId = (youtubeUrl: string): string | null => {
-    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-    const match = youtubeUrl.match(regExp);
-    return (match && match[7].length === 11) ? match[7] : null;
+  // Extract YouTube video ID from URL for thumbnail if not provided
+  const getYouTubeVideoId = (url: string): string | null => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
   };
 
-  const videoId = thumbnailUrl ? '' : getYouTubeVideoId(url);
-  const defaultThumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
-  
-  const actualThumbnailUrl = thumbnailUrl || defaultThumbnailUrl || "/placeholder.svg";
+  const videoId = video.thumbnailUrl ? undefined : getYouTubeVideoId(video.url);
+  const thumbnailUrl = video.thumbnailUrl || (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : undefined);
 
   return (
     <a 
-      href={url} 
-      target="_blank" 
+      href={video.url}
+      target="_blank"
       rel="noopener noreferrer"
-      className="block mb-3 rounded-lg overflow-hidden border border-gray-200 hover:border-carfix-500 transition-colors bg-background/50"
+      className="block bg-background/80 border border-border rounded-md overflow-hidden hover:shadow-md transition-shadow"
     >
-      <div className="relative">
-        <div className="aspect-video bg-gray-100 relative overflow-hidden">
-          <img 
-            src={actualThumbnailUrl} 
-            alt={title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-            <div className="bg-carfix-600 rounded-full p-2">
-              <Play className="h-6 w-6 text-white" fill="white" />
-            </div>
+      <div className="flex items-center p-2">
+        {thumbnailUrl && (
+          <div className="w-24 h-16 mr-3 overflow-hidden rounded bg-muted flex-shrink-0">
+            <img 
+              src={thumbnailUrl} 
+              alt={video.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <h4 className="text-sm font-medium leading-tight line-clamp-2">{video.title}</h4>
+          <div className="mt-1 flex items-center text-xs text-muted-foreground">
+            <ExternalLink className="w-3 h-3 mr-1" />
+            <span className="truncate">Watch on YouTube</span>
           </div>
         </div>
-      </div>
-      <div className="p-3">
-        <div className="flex justify-between items-start">
-          <h3 className="text-sm font-medium line-clamp-2">{title}</h3>
-          <ExternalLink className="h-4 w-4 text-gray-500 flex-shrink-0 ml-2 mt-0.5" />
-        </div>
-        <p className="text-xs text-gray-500 mt-1">YouTube Video</p>
       </div>
     </a>
   );

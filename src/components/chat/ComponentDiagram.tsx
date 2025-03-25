@@ -23,8 +23,11 @@ const ComponentDiagram: React.FC<ComponentDiagramProps> = ({ componentDiagram })
           src={componentDiagram.diagramUrl} 
           alt={`${componentDiagram.componentName} location`}
           className="w-full object-contain"
+          onClick={() => window.open(componentDiagram.diagramUrl, '_blank')}
+          style={{ cursor: 'zoom-in' }}
         />
       </div>
+      <p className="text-xs text-muted-foreground mt-1 text-center">Click image to enlarge</p>
     </div>
   );
 };

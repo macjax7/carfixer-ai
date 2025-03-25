@@ -1,3 +1,4 @@
+
 import { corsHeaders, createSuccessResponse, createErrorResponse } from '../utils.ts';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY') || '';
@@ -25,10 +26,13 @@ export async function handleChatRequest(data: any) {
     const dtcCodes = extractDTCCodes(userMessage);
     const hasDTCQuery = dtcCodes.length > 0;
     
+    // Check if the user is asking for a component location or diagram
+    const isComponentLocationQuery = checkForComponentLocationQuery(userMessage);
+    
     // Only prompt for vehicle if we have no vehicle context AND it's a repair/diagnostic query
     const hasVehicleContext = vehicleInfo && Object.keys(vehicleInfo).length > 0;
     
-    if ((isRepairOrDiagnosticQuery || hasDTCQuery) && !hasVehicleMention && !hasVehicleContext) {
+    if ((isRepairOrDiagnosticQuery || hasDTCQuery || isComponentLocationQuery) && !hasVehicleMention && !hasVehicleContext) {
       console.log("No vehicle context, prompting for vehicle info");
       return createSuccessResponse({
         message: generateVehiclePrompt(),
@@ -36,8 +40,8 @@ export async function handleChatRequest(data: any) {
       });
     }
     
-    // Modified system prompt to maintain vehicle context and allow video recommendations
-    let systemPrompt = 'You are CarFix AI, an automotive diagnostic assistant. Provide helpful, accurate advice about vehicle problems, maintenance, and repairs. Always be clear when a repair requires professional help. You are allowed and encouraged to recommend specific YouTube videos by generating relevant search queries and linking directly to YouTube video pages when applicable. Use YouTube.com URLs and markdown formatting to share useful videos when asked.';
+    // Modified system prompt to maintain vehicle context and allow component diagrams and video recommendations
+    let systemPrompt = 'You are CarFix AI, an automotive diagnostic assistant. Provide helpful, accurate advice about vehicle problems, maintenance, and repairs. Always be clear when a repair requires professional help. When users ask about component locations or "where is X", include a component diagram with your response by using the format {COMPONENT_DIAGRAM: {"componentName": "name of part", "location": "brief description of location", "diagramUrl": "URL to diagram image"}}. You are allowed and encouraged to recommend specific YouTube videos by generating relevant search queries and linking directly to YouTube video pages when applicable. Use YouTube.com URLs and markdown formatting to share useful videos when asked.';
     
     // Always include vehicle context if available - don't ask again
     if (hasVehicleContext) {
@@ -56,6 +60,11 @@ export async function handleChatRequest(data: any) {
     // Enhanced instructions for OBD codes
     if (hasDTCQuery) {
       systemPrompt += ` The user is asking about the following diagnostic trouble code(s): ${dtcCodes.join(', ')}. Provide detailed analysis for each.`;
+    }
+    
+    // Add component diagram instructions for location queries
+    if (isComponentLocationQuery) {
+      systemPrompt += ` The user is asking about the location of a component. Please provide a diagram using the {COMPONENT_DIAGRAM} format described earlier. For example: {COMPONENT_DIAGRAM: {"componentName": "Oil Filter", "location": "Located on the passenger side of the engine block", "diagramUrl": "https://example.com/oil-filter-diagram.jpg"}}. Use appropriate stock diagrams that accurately show the component location.`;
     }
     
     // Add video recommendation instructions for video queries
@@ -159,6 +168,28 @@ function checkForRepairOrDiagnosticQuery(message: string): boolean {
   const partPattern = new RegExp(`\\b(${partTerms.join('|')})\\b`, 'i');
   
   return repairPattern.test(message) && partPattern.test(message);
+}
+
+function checkForComponentLocationQuery(message: string): boolean {
+  // Check for location-related terms
+  const locationTerms = [
+    'where is', 'location of', 'find', 'locate', 'position of', 'where can i find', 
+    'where\'s the', 'where are', 'show me', 'diagram', 'schematic', 'placement'
+  ];
+  
+  // Common automotive components
+  const componentTerms = [
+    'sensor', 'filter', 'pump', 'relay', 'fuse', 'valve', 'solenoid', 'switch',
+    'thermostat', 'belt', 'pulley', 'battery', 'alternator', 'starter', 'spark plug',
+    'injector', 'throttle body', 'mass air flow', 'maf', 'egr', 'pcv', 'evap',
+    'oxygen sensor', 'o2 sensor', 'camshaft', 'crankshaft', 'knock sensor', 'vvt',
+    'timing chain', 'timing belt', 'water pump', 'oil filter', 'air filter', 'cabin filter'
+  ];
+  
+  const locationPattern = new RegExp(`\\b(${locationTerms.join('|')})\\b`, 'i');
+  const componentPattern = new RegExp(`\\b(${componentTerms.join('|')})\\b`, 'i');
+  
+  return locationPattern.test(message) && componentPattern.test(message);
 }
 
 function extractDTCCodes(message: string): string[] {

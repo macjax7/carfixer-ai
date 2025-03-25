@@ -62,6 +62,34 @@ export const useAIResponseProcessor = () => {
         }
       }
       
+      // Extract component diagram if present in the AI response
+      const extractComponentDiagram = (response: string) => {
+        const diagramRegex = /{COMPONENT_DIAGRAM:\s*({.*?})}/s;
+        const match = response.match(diagramRegex);
+        
+        if (match && match[1]) {
+          try {
+            const diagramData = JSON.parse(match[1]);
+            return {
+              componentName: diagramData.componentName || '',
+              location: diagramData.location || '',
+              diagramUrl: diagramData.diagramUrl || ''
+            };
+          } catch (error) {
+            console.error('Error parsing component diagram data:', error);
+            return null;
+          }
+        }
+        return null;
+      };
+      
+      // Check for component diagram in the response
+      const componentDiagram = extractComponentDiagram(aiResponseText);
+      if (componentDiagram) {
+        console.log("Found component diagram in response:", componentDiagram);
+        aiMessageExtra = { ...aiMessageExtra, componentDiagram };
+      }
+      
       return { text: aiResponseText, extra: aiMessageExtra };
     } catch (error) {
       console.error("Error processing AI response:", error);

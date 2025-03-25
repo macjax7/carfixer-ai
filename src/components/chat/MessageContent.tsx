@@ -9,6 +9,38 @@ const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: an
   sender,
   videoRecommendations
 }) => {
+  // Extract component diagram data from message if present
+  const extractComponentDiagram = (content: string) => {
+    const diagramRegex = /{COMPONENT_DIAGRAM:\s*({.*?})}/s;
+    const match = content.match(diagramRegex);
+    
+    if (match && match[1]) {
+      try {
+        const diagramData = JSON.parse(match[1]);
+        return {
+          componentName: diagramData.componentName || '',
+          location: diagramData.location || '',
+          diagramUrl: diagramData.diagramUrl || ''
+        };
+      } catch (error) {
+        console.error('Error parsing component diagram data:', error);
+        return null;
+      }
+    }
+    return null;
+  };
+  
+  // Remove component diagram markers from text
+  const cleanText = (content: string) => {
+    return content.replace(/{COMPONENT_DIAGRAM:\s*({.*?})}/s, '');
+  };
+  
+  // Extract any component diagram data
+  const componentDiagram = extractComponentDiagram(text);
+  
+  // Clean the text to remove diagram markers
+  const cleanedText = cleanText(text);
+
   // Enhanced URL regex that matches more URL formats, specifically targeting vehicle listing platforms and YouTube
   const renderTextWithLinks = (content: string) => {
     // Enhanced URL regex that matches more URL formats
@@ -131,7 +163,7 @@ const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: an
   // Combine any explicitly passed video recommendations with those extracted from markdown links
   const allVideoRecommendations = [
     ...(videoRecommendations || []),
-    ...extractVideoRecommendationsFromMarkdown(text)
+    ...extractVideoRecommendationsFromMarkdown(cleanedText)
   ];
 
   return (
@@ -147,8 +179,27 @@ const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: an
       )}
       
       <p className="text-sm md:text-base whitespace-pre-wrap">
-        {renderTextWithLinks(text)}
+        {renderTextWithLinks(cleanedText)}
       </p>
+      
+      {componentDiagram && (
+        <div className="mt-3 p-3 bg-background/90 border border-border/60 rounded-lg">
+          <h4 className="text-sm font-medium mb-1 text-carfix-600">{componentDiagram.componentName} Location</h4>
+          {componentDiagram.location && (
+            <p className="text-xs text-muted-foreground mb-2">{componentDiagram.location}</p>
+          )}
+          <div className="rounded overflow-hidden border border-border/40">
+            <img 
+              src={componentDiagram.diagramUrl} 
+              alt={`${componentDiagram.componentName} diagram`} 
+              className="w-full object-contain max-h-60"
+              onClick={() => window.open(componentDiagram.diagramUrl, '_blank')}
+              style={{ cursor: 'zoom-in' }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-1 text-center">Click image to enlarge</p>
+        </div>
+      )}
       
       {allVideoRecommendations.length > 0 && (
         <div className="mt-3 space-y-2">
