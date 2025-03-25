@@ -1,4 +1,3 @@
-
 import { corsHeaders, createSuccessResponse, createErrorResponse } from '../utils.ts';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY') || '';
@@ -41,7 +40,7 @@ export async function handleChatRequest(data: any) {
     }
     
     // Modified system prompt to maintain vehicle context and allow component diagrams and video recommendations
-    let systemPrompt = 'You are CarFix AI, an automotive diagnostic assistant. Provide helpful, accurate advice about vehicle problems, maintenance, and repairs. Always be clear when a repair requires professional help. When users ask about component locations or "where is X", include a component diagram with your response by using the format {COMPONENT_DIAGRAM: {"componentName": "name of part", "location": "brief description of location", "diagramUrl": "URL to diagram image"}}. You are allowed and encouraged to recommend specific YouTube videos by generating relevant search queries and linking directly to YouTube video pages when applicable. Use YouTube.com URLs and markdown formatting to share useful videos when asked.';
+    let systemPrompt = 'You are CarFix AI, an automotive diagnostic assistant. Provide helpful, accurate advice about vehicle problems, maintenance, and repairs. Always be clear when a repair requires professional help. When users ask about component locations or "where is X", include a component diagram with your response by using the format {COMPONENT_DIAGRAM: {"componentName": "name of part", "location": "brief description of location", "diagramUrl": "URL to diagram image"}}. For any repair procedure or diagnostic issue, ALWAYS recommend at least one relevant YouTube video with your response. Format YouTube video links as markdown: [Descriptive Title of Video](https://www.youtube.com/watch?v=VIDEO_ID). You should aim to recommend multiple videos when possible, especially for complex repairs.';
     
     // Always include vehicle context if available - don't ask again
     if (hasVehicleContext) {
@@ -67,13 +66,8 @@ export async function handleChatRequest(data: any) {
       systemPrompt += ` The user is asking about the location of a component. Please provide a diagram using the {COMPONENT_DIAGRAM} format described earlier. For example: {COMPONENT_DIAGRAM: {"componentName": "Oil Filter", "location": "Located on the passenger side of the engine block", "diagramUrl": "https://example.com/oil-filter-diagram.jpg"}}. Use appropriate stock diagrams that accurately show the component location.`;
     }
     
-    // Add video recommendation instructions for video queries
-    if (userMessage.toLowerCase().includes('video') || 
-        userMessage.toLowerCase().includes('youtube') || 
-        userMessage.toLowerCase().includes('watch') ||
-        userMessage.toLowerCase().includes('tutorial')) {
-      systemPrompt += ` The user is asking for video content. Please suggest relevant YouTube videos using markdown links [Video Title](URL). When recommending videos, try to suggest videos that are high quality, instructional, and relevant to their specific vehicle when possible.`;
-    }
+    // Add video recommendation instructions for all repair-related queries
+    systemPrompt += ` For ANY repair, diagnostic, or maintenance question, you MUST include at least one relevant YouTube video recommendation using markdown links [Video Title](URL). When recommending videos, try to suggest videos that are high quality, instructional, and relevant to their specific vehicle when possible. Prioritize videos that show the actual repair or diagnostic process.`;
 
     const requestMessages = [
       { role: 'system', content: systemPrompt },

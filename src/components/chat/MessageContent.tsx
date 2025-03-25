@@ -47,7 +47,7 @@ const MessageContent: React.FC<MessageContentProps & {
   return (
     <>
       {/* Display uploaded image if present */}
-      <UploadedImage src={image} />
+      {image && <UploadedImage src={image} />}
       
       {/* Standard text message (hidden if it's a structured repair guide) */}
       {(!hasStructuredGuide || sender === 'user') && (
@@ -65,26 +65,17 @@ const MessageContent: React.FC<MessageContentProps & {
       
       {/* Component diagram */}
       {componentDiagram && (
-        <div className="mt-3 p-3 bg-background/90 border border-border/60 rounded-lg">
-          <h4 className="text-sm font-medium mb-1 text-carfix-600">{componentDiagram.componentName} Location</h4>
-          {componentDiagram.location && (
-            <p className="text-xs text-muted-foreground mb-2">{componentDiagram.location}</p>
-          )}
-          <div className="rounded overflow-hidden border border-border/40">
-            <img 
-              src={componentDiagram.diagramUrl} 
-              alt={`${componentDiagram.componentName} diagram`} 
-              className="w-full object-contain max-h-60"
-              onClick={() => window.open(componentDiagram.diagramUrl, '_blank')}
-              style={{ cursor: 'zoom-in' }}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground mt-1 text-center">Click image to enlarge</p>
-        </div>
+        <ComponentDiagram 
+          componentName={componentDiagram.componentName}
+          location={componentDiagram.location}
+          diagramUrl={componentDiagram.diagramUrl}
+        />
       )}
       
       {/* Video recommendations */}
-      <VideoRecommendationsList videos={allVideoRecommendations} />
+      {allVideoRecommendations.length > 0 && (
+        <VideoRecommendationsList videos={allVideoRecommendations} />
+      )}
     </>
   );
 };
