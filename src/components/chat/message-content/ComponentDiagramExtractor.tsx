@@ -7,12 +7,17 @@ interface ComponentDiagramExtractorProps {
 }
 
 export const extractComponentDiagram = (text: string): ComponentDiagram | null => {
+  // Log the input text to check if diagram markers are present
+  console.log("Extracting component diagram from text:", text.substring(0, 200) + "...");
+  
   const diagramRegex = /{COMPONENT_DIAGRAM:\s*({.*?})}/s;
   const match = text.match(diagramRegex);
   
   if (match && match[1]) {
+    console.log("Found component diagram marker in text, raw match:", match[1]);
     try {
       const diagramData = JSON.parse(match[1]);
+      console.log("Successfully parsed component diagram data:", diagramData);
       
       // Validate required fields
       if (!diagramData.componentName || !diagramData.location || !diagramData.diagramUrl) {
@@ -31,6 +36,7 @@ export const extractComponentDiagram = (text: string): ComponentDiagram | null =
       return null;
     }
   }
+  console.log("No component diagram marker found in text");
   return null;
 };
 

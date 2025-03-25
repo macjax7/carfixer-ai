@@ -17,14 +17,19 @@ const MessageContent: React.FC<MessageContentProps> = ({
   videoRecommendations,
   repairGuidance
 }) => {
+  console.log("MessageContent received text:", text?.substring(0, 100) + "...");
+  console.log("Sender:", sender);
+  
   // Extract component diagram data using the utility function
   const componentDiagram = extractComponentDiagram(text);
   
   // Clean the text to remove diagram markers
   const cleanedText = cleanText(text);
+  console.log("Text after cleaning:", cleanedText?.substring(0, 100) + "...");
 
   // Extract YouTube links from markdown
   const markdownVideos = YouTubeExtractor({ text: cleanedText });
+  console.log("Extracted videos from markdown:", markdownVideos.length);
   
   // Combine explicitly passed videos with those extracted from markdown
   const allVideoRecommendations: VideoRecommendation[] = [
@@ -37,6 +42,17 @@ const MessageContent: React.FC<MessageContentProps> = ({
     cleanedText, 
     repairGuidance?.format
   );
+  console.log("Has structured repair guide:", hasStructuredGuide);
+  
+  // Log component diagram details if present
+  if (componentDiagram) {
+    console.log("Component diagram found:", {
+      componentName: componentDiagram.componentName,
+      location: componentDiagram.location,
+      hasDiagramUrl: !!componentDiagram.diagramUrl,
+      hasHighlightedUrl: !!componentDiagram.highlightedDiagramUrl
+    });
+  }
   
   return (
     <>

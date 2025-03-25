@@ -24,13 +24,23 @@ export async function sendChatMessage(
       messageHistoryLength: messageHistory.length
     });
     
-    // Check if we're connected to Supabase
-    console.log("Checking Supabase connection before API call...");
+    // Log the first and last message for debugging
+    if (apiMessages.length > 0) {
+      console.log("First message:", apiMessages[0]);
+      console.log("Last message:", apiMessages[apiMessages.length - 1]);
+    }
+    
+    // Log vehicle info for debugging
+    if (vehicleInfo) {
+      console.log("Vehicle context being sent:", vehicleInfo);
+    }
     
     // Add timeout to prevent hanging requests
     const timeoutPromise = new Promise((_, reject) => 
       setTimeout(() => reject(new Error("API request timed out")), 30000)
     );
+    
+    console.log("Invoking Supabase function 'openai'...");
     
     const apiPromise = supabase.functions.invoke('openai', {
       body: {
@@ -47,21 +57,32 @@ export async function sendChatMessage(
     
     // Race between the API call and the timeout
     const response = await Promise.race([apiPromise, timeoutPromise]) as any;
+    console.log("Received response from Supabase function:", response ? "success" : "no response");
+    
     const { data, error } = response || {};
 
     if (error) {
       console.error("Supabase function error:", error);
-      throw new Error(`OpenAI API error: ${error.message}`);
+      throw new Error(`OpenAI API error: ${error.message || JSON.stringify(error)}`);
     }
     
-    console.log("Received response from Supabase function:", data ? "success" : "no data");
+    if (!data) {
+      console.error("No data received from Supabase function");
+      throw new Error("Empty response received from API");
+    }
+    
+    console.log("Response data structure:", Object.keys(data));
     
     // Return specifically the message property from the response
     if (data && data.message) {
+      console.log("Message received, length:", data.message.length);
+      console.log("Message preview:", data.message.substring(0, 100) + "...");
       return data.message;
     } else if (data) {
       console.warn("Unexpected response format. Full response:", data);
-      return typeof data === 'string' ? data : JSON.stringify(data);
+      const responseText = typeof data === 'string' ? data : JSON.stringify(data);
+      console.log("Converted response:", responseText.substring(0, 100) + "...");
+      return responseText;
     } else {
       throw new Error("Empty response received from OpenAI API");
     }

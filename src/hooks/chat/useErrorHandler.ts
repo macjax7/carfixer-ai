@@ -32,8 +32,26 @@ export const useErrorHandler = () => {
     const errorMessage = error?.message || 
       (typeof error === 'string' ? error : JSON.stringify(error));
     
+    let detailedError = "Unknown error";
+    
+    try {
+      // Try to extract more detailed error information
+      if (error.response) {
+        detailedError = `Status: ${error.response.status}, Message: ${JSON.stringify(error.response.data)}`;
+      } else if (error.request) {
+        detailedError = `No response received: ${error.request}`;
+      } else if (error.message) {
+        detailedError = error.message;
+      } else if (typeof error === 'object') {
+        detailedError = JSON.stringify(error);
+      }
+    } catch (e) {
+      console.error("Error parsing error details:", e);
+    }
+    
     console.log("AI error details:", {
       message: errorMessage,
+      detailedError,
       code: error?.code,
       status: error?.status,
       response: error?.response
@@ -45,7 +63,7 @@ export const useErrorHandler = () => {
       description: "Failed to get a response from OpenAI. Please check your connection or try again later."
     });
     
-    return "I apologize, but I encountered an error processing your request. Please try again.";
+    return "I apologize, but I encountered an error processing your request. Please try again or check if your OpenAI API key is valid and has sufficient credits.";
   };
 
   const handleUIError = (error: any, message: string = "UI Error") => {

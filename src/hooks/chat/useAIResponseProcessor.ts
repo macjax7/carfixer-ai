@@ -22,6 +22,12 @@ export const useAIResponseProcessor = () => {
     let aiMessageExtra = {};
     
     try {
+      console.log("processAIResponse called with:", { 
+        textLength: text.length, 
+        hasImage: !!image,
+        vehicleInfo 
+      });
+      
       // Store vehicle context when it's provided
       if (vehicleInfo && Object.keys(vehicleInfo).length > 0) {
         console.log("Storing vehicle context:", vehicleInfo);
@@ -34,7 +40,12 @@ export const useAIResponseProcessor = () => {
       
       if (image) {
         // Process image-based query
+        console.log("Processing image query with text:", text);
         const result = await processImage(image, text, effectiveVehicleInfo);
+        console.log("Image processing result:", { 
+          textLength: result.text?.length,
+          hasExtra: Object.keys(result.extra || {}).length > 0
+        });
         return result;
       } else if (/https?:\/\/[^\s]+/.test(text)) {
         // Process URL-based query
@@ -43,6 +54,7 @@ export const useAIResponseProcessor = () => {
         if (urlResults.vehicleListingAnalysis) {
           aiResponseText = urlResults.text;
           aiMessageExtra = { vehicleListingAnalysis: urlResults.vehicleListingAnalysis };
+          console.log("URL processing result: Vehicle listing analysis");
         } else {
           // If it's not a vehicle listing, just process as a normal query
           console.log("URL doesn't appear to be a vehicle listing, processing as normal text");
@@ -80,8 +92,10 @@ export const useAIResponseProcessor = () => {
               format: 'structured'
             }
           };
+          console.log("Generated structured repair guide");
         } else {
           // If we can't extract a specific repair type, fall back to normal chat
+          console.log("Could not extract repair type, falling back to normal chat");
           aiResponseText = await chatWithAI([{ role: 'user', content: text }], true, effectiveVehicleInfo);
         }
       } else {
@@ -92,11 +106,32 @@ export const useAIResponseProcessor = () => {
           console.log("Detected code type:", codeType);
           aiResponseText = await chatWithAI([{ role: 'user', content: text }], true, effectiveVehicleInfo, [codeType]);
         } else {
-          // Process normal text query
-          console.log("No code detected, processing as normal text with vehicle context:", effectiveVehicleInfo);
-          aiResponseText = await chatWithAI([{ role: 'user', content: text }], true, effectiveVehicleInfo);
+          // Check if this is a component location query
+          const locationKeywords = [
+            'where is', 'where are', 'location of', 'find the', 'where can i find', 
+            'how do i access', 'how to access', 'how to find', 'where to find'
+          ];
+          
+          const isLocationQuery = locationKeywords.some(keyword => 
+            text.toLowerCase().includes(keyword)
+          );
+          
+          if (isLocationQuery) {
+            console.log("Detected potential component location query");
+            // For location queries, explicitly use GPT-4o
+            aiResponseText = await chatWithAI([{ 
+              role: 'user', 
+              content: `${text} Please respond with a detailed location description and include a component diagram using the COMPONENT_DIAGRAM format.`
+            }], true, effectiveVehicleInfo);
+          } else {
+            // Process normal text query
+            console.log("No specialized query detected, processing as normal text with vehicle context");
+            aiResponseText = await chatWithAI([{ role: 'user', content: text }], true, effectiveVehicleInfo);
+          }
         }
       }
+      
+      console.log("AI response received, length:", aiResponseText?.length);
       
       // Extract component diagram if present in the AI response
       const extractComponentDiagram = (response: string) => {
@@ -106,6 +141,7 @@ export const useAIResponseProcessor = () => {
         if (match && match[1]) {
           try {
             const diagramData = JSON.parse(match[1]);
+            console.log("Extracted component diagram from AI response:", diagramData);
             return {
               componentName: diagramData.componentName || '',
               location: diagramData.location || '',

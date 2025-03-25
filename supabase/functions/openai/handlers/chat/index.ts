@@ -24,21 +24,28 @@ export async function handleChatRequest(data: any) {
     // Check if this is the first message or a very generic question
     const userMessage = messages[messages.length - 1].content;
     
+    console.log("Processing user message:", userMessage);
+    
     // Check if the user has mentioned a vehicle in their current query or previous messages
     const hasVehicleMention = checkForVehicleMention(userMessage, messageHistory);
+    console.log("Vehicle mention detected:", hasVehicleMention);
     
     // Check if the user is asking about a specific repair procedure or diagnostic
     const isRepairOrDiagnosticQuery = checkForRepairOrDiagnosticQuery(userMessage);
+    console.log("Repair or diagnostic query detected:", isRepairOrDiagnosticQuery);
     
     // Check for OBD-II code patterns in the message
     const dtcCodes = extractDTCCodes(userMessage);
     const hasDTCQuery = dtcCodes.length > 0;
+    console.log("DTC codes detected:", dtcCodes, "Has DTC query:", hasDTCQuery);
     
     // Check if the user is asking for a component location or diagram
     const isComponentLocationQuery = checkForComponentLocationQuery(userMessage);
+    console.log("Component location query detected:", isComponentLocationQuery);
     
     // Only prompt for vehicle if we have no vehicle context AND it's a repair/diagnostic query
     const hasVehicleContext = vehicleInfo && Object.keys(vehicleInfo).length > 0;
+    console.log("Has vehicle context:", hasVehicleContext, "Vehicle info:", vehicleInfo);
     
     if ((isRepairOrDiagnosticQuery || hasDTCQuery || isComponentLocationQuery) && !hasVehicleMention && !hasVehicleContext) {
       console.log("No vehicle context, prompting for vehicle info");
@@ -79,7 +86,8 @@ export async function handleChatRequest(data: any) {
       isRepairOrDiagnosticQuery ? 'repair guide' : 'general'
     }`);
     
-    console.log("Sending request to OpenAI with system prompt:", systemPrompt.substring(0, 200) + "...");
+    console.log("Sending request to OpenAI with system prompt:", systemPrompt);
+    console.log("User messages:", JSON.stringify(messages));
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -103,6 +111,7 @@ export async function handleChatRequest(data: any) {
 
     const result = await response.json();
     console.log("Received response from OpenAI, tokens used:", result.usage?.total_tokens || 'unknown');
+    console.log("OpenAI response content:", result.choices[0].message.content.substring(0, 200) + "...");
     
     // Add error checking for the response structure
     if (!result || !result.choices || !result.choices[0] || !result.choices[0].message) {
