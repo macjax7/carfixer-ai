@@ -51,6 +51,7 @@ export async function handleChatRequest(data: any) {
         model: 'gpt-4o-mini', // Using the newer, more reliable model
         messages: requestMessages,
         temperature: 0.7,
+        timeout: 60000, // Increase timeout to 60 seconds
       }),
     });
 

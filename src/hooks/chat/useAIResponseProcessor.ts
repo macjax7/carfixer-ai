@@ -16,7 +16,7 @@ export const useAIResponseProcessor = () => {
   const { vehicleContext } = useVehicleContext();
   const { extractSymptoms } = useSymptomExtractor();
   const { extractRepairTask } = useRepairTaskExtractor();
-  const { handleSuccess, handleError, consecutiveErrorCount } = useAIErrorHandler();
+  const { handleSuccess, handleError, errorCount } = useAIErrorHandler();
   const { processOBDCodes } = useOBDProcessor();
   const { processImageQuery } = useImageProcessor();
   const { processTextQuery } = useTextProcessor();
@@ -123,7 +123,7 @@ ${repairContext ? 'Give a repair guide using this information.' : 'Respond with 
       processOBDCodes,
       processImageQuery,
       processTextQuery,
-      consecutiveErrorCount
+      errorCount
     ]
   );
 

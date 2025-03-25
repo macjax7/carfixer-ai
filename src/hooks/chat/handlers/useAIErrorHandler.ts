@@ -21,14 +21,14 @@ export const useAIErrorHandler = () => {
     toast({
       title: "Connection Issue",
       description: errorCount > 1 
-        ? "Still having trouble connecting. Please try again shortly." 
+        ? "Still having trouble connecting. Please check your internet connection and try again." 
         : "Having trouble connecting to the AI service.",
       variant: "destructive"
     });
     
     // Create a direct, simple fallback response
     return { 
-      text: "Sorry, I'm having technical difficulties at the moment. Please try again shortly.", 
+      text: "I'm having trouble connecting to my knowledge database right now. Please check your internet connection and try again in a moment.", 
       extra: {} 
     };
   }, [errorCount, toast]);
