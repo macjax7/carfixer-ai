@@ -11,7 +11,7 @@ import { speechToText } from './speech';
 import { ChatMessage } from './types';
 import { useCodeDetection } from '@/hooks/chat/useCodeDetection';
 import { useSystemPrompt } from '@/hooks/chat/useSystemPrompt';
-import { getOBDDiagnostics, extractOBDCodes, estimateCodeSeverity, getCodeExplanation } from './obd';
+import { getOBDDiagnostics, extractOBDCodes } from './obd';
 import { fetchRepairData } from './repair-data';
 
 /**
@@ -19,7 +19,7 @@ import { fetchRepairData } from './repair-data';
  */
 export function useOpenAI() {
   const { selectedVehicle } = useVehicles();
-  const { processCodeType, extractCodes } = useCodeDetection();
+  const { processCodeType } = useCodeDetection();
   const { systemPrompt } = useSystemPrompt();
   
   const chatWithAI = async (
@@ -41,18 +41,11 @@ export function useOpenAI() {
       if (obdCodes.length > 0 && (vehicleOverride || selectedVehicle)) {
         console.log("OBD codes detected, using specialized diagnostic flow:", obdCodes);
         try {
-          // Extract potential symptoms from the message
-          const symptoms = lastUserMessage?.content 
-            ? extractSymptomsFromText(lastUserMessage.content)
-            : [];
-            
-          console.log("Extracted symptoms:", symptoms);
-          
           // Get detailed OBD analysis from specialized endpoint
           const analysis = await getOBDDiagnostics({
             codes: obdCodes,
             vehicleInfo: vehicleOverride || selectedVehicle,
-            symptoms
+            symptoms: [] // Could extract symptoms from message in the future
           });
           return analysis;
         } catch (error) {
@@ -74,21 +67,6 @@ export function useOpenAI() {
       console.error("Error in chatWithAI:", error);
       throw error;
     }
-  };
-  
-  /**
-   * Extract symptoms from text to provide better context for OBD analysis
-   */
-  const extractSymptomsFromText = (text: string): string[] => {
-    const commonSymptoms = [
-      "check engine light", "won't start", "stalling", "rough idle", 
-      "hesitation", "misfire", "overheating", "noise", "knocking", 
-      "vibration", "smoke", "poor acceleration", "poor fuel economy", 
-      "leak", "grinding", "squealing"
-    ];
-    
-    const lowerText = text.toLowerCase();
-    return commonSymptoms.filter(symptom => lowerText.includes(symptom));
   };
   
   const identifyPart = async (imageUrl: string, customPrompt?: string) => {
@@ -174,9 +152,6 @@ export function useOpenAI() {
     getOBDData,
     speechToText: convertSpeechToText,
     processCodeType,
-    extractOBDCodes,
-    estimateCodeSeverity,
-    getCodeExplanation,
-    extractCodes
+    extractOBDCodes
   };
 }

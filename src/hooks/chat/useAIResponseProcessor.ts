@@ -1,26 +1,14 @@
 
 import { useCallback, useState } from "react";
+import { useOpenAI } from "@/utils/openai/hook";
 import { useVehicleContext } from "./useVehicleContext";
 import { ChatMessage } from "@/utils/openai/types";
 import { fetchRepairData } from "@/utils/openai/repair-data";
-import { useSymptomExtractor } from "./extractors/useSymptomExtractor";
-import { useRepairTaskExtractor } from "./extractors/useRepairTaskExtractor";
-import { useAIErrorHandler } from "./handlers/useAIErrorHandler";
-import { useOBDProcessor } from "./handlers/useOBDProcessor";
-import { useImageProcessor } from "./handlers/useImageProcessor";
-import { useTextProcessor } from "./handlers/useTextProcessor";
-import { useOpenAI } from "@/utils/openai/hook";
 
 export const useAIResponseProcessor = () => {
+  const { chatWithAI, identifyPart, extractOBDCodes, getOBDAnalysis } = useOpenAI();
   const [currentVehicleContext, setCurrentVehicleContext] = useState<any>(null);
   const { vehicleContext } = useVehicleContext();
-  const { extractSymptoms } = useSymptomExtractor();
-  const { extractRepairTask } = useRepairTaskExtractor();
-  const { handleSuccess, handleError, errorCount } = useAIErrorHandler();
-  const { processOBDCodes } = useOBDProcessor();
-  const { processImageQuery } = useImageProcessor();
-  const { processTextQuery } = useTextProcessor();
-  const { extractOBDCodes } = useOpenAI();
 
   const processAIResponse = useCallback(
     async (
@@ -39,20 +27,12 @@ export const useAIResponseProcessor = () => {
         // Extract potential repair task from the user message
         const repairTask = extractRepairTask(userMessage);
         
-        // Extract symptoms from user message
-        const symptoms = extractSymptoms(userMessage);
-        
         // Fetch repair data if we have vehicle info and a potential repair task
         let repairContext = "";
         if (effectiveVehicleInfo && repairTask) {
           console.log("Fetching repair data for task:", repairTask);
-          try {
-            repairContext = await fetchRepairData(effectiveVehicleInfo, repairTask);
-            console.log("Received repair context data:", repairContext ? "Yes" : "No");
-          } catch (repairDataError) {
-            console.error("Error fetching repair data:", repairDataError);
-            // Continue without repair data if fetch fails
-          }
+          repairContext = await fetchRepairData(effectiveVehicleInfo, repairTask);
+          console.log("Received repair context data:", repairContext ? "Yes" : "No");
         }
 
         // Create the enhanced prompt with vehicle context and repair data
@@ -72,60 +52,70 @@ ${repairContext ? 'Give a repair guide using this information.' : 'Respond with 
         console.log("Enhanced user message with repair data:", 
           repairContext ? "Yes" : "No");
 
-        try {
-          // Handle specialized OBD code analysis if we have codes and vehicle info
-          if (obdCodes.length > 0 && effectiveVehicleInfo) {
-            const obdResult = await processOBDCodes(userMessage, effectiveVehicleInfo, handleSuccess);
-            if (obdResult) return obdResult;
+        // Handle specialized OBD code analysis if we have codes and vehicle info
+        if (obdCodes.length > 0 && effectiveVehicleInfo) {
+          console.log("Processing OBD code analysis for codes:", obdCodes);
+          try {
+            const analysis = await getOBDAnalysis(obdCodes);
+            return { text: analysis, extra: { obdCodes } };
+          } catch (error) {
+            console.error("Error in OBD analysis, falling back to standard chat:", error);
+            // Continue with standard processing if OBD analysis fails
           }
+        }
 
-          // Process image-based query if an image is provided
-          if (image) {
-            return await processImageQuery(image, enhancedUserMessage, handleSuccess);
-          } 
+        if (image) {
+          console.log("Processing image-based query");
+          const response = await identifyPart(image, enhancedUserMessage);
+          return { text: response, extra: { image } };
+        } else {
+          console.log("Processing text-based query");
           
-          // Process text-based query
           // Prepare message history plus the new user message
           const messages: ChatMessage[] = [
             ...previousMessages,
             { role: "user", content: enhancedUserMessage }
           ];
           
-          const response = await processTextQuery(messages, effectiveVehicleInfo, handleSuccess);
-          
-          return { 
-            text: response, 
-            extra: { 
-              obdCodes: obdCodes.length > 0 ? obdCodes : undefined,
-              image: image ? image : undefined 
-            } 
-          };
-        } catch (error) {
-          return handleError(error);
+          const response = await chatWithAI(messages, true, effectiveVehicleInfo);
+          return { text: response, extra: { obdCodes: obdCodes.length > 0 ? obdCodes : undefined } };
         }
       } catch (error) {
         console.error("Error processing AI response:", error);
-        
-        // Final fallback for unexpected errors
-        return { 
-          text: "I apologize for the inconvenience. I encountered an unexpected error while processing your request. Please try again.",
-          extra: {}
-        };
+        throw error;
       }
     },
-    [
-      vehicleContext,
-      extractSymptoms,
-      extractRepairTask,
-      extractOBDCodes,
-      handleSuccess,
-      handleError,
-      processOBDCodes,
-      processImageQuery,
-      processTextQuery,
-      errorCount
-    ]
+    [chatWithAI, identifyPart, vehicleContext, extractOBDCodes, getOBDAnalysis]
   );
+
+  /**
+   * Extract potential repair task from user message
+   */
+  const extractRepairTask = (message: string): string | null => {
+    // Common repair tasks and their related keywords
+    const repairTasks = {
+      "oil change": ["oil change", "oil filter", "drain plug", "oil pan", "engine oil"],
+      "brake replacement": ["brake", "brake pad", "rotor", "caliper", "brake fluid"],
+      "spark plug replacement": ["spark plug", "ignition", "misfire", "spark"],
+      "battery replacement": ["battery", "charging", "alternator", "dead battery"],
+      "tire rotation": ["tire", "rotation", "balance", "wheel", "tire pressure"],
+      "air filter replacement": ["air filter", "cabin filter", "engine filter"],
+      "timing belt replacement": ["timing belt", "timing chain", "belt", "chain"],
+      "coolant flush": ["coolant", "radiator", "antifreeze", "overheating"],
+      "transmission service": ["transmission", "fluid change", "gear", "shifting"],
+      "suspension repair": ["suspension", "shock", "strut", "spring", "control arm"]
+    };
+
+    const messageLower = message.toLowerCase();
+    
+    for (const [task, keywords] of Object.entries(repairTasks)) {
+      if (keywords.some(keyword => messageLower.includes(keyword))) {
+        return task;
+      }
+    }
+    
+    return null;
+  };
 
   return {
     processAIResponse,

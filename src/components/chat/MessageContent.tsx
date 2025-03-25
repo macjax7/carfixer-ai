@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { MessageContentProps } from './types';
 import VideoCard from './VideoCard';
@@ -179,6 +180,7 @@ const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: an
             <OBDCodeInfo 
               key={idx} 
               code={code} 
+              severity={code.startsWith('P0') ? 'medium' : 'high'}
             />
           ))}
         </div>

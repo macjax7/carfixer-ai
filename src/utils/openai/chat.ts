@@ -2,8 +2,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ChatMessage } from './types';
 
-const TIMEOUT_DURATION = 30000; // 30 seconds timeout for longer responses
-
 /**
  * Send a message to the OpenAI API for chat completion
  */
@@ -14,12 +12,6 @@ export async function sendChatMessage(
   messageHistory: string[] = [],
   systemPrompt?: string
 ) {
-  // Create a simplified error message handler
-  const createErrorResponse = (message: string) => {
-    console.error(`Chat error: ${message}`);
-    return message;
-  };
-
   try {
     // Filter messages to only include the required fields for the API
     const apiMessages = messages.map(({ role, content }) => ({ role, content }));
@@ -29,15 +21,24 @@ export async function sendChatMessage(
       action: 'chat',
       messages: apiMessages.length,
       includeVehicleContext,
-      hasVehicleInfo: !!vehicleInfo
+      hasVehicleInfo: !!vehicleInfo,
+      messageHistoryLength: messageHistory.length,
+      hasSystemPrompt: !!systemPrompt
     });
-
+    
+    // Check if we're connected to Supabase
+    console.log("Checking Supabase connection before API call...");
+    
     // Add timeout to prevent hanging requests
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Request timed out")), TIMEOUT_DURATION)
+      setTimeout(() => reject(new Error("API request timed out")), 30000)
     );
     
-    // Attempt to call the Supabase function
+    // Log if we're using a system prompt
+    if (systemPrompt) {
+      console.log("Using custom system prompt:", systemPrompt.substring(0, 100) + "...");
+    }
+
     const apiPromise = supabase.functions.invoke('openai', {
       body: {
         service: 'diagnostic',
@@ -58,23 +59,22 @@ export async function sendChatMessage(
 
     if (error) {
       console.error("Supabase function error:", error);
-      return createErrorResponse(`Sorry, I encountered a service error. Please try again in a moment.`);
+      throw new Error(`OpenAI API error: ${error.message}`);
     }
     
     console.log("Received response from Supabase function:", data ? "success" : "no data");
     
-    // Handle the response correctly
+    // Return specifically the message property from the response
     if (data && data.message) {
       return data.message;
     } else if (data) {
+      console.warn("Unexpected response format. Full response:", data);
       return typeof data === 'string' ? data : JSON.stringify(data);
     } else {
-      return createErrorResponse("I received an empty response. Please try again.");
+      throw new Error("Empty response received from OpenAI API");
     }
   } catch (error) {
-    console.error('Error in sendChatMessage:', error);
-    
-    // Provide a simple, direct error message without complex fallback logic
-    return "I'm experiencing technical difficulties right now. Please try again in a few moments.";
+    console.error('Error sending chat message:', error);
+    throw error;
   }
 }
