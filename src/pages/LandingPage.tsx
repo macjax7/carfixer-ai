@@ -4,16 +4,37 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import Header from '@/components/Header';
+import AIChat from '@/components/AIChat';
 
 const LandingPage: React.FC = () => {
   const { user } = useAuth();
 
+  // If user is authenticated, redirect them to the dedicated chat page
+  if (user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-12 flex justify-center">
+          <Link to="/chat">
+            <Button size="lg">Go to Chat</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
       
+      {/* Chat section at the top for guest users */}
+      <section className="w-full flex-1 min-h-[70vh] border-b">
+        <AIChat />
+      </section>
+      
+      {/* Marketing content below the chat */}
       <main className="container mx-auto px-4 py-12">
-        <section className="py-12 md:py-24 lg:py-32">
+        <section className="py-12 md:py-24">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -25,26 +46,18 @@ const LandingPage: React.FC = () => {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                {user ? (
-                  <Link to="/chat">
-                    <Button size="lg">Start Chatting</Button>
-                  </Link>
-                ) : (
-                  <>
-                    <Link to="/login">
-                      <Button size="lg" variant="default">Log In</Button>
-                    </Link>
-                    <Link to="/signup">
-                      <Button size="lg" variant="outline">Sign Up</Button>
-                    </Link>
-                  </>
-                )}
+                <Link to="/login">
+                  <Button size="lg" variant="default">Log In</Button>
+                </Link>
+                <Link to="/signup">
+                  <Button size="lg" variant="outline">Sign Up</Button>
+                </Link>
               </div>
             </div>
           </div>
         </section>
         
-        <section className="py-12 md:py-24 lg:py-32 bg-muted/50">
+        <section className="py-12 md:py-24 bg-muted/50">
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-3 lg:gap-12">
               <div className="flex flex-col justify-center space-y-4">

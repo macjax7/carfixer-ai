@@ -117,6 +117,7 @@ const Chat: React.FC = () => {
   const { user } = useAuth();
   const params = useParams();
   const { loadChatById } = useChat();
+  const navigate = useNavigate();
   
   // Load specific chat if chatId is in the URL
   useEffect(() => {
@@ -126,21 +127,12 @@ const Chat: React.FC = () => {
     }
   }, [params.chatId, loadChatById]);
 
-  // For guest users, render a simplified layout without the sidebar
-  if (!user) {
-    return (
-      <div className="flex flex-col h-screen bg-background">
-        <SidebarProvider defaultOpen={false}>
-          <div className="flex flex-1 w-full overflow-hidden">
-            <main className="flex-1 overflow-hidden relative">
-              <ChatHeader />
-              <AIChat />
-            </main>
-          </div>
-        </SidebarProvider>
-      </div>
-    );
-  }
+  // Redirect guest users to the landing page with chat
+  useEffect(() => {
+    if (!user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   // For authenticated users, show the full layout with sidebar
   return (
