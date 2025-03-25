@@ -15,6 +15,7 @@ export interface ComponentDiagram {
   componentName: string;
   location: string;
   diagramUrl: string;
+  highlightedDiagramUrl?: string; // Added support for a highlighted version of the diagram
 }
 
 export interface VehicleListingAnalysis {

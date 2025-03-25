@@ -109,7 +109,8 @@ export const useAIResponseProcessor = () => {
             return {
               componentName: diagramData.componentName || '',
               location: diagramData.location || '',
-              diagramUrl: diagramData.diagramUrl || ''
+              diagramUrl: diagramData.diagramUrl || '',
+              highlightedDiagramUrl: diagramData.highlightedDiagramUrl || '' // Get highlighted diagram URL
             };
           } catch (error) {
             console.error('Error parsing component diagram data:', error);

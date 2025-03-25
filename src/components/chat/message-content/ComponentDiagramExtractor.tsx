@@ -16,7 +16,8 @@ export const extractComponentDiagram = (text: string): ComponentDiagram | null =
       return {
         componentName: diagramData.componentName || '',
         location: diagramData.location || '',
-        diagramUrl: diagramData.diagramUrl || ''
+        diagramUrl: diagramData.diagramUrl || '',
+        highlightedDiagramUrl: diagramData.highlightedDiagramUrl || '' // Added support for highlighted version
       };
     } catch (error) {
       console.error('Error parsing component diagram data:', error);
