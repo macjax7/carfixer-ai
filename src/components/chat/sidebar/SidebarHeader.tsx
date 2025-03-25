@@ -39,6 +39,7 @@ const SidebarHeader = ({
           size="sm"
           className="flex items-center gap-1 h-8"
           onClick={handleNewChatClick}
+          disabled={!canCreateNewChat}
         >
           <PlusCircle className="h-4 w-4" />
           <span className="text-xs">New Chat</span>
