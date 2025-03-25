@@ -1,13 +1,21 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { MessageContentProps } from './types';
 import VideoCard from './VideoCard';
+import RepairInstructions from './RepairInstructions';
 
-const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: any[] }> = ({
+const MessageContent: React.FC<MessageContentProps & { 
+  videoRecommendations?: any[];
+  repairGuidance?: {
+    content: string;
+    format?: string;
+  };
+}> = ({
   text,
   image,
   sender,
-  videoRecommendations
+  videoRecommendations,
+  repairGuidance
 }) => {
   // Extract component diagram data from message if present
   const extractComponentDiagram = (content: string) => {
@@ -166,6 +174,13 @@ const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: an
     ...extractVideoRecommendationsFromMarkdown(cleanedText)
   ];
 
+  // Determine if the message contains instructions that should be rendered with the RepairInstructions component
+  const containsStructuredRepairGuide = repairGuidance?.format === 'structured' || 
+                                      (cleanedText.includes('## Tools') || 
+                                       cleanedText.includes('# Tools') ||
+                                       cleanedText.includes('## Step') || 
+                                       cleanedText.includes('# Step'));
+  
   return (
     <>
       {image && (
@@ -178,9 +193,19 @@ const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: an
         </div>
       )}
       
-      <p className="text-sm md:text-base whitespace-pre-wrap">
-        {renderTextWithLinks(cleanedText)}
-      </p>
+      {/* Standard text message (hidden if it's a structured repair guide) */}
+      {(!containsStructuredRepairGuide || sender === 'user') && (
+        <p className="text-sm md:text-base whitespace-pre-wrap">
+          {renderTextWithLinks(cleanedText)}
+        </p>
+      )}
+      
+      {/* Structured repair instructions */}
+      {sender === 'ai' && containsStructuredRepairGuide && (
+        <RepairInstructions 
+          content={repairGuidance?.content || cleanedText} 
+        />
+      )}
       
       {componentDiagram && (
         <div className="mt-3 p-3 bg-background/90 border border-border/60 rounded-lg">

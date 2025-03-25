@@ -6,7 +6,7 @@ import { useImageProcessor } from "./useImageProcessor";
 
 export const useAIResponseProcessor = () => {
   const [currentVehicleContext, setCurrentVehicleContext] = useState<any>(null);
-  const { chatWithAI, analyzeListing } = useOpenAI();
+  const { chatWithAI, analyzeListing, getRepairSteps } = useOpenAI();
   const { processCodeType } = useCodeDetection();
   const { processImage } = useImageProcessor();
 
@@ -46,6 +46,42 @@ export const useAIResponseProcessor = () => {
         } else {
           // If it's not a vehicle listing, just process as a normal query
           console.log("URL doesn't appear to be a vehicle listing, processing as normal text");
+          aiResponseText = await chatWithAI([{ role: 'user', content: text }], true, effectiveVehicleInfo);
+        }
+      } else if (/how to (fix|repair|replace|install|remove|change)/.test(text.toLowerCase())) {
+        // Process repair guide requests
+        console.log("Detected repair guide request, generating structured guide");
+        
+        // Extract repair type from the query
+        const repairMatch = text.toLowerCase().match(/how to (fix|repair|replace|install|remove|change) ([^?.,]+)/);
+        if (repairMatch && repairMatch[2]) {
+          const repairType = `${repairMatch[1]} ${repairMatch[2]}`.trim();
+          console.log("Detected repair type:", repairType);
+          
+          // Extract part name if present
+          const partMatch = repairMatch[2].match(/(?:the|a|an) (.+)/);
+          const partName = partMatch ? partMatch[1].trim() : repairMatch[2].trim();
+          
+          // Look for diagnostic code in the query
+          const dtcMatch = text.match(/[PB][0-9]{4}/i);
+          const dtcCode = dtcMatch ? dtcMatch[0].toUpperCase() : undefined;
+          
+          // Generate structured repair guide
+          const repairGuide = await getRepairSteps({
+            repairType,
+            partName,
+            dtcCode,
+          });
+          
+          aiResponseText = repairGuide;
+          aiMessageExtra = { 
+            repairGuidance: {
+              content: repairGuide,
+              format: 'structured'
+            }
+          };
+        } else {
+          // If we can't extract a specific repair type, fall back to normal chat
           aiResponseText = await chatWithAI([{ role: 'user', content: text }], true, effectiveVehicleInfo);
         }
       } else {
@@ -95,7 +131,7 @@ export const useAIResponseProcessor = () => {
       console.error("Error processing AI response:", error);
       throw error;
     }
-  }, [chatWithAI, analyzeListing, processCodeType, currentVehicleContext, processImage]);
+  }, [chatWithAI, analyzeListing, processCodeType, currentVehicleContext, processImage, getRepairSteps]);
 
   return { 
     processAIResponse,

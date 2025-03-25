@@ -40,6 +40,10 @@ interface MessageProps {
     url: string;
     thumbnailUrl?: string;
   }[];
+  repairGuidance?: {
+    content: string;
+    format?: string;
+  };
 }
 
 const ChatMessage: React.FC<MessageProps> = ({ 
@@ -50,7 +54,8 @@ const ChatMessage: React.FC<MessageProps> = ({
   image,
   componentDiagram,
   vehicleListingAnalysis,
-  videoRecommendations
+  videoRecommendations,
+  repairGuidance
 }) => {
   // Ensure timestamp is a Date object before using Date methods
   const formattedTime = (): string => {
@@ -91,6 +96,7 @@ const ChatMessage: React.FC<MessageProps> = ({
           image={image}
           sender={sender}
           videoRecommendations={videoRecommendations}
+          repairGuidance={repairGuidance}
         />
         
         {componentDiagram && <ComponentDiagram componentDiagram={componentDiagram} />}
@@ -118,6 +124,7 @@ export default React.memo(ChatMessage, (prevProps, nextProps) => {
     prevProps.image === nextProps.image &&
     prevProps.componentDiagram === nextProps.componentDiagram &&
     prevProps.vehicleListingAnalysis === nextProps.vehicleListingAnalysis &&
-    prevProps.videoRecommendations === nextProps.videoRecommendations
+    prevProps.videoRecommendations === nextProps.videoRecommendations &&
+    prevProps.repairGuidance === nextProps.repairGuidance
   );
 });

@@ -8,6 +8,7 @@ export interface Message {
   componentDiagram?: ComponentDiagram;
   vehicleListingAnalysis?: VehicleListingAnalysis;
   videoRecommendations?: VideoRecommendation[];
+  repairGuidance?: RepairGuidance;
 }
 
 export interface ComponentDiagram {
@@ -39,6 +40,11 @@ export interface VideoRecommendation {
   title: string;
   url: string;
   thumbnailUrl?: string;
+}
+
+export interface RepairGuidance {
+  content: string;
+  format?: string;
 }
 
 export interface MessageContentProps {
