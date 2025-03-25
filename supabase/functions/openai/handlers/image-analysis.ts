@@ -7,6 +7,7 @@ export async function handleImageAnalysis(data: any) {
   try {
     console.log("Image analysis handler received request");
     
+    // Extract and validate the request data
     const { image, prompt = 'Identify this car part and explain its purpose.', vehicleInfo = null } = data;
     
     if (!image) {
@@ -19,6 +20,7 @@ export async function handleImageAnalysis(data: any) {
     console.log("Image data type:", typeof image);
     console.log("Image data starts with:", image.substring(0, 20) + "...");
     
+    // Build the system prompt
     let systemPrompt = 'You are CarFix AI, an automotive part identification specialist with extensive knowledge of OEM and aftermarket parts. Analyze the provided image and identify the car part shown. Provide a detailed response that first explains the part in simple everyday terms with an analogy, then provides technical details.';
     
     // Add vehicle specificity instructions when vehicle info is provided
@@ -33,31 +35,31 @@ export async function handleImageAnalysis(data: any) {
     // Add component diagram instructions
     systemPrompt += ' If you can identify a specific component with certainty, include a component diagram section using this format: {COMPONENT_DIAGRAM: {"componentName": "name of part", "location": "brief description of location"}}';
     
-    // For image analysis, we use GPT-4o with vision capabilities
+    // Process and validate the image data
+    let imageUrl = image;
+    let imageType = 'unknown';
+    
+    if (typeof image === 'string') {
+      if (image.startsWith('data:image/')) {
+        imageType = 'data-url';
+      } else if (image.startsWith('http')) {
+        imageType = 'remote-url';
+      } else if (image.match(/^[A-Za-z0-9+/=]+$/)) {
+        // Looks like a raw base64 string without the data: prefix
+        imageType = 'raw-base64';
+        imageUrl = `data:image/jpeg;base64,${image}`;
+      }
+    }
+    
+    console.log(`Image detected as type: ${imageType}, length: ${typeof image === 'string' ? image.length : 'unknown'}`);
+    
+    if (imageType === 'unknown') {
+      return createErrorResponse(new Error("Unsupported image format"));
+    }
+    
+    // Prepare the request to OpenAI
     try {
-      // Process and validate the image data
-      let imageUrl = image;
-      let imageType = 'unknown';
-      
-      if (typeof image === 'string') {
-        if (image.startsWith('data:image/')) {
-          imageType = 'data-url';
-        } else if (image.startsWith('http')) {
-          imageType = 'remote-url';
-        } else if (image.match(/^[A-Za-z0-9+/=]+$/)) {
-          // Looks like a raw base64 string without the data: prefix
-          imageType = 'raw-base64';
-          imageUrl = `data:image/jpeg;base64,${image}`;
-        }
-      }
-      
-      console.log(`Image detected as type: ${imageType}, length: ${typeof image === 'string' ? image.length : 'unknown'}`);
-      
-      if (imageType === 'unknown') {
-        return createErrorResponse(new Error("Unsupported image format"));
-      }
-      
-      // Verify the request format is correct for the vision model
+      // Create the request for the vision model
       const requestBody = {
         model: 'gpt-4o',
         messages: [
@@ -81,6 +83,7 @@ export async function handleImageAnalysis(data: any) {
       
       console.log("Sending request to OpenAI vision API");
       
+      // Call the OpenAI API
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -96,6 +99,7 @@ export async function handleImageAnalysis(data: any) {
         return createErrorResponse(new Error(`OpenAI API error: ${JSON.stringify(errorData)}`));
       }
 
+      // Process the response
       const result = await response.json();
       console.log("OpenAI vision response received, length:", result.choices[0].message.content.length);
       

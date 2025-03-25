@@ -6,12 +6,12 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export async function analyzeImage(imageUrl: string, prompt?: string, vehicleInfo = null) {
   try {
-    console.log("Analyzing image with OpenAI vision API:", { 
-      imageUrlType: typeof imageUrl,
-      imageUrlLength: imageUrl?.length || 0,
+    console.log("analyzeImage called with:", { 
+      imageType: typeof imageUrl,
+      imageLength: imageUrl?.length || 0,
       hasPrompt: !!prompt, 
       hasVehicleInfo: !!vehicleInfo,
-      startsWithBlob: imageUrl?.startsWith('blob:') || false
+      isBlobURL: imageUrl?.startsWith('blob:') || false
     });
     
     // Set default prompt if not provided
@@ -22,42 +22,39 @@ export async function analyzeImage(imageUrl: string, prompt?: string, vehicleInf
       throw new Error('No image URL provided');
     }
     
-    // Process the image data - handle different formats properly
-    let processedImageData = imageUrl;
-    
-    // For blob URLs created with URL.createObjectURL, we need to fetch and convert
+    // Handle blob URLs by fetching and converting to data URL
     if (imageUrl.startsWith('blob:')) {
       console.log("Processing blob URL...");
+      
       try {
-        // Fetch the blob content
+        // Create a new fetch request to get the blob data
         const response = await fetch(imageUrl);
         if (!response.ok) {
-          throw new Error(`Failed to fetch blob (status ${response.status})`);
+          throw new Error(`Failed to fetch blob URL: ${response.status} ${response.statusText}`);
         }
         
         // Get the blob data
         const blob = await response.blob();
-        console.log("Blob fetched successfully:", {
+        console.log("Blob data fetched:", {
           type: blob.type,
-          size: `${(blob.size / 1024).toFixed(2)} KB`
+          size: `${(blob.size / 1024).toFixed(2)}KB`
         });
         
-        // Check if the blob is too large (8MB limit for edge functions)
         if (blob.size > 8 * 1024 * 1024) {
           throw new Error('Image is too large. Maximum size is 8MB');
         }
         
-        // Convert blob to base64 data URL using FileReader
-        processedImageData = await new Promise((resolve, reject) => {
+        // Convert the blob to a data URL
+        imageUrl = await new Promise((resolve, reject) => {
           const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = () => reject(new Error('Failed to read image data'));
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Failed to convert blob to data URL'));
           reader.readAsDataURL(blob);
         });
         
-        console.log("Successfully converted blob to data URL:", {
-          dataLength: processedImageData?.length || 0,
-          dataPreview: processedImageData?.substring(0, 50) + '...' || ''
+        console.log("Blob converted to data URL successfully:", {
+          dataURLLength: imageUrl.length,
+          dataURLPrefix: imageUrl.substring(0, 30) + '...'
         });
       } catch (error) {
         console.error("Error processing blob URL:", error);
@@ -65,57 +62,63 @@ export async function analyzeImage(imageUrl: string, prompt?: string, vehicleInf
       }
     }
     
-    // Ensure we're sending a valid format to the edge function
-    if (typeof processedImageData !== 'string') {
-      console.error("Invalid image data format - not a string");
-      throw new Error('Image data is in an invalid format');
+    // Verify image format before sending to edge function
+    if (typeof imageUrl !== 'string') {
+      throw new Error('Image data is not a string');
     }
     
-    if (!processedImageData.startsWith('data:') && !processedImageData.startsWith('http')) {
-      console.error("Invalid image data format after processing:", processedImageData.substring(0, 50));
-      throw new Error('Image data is in an invalid format');
+    if (!imageUrl.startsWith('data:') && !imageUrl.startsWith('http')) {
+      throw new Error('Image must be a data URL or http URL');
     }
     
-    console.log("Sending image to OpenAI edge function:", { 
-      dataLength: processedImageData.length,
+    console.log("Calling Supabase function with image data:", {
       promptLength: effectivePrompt.length,
-      dataPreview: processedImageData.substring(0, 50) + '...'
+      imageURLLength: imageUrl.length,
+      imageURLStart: imageUrl.substring(0, 30) + '...'
     });
     
-    // Call the edge function with a timeout
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Image analysis timed out after 30 seconds')), 30000)
-    );
+    // Set up a timeout for the Supabase function call
+    const functionTimeout = 25000; // 25 seconds
     
-    const analysisPromise = supabase.functions.invoke('openai', {
+    // Create a promise that will reject after the timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Image analysis timed out after 25 seconds')), functionTimeout);
+    });
+    
+    // Create the promise for the Supabase function call
+    const functionPromise = supabase.functions.invoke('openai', {
       body: {
         service: 'image',
         action: 'analyze',
         data: {
-          image: processedImageData,
+          image: imageUrl,
           prompt: effectivePrompt,
           vehicleInfo
         }
       }
     });
     
-    // Race the analysis promise against the timeout
-    const { data, error } = await Promise.race([analysisPromise, timeoutPromise]) as any;
-
-    if (error) {
-      console.error("Error from Supabase image analysis function:", error);
-      throw new Error(error.message || 'Error analyzing image');
+    // Race the promises - whichever resolves/rejects first wins
+    const result = await Promise.race([functionPromise, timeoutPromise]) as any;
+    
+    if (result.error) {
+      console.error("Error from Supabase function:", result.error);
+      throw new Error(`Error from image analysis: ${result.error.message || 'Unknown error'}`);
     }
     
-    if (!data || !data.analysis) {
-      console.error("Invalid response from image analysis function:", data);
+    if (!result.data || !result.data.analysis) {
+      console.error("Invalid response from image analysis:", result.data);
       throw new Error('Invalid response from image analysis');
     }
     
-    console.log("Image analysis successful, response length:", data?.analysis?.length || 0);
-    return data.analysis;
+    console.log("Successfully received image analysis:", {
+      analysisLength: result.data.analysis.length,
+      analysisStart: result.data.analysis.substring(0, 50) + '...'
+    });
+    
+    return result.data.analysis;
   } catch (error) {
-    console.error('Error analyzing image:', error);
+    console.error("Error in analyzeImage:", error);
     throw error;
   }
 }

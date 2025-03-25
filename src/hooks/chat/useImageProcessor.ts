@@ -13,11 +13,12 @@ export const useImageProcessor = () => {
     text: string,
     vehicleInfo?: any
   ) => {
-    console.log("Processing image-based query:", { 
-      imageUrlLength: image?.length || 0,
+    console.log("processImage called with:", { 
+      imageType: typeof image,
+      imageLength: image?.length || 0,
       textPrompt: text,
       hasVehicleInfo: !!vehicleInfo,
-      isBlob: image?.startsWith('blob:') || false
+      isBlobURL: image?.startsWith('blob:') || false
     });
     
     try {
@@ -60,11 +61,11 @@ export const useImageProcessor = () => {
       // Create a more user-friendly error message
       let errorMessage = "I couldn't analyze this image.";
       
-      if (error.message?.includes("timed out")) {
+      if (error?.message?.includes("timed out")) {
         errorMessage += " The analysis took too long. Please try a smaller or clearer image.";
-      } else if (error.message?.includes("too large")) {
+      } else if (error?.message?.includes("too large")) {
         errorMessage += " The image is too large. Please use an image smaller than 8MB.";
-      } else if (error.message?.includes("Invalid image")) {
+      } else if (error?.message?.includes("Invalid image")) {
         errorMessage += " The image format appears to be invalid. Please try a different image.";
       } else {
         errorMessage += " Please try again with a clearer image of the car part.";
