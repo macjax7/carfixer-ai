@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { Message } from "@/components/chat/types";
 import { useAuth } from '@/context/AuthContext';
@@ -7,6 +8,7 @@ import { useChatStorage } from "./handlers/useChatStorage";
 import { useChatMessaging } from "./handlers/useChatMessaging";
 import { useRealtimeMessages } from "./handlers/useRealtimeMessages";
 import { useMessageLoading } from "./handlers/useMessageLoading";
+import { supabase } from '@/integrations/supabase/client';
 
 export const useDirectChatHandler = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -226,5 +228,3 @@ export const useDirectChatHandler = () => {
     loadChatById
   };
 };
-
-import { supabase } from '@/integrations/supabase/client';

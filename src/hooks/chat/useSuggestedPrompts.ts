@@ -1,14 +1,14 @@
 
+import { useMemo } from 'react';
+
 export const useSuggestedPrompts = () => {
-  // Add a few more prompts to demonstrate the scrolling feature
-  const suggestedPrompts = [
-    "What does the check engine light mean?",
-    "How do I change brake pads?",
-    "My engine is overheating",
-    "Why is my car making a clicking noise?",
-    "How to fix a coolant leak",
-    "What's the recommended tire pressure?"
-  ];
-  
+  const suggestedPrompts = useMemo(() => [
+    "What's wrong with my car if it makes a grinding noise when braking?",
+    "How do I change my car's oil?",
+    "What could cause my check engine light to come on?",
+    "How often should I rotate my tires?",
+    "What's a good maintenance schedule for a 2018 Honda Civic?"
+  ], []);
+
   return { suggestedPrompts };
 };

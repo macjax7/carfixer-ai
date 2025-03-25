@@ -1,3 +1,4 @@
+
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useChatMessages } from './useChatMessages';
@@ -6,6 +7,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useChatDatabase } from './useChatDatabase';
 import { useToast } from '@/hooks/use-toast';
 import { isValidUUID } from '@/utils/uuid';
+import { useMessageInput } from './useMessageInput';
+import { useSuggestedPrompts } from './useSuggestedPrompts';
 
 export const useChat = () => {
   const navigate = useNavigate();
@@ -18,7 +21,7 @@ export const useChat = () => {
     messages,
     messageHistory,
     chatId,
-    isLoading,
+    isLoading: messagesLoading,
     addUserMessage,
     addAIMessage,
     resetChat,
@@ -33,6 +36,17 @@ export const useChat = () => {
     isProcessing,
     vehicleContext
   } = useMessageSender();
+
+  // Get input state functionality
+  const {
+    input,
+    setInput,
+    hasAskedForVehicle,
+    setHasAskedForVehicle
+  } = useMessageInput();
+
+  // Get suggested prompts
+  const { suggestedPrompts } = useSuggestedPrompts();
   
   // Get database operations
   const { createChatSession } = useChatDatabase();
@@ -84,18 +98,57 @@ export const useChat = () => {
   
   // Check if user can create a new chat (not processing a message)
   const canCreateNewChat = !isProcessing && !isCreatingChat;
+
+  // Handle sending message form submission
+  const handleSendMessage = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim() && !isProcessing && !messagesLoading) {
+      processAndSendMessage(input);
+      setInput('');
+    }
+  }, [input, isProcessing, messagesLoading, processAndSendMessage, setInput]);
+
+  // Handle image upload
+  const handleImageUpload = useCallback((file: File) => {
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      processAndSendMessage(input, imageUrl);
+      setInput('');
+    }
+  }, [input, processAndSendMessage, setInput]);
+
+  // Handle listing analysis
+  const handleListingAnalysis = useCallback((url: string) => {
+    if (url) {
+      processAndSendMessage(`Can you analyze this vehicle listing? ${url}`);
+      setInput('');
+    }
+  }, [processAndSendMessage, setInput]);
+
+  // Handle suggested prompt selection
+  const handleSuggestedPrompt = useCallback((prompt: string) => {
+    setInput(prompt);
+  }, [setInput]);
   
   return {
     messages,
     messageHistory,
     chatId,
-    isLoading,
+    isLoading: messagesLoading || isProcessing,
     isProcessing,
     vehicleContext,
+    input,
+    setInput,
     processAndSendMessage,
     handleNewChat,
     canCreateNewChat,
     loadChatById,
-    chatIdLoaded
+    chatIdLoaded,
+    handleSendMessage,
+    handleImageUpload,
+    handleListingAnalysis,
+    handleSuggestedPrompt,
+    suggestedPrompts,
+    hasAskedForVehicle
   };
 };
