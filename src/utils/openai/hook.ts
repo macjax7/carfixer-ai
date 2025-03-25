@@ -42,15 +42,37 @@ export function useOpenAI() {
   };
   
   const identifyPart = async (imageUrl: string, customPrompt?: string, vehicleInfo?: any) => {
-    // Use vehicleInfo if provided, otherwise fall back to selectedVehicle
-    const effectiveVehicle = vehicleInfo || selectedVehicle;
-    
-    const prompt = customPrompt || `Identify this car part and explain its purpose. ${
-      effectiveVehicle ? `This is from a ${effectiveVehicle.year} ${effectiveVehicle.make} ${effectiveVehicle.model}.` : ''
-    }`;
-    
-    console.log("Identifying part with vehicle context:", effectiveVehicle || "No vehicle context");
-    return analyzeImage(imageUrl, prompt, effectiveVehicle);
+    try {
+      // Use vehicleInfo if provided, otherwise fall back to selectedVehicle
+      const effectiveVehicle = vehicleInfo || selectedVehicle;
+      
+      console.log("identifyPart called with:", {
+        imageUrlLength: imageUrl?.length || 0,
+        hasCustomPrompt: !!customPrompt,
+        effectiveVehicle
+      });
+      
+      const prompt = customPrompt || `Identify this car part and explain its purpose. ${
+        effectiveVehicle ? `This is from a ${effectiveVehicle.year} ${effectiveVehicle.make} ${effectiveVehicle.model}.` : ''
+      }`;
+      
+      console.log("Identifying part with prompt:", prompt);
+      console.log("Vehicle context:", effectiveVehicle || "No vehicle context");
+      
+      // Add a timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Image analysis timed out after 30 seconds")), 30000)
+      );
+      
+      const analysisPromise = analyzeImage(imageUrl, prompt, effectiveVehicle);
+      const result = await Promise.race([analysisPromise, timeoutPromise]);
+      
+      console.log("Image analysis completed successfully");
+      return result;
+    } catch (error) {
+      console.error("Error in identifyPart:", error);
+      throw error;
+    }
   };
   
   const analyzeListing = async (url: string) => {

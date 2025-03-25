@@ -20,8 +20,15 @@ export const useImageProcessor = () => {
     });
     
     try {
+      // Validate image URL
+      if (!image) {
+        throw new Error('No image URL provided');
+      }
+      
       // Create default prompt if user didn't provide one
       const effectivePrompt = text.trim() || "Can you identify this car part?";
+      
+      console.log("Calling identifyPart with prompt:", effectivePrompt);
       
       // Process the image with the OpenAI vision API - pass the vehicle context
       const imageResult = await identifyPart(image, effectivePrompt, vehicleInfo);

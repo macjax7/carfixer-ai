@@ -35,6 +35,14 @@ export async function handleImageAnalysis(data: any) {
     try {
       console.log("Sending request to OpenAI vision API with image URL length:", image.length);
       
+      // Ensure the image URL is properly formatted for the vision model
+      let imageUrl = image;
+      // Check if the image is a base64 string and not a URL
+      if (!imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
+        console.log("Image appears to be a raw base64 string, adding proper header");
+        imageUrl = `data:image/jpeg;base64,${image}`;
+      }
+      
       // Verify the request format is correct for the vision model
       const requestBody = {
         model: 'gpt-4o',
@@ -47,7 +55,10 @@ export async function handleImageAnalysis(data: any) {
             role: 'user',
             content: [
               { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: image } }
+              { 
+                type: 'image_url', 
+                image_url: { url: imageUrl } 
+              }
             ]
           }
         ],
@@ -58,7 +69,9 @@ export async function handleImageAnalysis(data: any) {
         model: requestBody.model,
         messageCount: requestBody.messages.length,
         systemPromptLength: systemPrompt.length,
-        hasImageUrl: !!image
+        hasImageUrl: !!imageUrl,
+        imageUrlType: typeof imageUrl,
+        imageUrlStart: imageUrl.substring(0, 30) + '...'
       }));
       
       const response = await fetch('https://api.openai.com/v1/chat/completions', {

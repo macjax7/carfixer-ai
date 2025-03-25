@@ -52,7 +52,12 @@ export const useAIResponseProcessor = () => {
           return result;
         } catch (error) {
           console.error("Error in image processing path:", error);
-          throw new Error(`Image analysis failed: ${error.message}`);
+          
+          // Return a descriptive error message to the user
+          return {
+            text: `I'm sorry, I couldn't analyze that image. Error: ${error.message || 'Unknown error'}. Please try again with a clearer image.`,
+            extra: { error: true }
+          };
         }
       } else if (/https?:\/\/[^\s]+/.test(text)) {
         // Process URL-based query
@@ -173,7 +178,10 @@ export const useAIResponseProcessor = () => {
       return { text: aiResponseText, extra: aiMessageExtra };
     } catch (error) {
       console.error("Error processing AI response:", error);
-      throw error;
+      return {
+        text: `I'm sorry, I encountered an error processing your request. Error: ${error.message || 'Unknown error'}. Please try again.`,
+        extra: { error: true }
+      };
     }
   }, [chatWithAI, analyzeListing, processCodeType, currentVehicleContext, processImage, getRepairSteps]);
 
