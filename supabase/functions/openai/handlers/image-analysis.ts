@@ -16,6 +16,8 @@ export async function handleImageAnalysis(data: any) {
     
     console.log("Processing image with prompt:", prompt);
     console.log("Vehicle context:", vehicleInfo ? "provided" : "not provided");
+    console.log("Image data type:", typeof image);
+    console.log("Image data starts with:", image.substring(0, 20) + "...");
     
     let systemPrompt = 'You are CarFix AI, an automotive part identification specialist with extensive knowledge of OEM and aftermarket parts. Analyze the provided image and identify the car part shown. Provide a detailed response that first explains the part in simple everyday terms with an analogy, then provides technical details.';
     

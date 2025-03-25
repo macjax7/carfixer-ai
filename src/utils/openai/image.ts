@@ -7,9 +7,11 @@ import { supabase } from '@/integrations/supabase/client';
 export async function analyzeImage(imageUrl: string, prompt?: string, vehicleInfo = null) {
   try {
     console.log("Analyzing image with OpenAI vision API:", { 
+      imageUrlType: typeof imageUrl,
       imageUrlLength: imageUrl?.length || 0,
       hasPrompt: !!prompt, 
-      hasVehicleInfo: !!vehicleInfo 
+      hasVehicleInfo: !!vehicleInfo,
+      startsWithBlob: imageUrl?.startsWith('blob:') || false
     });
     
     // Set default prompt if not provided
@@ -23,7 +25,7 @@ export async function analyzeImage(imageUrl: string, prompt?: string, vehicleInf
     // Process the image data - handle different formats properly
     let processedImageData = imageUrl;
     
-    // For blob URLs created with URL.createObjectURL, we need special handling
+    // For blob URLs created with URL.createObjectURL, we need to fetch and convert
     if (imageUrl.startsWith('blob:')) {
       console.log("Processing blob URL...");
       try {
@@ -45,7 +47,7 @@ export async function analyzeImage(imageUrl: string, prompt?: string, vehicleInf
           throw new Error('Image is too large. Maximum size is 8MB');
         }
         
-        // Convert blob to base64 data URL
+        // Convert blob to base64 data URL using FileReader
         processedImageData = await new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
@@ -54,8 +56,8 @@ export async function analyzeImage(imageUrl: string, prompt?: string, vehicleInf
         });
         
         console.log("Successfully converted blob to data URL:", {
-          dataLength: processedImageData.length,
-          preview: processedImageData.substring(0, 50) + '...'
+          dataLength: processedImageData?.length || 0,
+          dataPreview: processedImageData?.substring(0, 50) + '...' || ''
         });
       } catch (error) {
         console.error("Error processing blob URL:", error);
@@ -64,14 +66,20 @@ export async function analyzeImage(imageUrl: string, prompt?: string, vehicleInf
     }
     
     // Ensure we're sending a valid format to the edge function
+    if (typeof processedImageData !== 'string') {
+      console.error("Invalid image data format - not a string");
+      throw new Error('Image data is in an invalid format');
+    }
+    
     if (!processedImageData.startsWith('data:') && !processedImageData.startsWith('http')) {
-      console.error("Invalid image data format after processing");
+      console.error("Invalid image data format after processing:", processedImageData.substring(0, 50));
       throw new Error('Image data is in an invalid format');
     }
     
     console.log("Sending image to OpenAI edge function:", { 
       dataLength: processedImageData.length,
-      promptLength: effectivePrompt.length
+      promptLength: effectivePrompt.length,
+      dataPreview: processedImageData.substring(0, 50) + '...'
     });
     
     // Call the edge function with a timeout
