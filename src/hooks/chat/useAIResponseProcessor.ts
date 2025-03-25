@@ -25,6 +25,7 @@ export const useAIResponseProcessor = () => {
       console.log("processAIResponse called with:", { 
         textLength: text.length, 
         hasImage: !!image,
+        imageLength: image?.length || 0,
         vehicleInfo 
       });
       
@@ -39,14 +40,20 @@ export const useAIResponseProcessor = () => {
       console.log("Using effective vehicle context:", effectiveVehicleInfo);
       
       if (image) {
-        // Process image-based query
-        console.log("Processing image query with text:", text);
-        const result = await processImage(image, text, effectiveVehicleInfo);
-        console.log("Image processing result:", { 
-          textLength: result.text?.length,
-          hasExtra: Object.keys(result.extra || {}).length > 0
-        });
-        return result;
+        // Process image-based query - explicitly log that we're entering the image processing path
+        console.log("IMAGE PATH: Processing image with text prompt:", text);
+        
+        try {
+          const result = await processImage(image, text, effectiveVehicleInfo);
+          console.log("Image processing completed successfully:", { 
+            resultTextLength: result.text?.length || 0,
+            hasExtra: Object.keys(result.extra || {}).length > 0
+          });
+          return result;
+        } catch (error) {
+          console.error("Error in image processing path:", error);
+          throw new Error(`Image analysis failed: ${error.message}`);
+        }
       } else if (/https?:\/\/[^\s]+/.test(text)) {
         // Process URL-based query
         console.log("Processing URL-based query with vehicle info:", effectiveVehicleInfo);
@@ -131,7 +138,7 @@ export const useAIResponseProcessor = () => {
         }
       }
       
-      console.log("AI response received, length:", aiResponseText?.length);
+      console.log("AI response received, length:", aiResponseText?.length || 0);
       
       // Extract component diagram if present in the AI response
       const extractComponentDiagram = (response: string) => {
