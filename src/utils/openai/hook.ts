@@ -17,12 +17,12 @@ import { useSystemPrompt } from '@/hooks/chat/useSystemPrompt';
  */
 export function useOpenAI() {
   const { selectedVehicle } = useVehicles();
-  const { processCodeType } = useCodeDetection();
+  const { processCodeType, extractDTCCodes } = useCodeDetection();
   const { systemPrompt } = useSystemPrompt();
   
   const chatWithAI = async (
     messages: ChatMessage[], 
-    includeVehicleContext = true,
+    includeVehicleContext = true, 
     vehicleOverride = null,
     messageHistory: string[] = []
   ) => {
@@ -114,6 +114,7 @@ export function useOpenAI() {
     decodeVehicleVIN,
     getOBDData,
     speechToText: convertSpeechToText,
-    processCodeType
+    processCodeType,
+    extractDTCCodes
   };
 }

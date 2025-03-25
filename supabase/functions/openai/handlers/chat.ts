@@ -47,8 +47,11 @@ export async function handleChatRequest(data: any) {
     let effectiveSystemPrompt = systemPrompt;
     
     if (!effectiveSystemPrompt) {
-      // Modified system prompt to maintain vehicle context and allow video recommendations
-      effectiveSystemPrompt = 'You are CarFix AI, an automotive diagnostic assistant. Provide helpful, accurate advice about vehicle problems, maintenance, and repairs. Always be clear when a repair requires professional help. You are allowed and encouraged to recommend specific YouTube videos by generating relevant search queries and linking directly to YouTube video pages when applicable. Use YouTube.com URLs and markdown formatting to share useful videos when asked.';
+      // Advanced system prompt for automotive diagnostics
+      effectiveSystemPrompt = 'You are CarFix AI, an automotive diagnostic expert with deep knowledge of OBD-II codes, vehicle systems, and repair procedures.';
+      
+      // Format responses in a layered, accessible way
+      effectiveSystemPrompt += ' FORMAT YOUR RESPONSES IN LAYERS: First, give a simple explanation of what the component is in everyday terms. Second, explain the technical meaning of any codes. Third, explain why it matters in terms of vehicle performance and safety. Fourth, list likely causes in order of probability. Finally, recommend next steps.';
       
       // Always include vehicle context if available - don't ask again
       if (hasVehicleContext) {
@@ -66,7 +69,10 @@ export async function handleChatRequest(data: any) {
       
       // Enhanced instructions for OBD codes
       if (hasDTCQuery) {
-        effectiveSystemPrompt += ` The user is asking about the following diagnostic trouble code(s): ${dtcCodes.join(', ')}. Provide detailed analysis for each.`;
+        effectiveSystemPrompt += ` The user is asking about the following diagnostic trouble code(s): ${dtcCodes.join(', ')}. For each code, provide: 1) a simple explanation of what the affected component does, 2) what the code means technically, 3) why it matters for the vehicle, 4) common causes specifically for their vehicle make/model if known, and 5) recommended next steps in order of simplicity/cost.`;
+        
+        // Add specific instructions for using analogies
+        effectiveSystemPrompt += ` Use everyday analogies to help explain complex systems. For example: "Your EGR valve is like a recirculation vent in your kitchen that redirects some exhaust gas back into the engine to reduce emissions and improve efficiency."`;
       }
       
       // Add video recommendation instructions for video queries
@@ -91,7 +97,9 @@ export async function handleChatRequest(data: any) {
       throw new Error('OpenAI API key is not configured');
     }
 
-    console.log(`Using model: ${hasDTCQuery ? 'gpt-4o' : 'gpt-4o-mini'}`);
+    // Use GPT-4o for diagnostic queries and GPT-4o-mini for regular conversations
+    const selectedModel = hasDTCQuery ? 'gpt-4o' : 'gpt-4o-mini';
+    console.log(`Using model: ${selectedModel}`);
     console.log("Sending request to OpenAI with messages:", JSON.stringify(requestMessages));
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -101,9 +109,9 @@ export async function handleChatRequest(data: any) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: hasDTCQuery ? 'gpt-4o' : 'gpt-4o-mini',
+        model: selectedModel,
         messages: requestMessages,
-        temperature: 0.7,
+        temperature: hasDTCQuery ? 0.3 : 0.7, // Lower temperature for more precise diagnostic responses
       }),
     });
 
@@ -131,6 +139,8 @@ export async function handleChatRequest(data: any) {
     return createErrorResponse(error);
   }
 }
+
+// Helper functions
 
 function checkForVehicleMention(currentMessage: string, messageHistory: string[] = []): boolean {
   const carMakes = [

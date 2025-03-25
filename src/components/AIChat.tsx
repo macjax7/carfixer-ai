@@ -3,6 +3,7 @@ import React, { memo } from 'react';
 import ChatContainer from './chat/ChatContainer';
 import SimpleChatContainer from './chat/SimpleChatContainer';
 import { useAuth } from '@/context/AuthContext';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 const AIChat: React.FC = () => {
   const { user } = useAuth();
@@ -11,7 +12,9 @@ const AIChat: React.FC = () => {
   // This ensures consistent behavior for all users
   return (
     <div className="h-full">
-      <SimpleChatContainer />
+      <SidebarProvider>
+        <SimpleChatContainer />
+      </SidebarProvider>
     </div>
   );
 };
