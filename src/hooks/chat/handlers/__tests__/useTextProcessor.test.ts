@@ -2,6 +2,7 @@
 import { renderHook } from '@testing-library/react-hooks';
 import { useTextProcessor } from '../useTextProcessor';
 import { useOpenAI } from '@/utils/openai/hook';
+import { ChatMessage } from '@/utils/openai/types';
 
 // Mock the OpenAI hook
 jest.mock('@/utils/openai/hook', () => ({
@@ -19,7 +20,7 @@ describe('useTextProcessor', () => {
   it('should process text query and call success handler', async () => {
     const { result } = renderHook(() => useTextProcessor());
     
-    const mockMessages = [{ role: 'user', content: 'Test message' }];
+    const mockMessages: ChatMessage[] = [{ role: 'user', content: 'Test message' }];
     const mockVehicleInfo = { year: '2020', make: 'Toyota', model: 'Camry' };
     const handleSuccess = jest.fn();
     
