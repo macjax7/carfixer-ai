@@ -13,7 +13,8 @@ export const useAIResponseProcessor = () => {
     async (
       userMessage: string,
       image?: string,
-      vehicleInfo = null
+      vehicleInfo = null,
+      previousMessages: ChatMessage[] = []
     ): Promise<{ text: string; extra?: any }> => {
       try {
         const effectiveVehicleInfo = vehicleInfo || vehicleContext;
@@ -40,10 +41,13 @@ Respond with mechanic-level accuracy and include only details specific to this v
           return { text: response, extra: { image } };
         } else {
           console.log("Processing text-based query");
-          // Explicitly type the messages array to match ChatMessage type
+          
+          // Prepare message history plus the new user message
           const messages: ChatMessage[] = [
+            ...previousMessages,
             { role: "user", content: enhancedUserMessage }
           ];
+          
           const response = await chatWithAI(messages, true, effectiveVehicleInfo);
           return { text: response };
         }

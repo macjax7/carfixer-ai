@@ -80,6 +80,7 @@ export async function handleChatRequest(data: any) {
       console.log("Using provided system prompt");
     }
 
+    // Build the complete message array including system prompt and all context
     const requestMessages = [
       { role: 'system', content: effectiveSystemPrompt },
       ...messages
