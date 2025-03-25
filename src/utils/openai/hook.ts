@@ -1,4 +1,3 @@
-
 import { useVehicles } from '@/hooks/use-vehicles';
 import { sendChatMessage } from './chat';
 import { analyzeImage } from './image';
@@ -42,12 +41,16 @@ export function useOpenAI() {
     }
   };
   
-  const identifyPart = async (imageUrl: string, customPrompt?: string) => {
+  const identifyPart = async (imageUrl: string, customPrompt?: string, vehicleInfo?: any) => {
+    // Use vehicleInfo if provided, otherwise fall back to selectedVehicle
+    const effectiveVehicle = vehicleInfo || selectedVehicle;
+    
     const prompt = customPrompt || `Identify this car part and explain its purpose. ${
-      selectedVehicle ? `This is from a ${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}.` : ''
+      effectiveVehicle ? `This is from a ${effectiveVehicle.year} ${effectiveVehicle.make} ${effectiveVehicle.model}.` : ''
     }`;
     
-    return analyzeImage(imageUrl, prompt, selectedVehicle);
+    console.log("Identifying part with vehicle context:", effectiveVehicle || "No vehicle context");
+    return analyzeImage(imageUrl, prompt, effectiveVehicle);
   };
   
   const analyzeListing = async (url: string) => {

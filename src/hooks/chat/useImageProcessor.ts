@@ -23,9 +23,8 @@ export const useImageProcessor = () => {
       // Create default prompt if user didn't provide one
       const effectivePrompt = text.trim() || "Can you identify this car part?";
       
-      // Process the image with the OpenAI vision API
-      // Note: Fixing the mismatch - only passing the allowed number of arguments
-      const imageResult = await identifyPart(image, effectivePrompt);
+      // Process the image with the OpenAI vision API - pass the vehicle context
+      const imageResult = await identifyPart(image, effectivePrompt, vehicleInfo);
       console.log("Image identification result received, length:", imageResult?.length || 0);
       
       // Look for component diagram data in the response
