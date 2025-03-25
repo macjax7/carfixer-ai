@@ -15,10 +15,10 @@ interface SidebarHeaderProps {
 }
 
 const SidebarHeader = ({
-  isSearching,
-  searchQuery,
-  toggleSearch,
-  handleSearch,
+  isSearching, 
+  searchQuery, 
+  toggleSearch, 
+  handleSearch, 
   handleNewChatClick,
   canCreateNewChat
 }: SidebarHeaderProps) => {
