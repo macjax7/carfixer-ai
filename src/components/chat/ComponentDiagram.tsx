@@ -14,6 +14,12 @@ const ComponentDiagram: React.FC<ComponentDiagramProps> = ({
   location, 
   diagramUrl 
 }) => {
+  // Add safety checks for the props
+  if (!componentName || !location || !diagramUrl) {
+    console.error('Missing required props in ComponentDiagram', { componentName, location, diagramUrl });
+    return null; // Don't render if missing required props
+  }
+  
   return (
     <div className="mt-4 border border-border/60 rounded-lg p-3 bg-background/50">
       <div className="flex items-center gap-2 mb-2 text-carfix-600">
