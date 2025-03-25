@@ -27,6 +27,9 @@ export const useAIResponseProcessor = () => {
         // Extract potential repair task from the user message
         const repairTask = extractRepairTask(userMessage);
         
+        // Extract symptoms from user message
+        const symptoms = extractSymptoms(userMessage);
+        
         // Fetch repair data if we have vehicle info and a potential repair task
         let repairContext = "";
         if (effectiveVehicleInfo && repairTask) {
@@ -56,7 +59,7 @@ ${repairContext ? 'Give a repair guide using this information.' : 'Respond with 
         if (obdCodes.length > 0 && effectiveVehicleInfo) {
           console.log("Processing OBD code analysis for codes:", obdCodes);
           try {
-            const analysis = await getOBDAnalysis(obdCodes);
+            const analysis = await getOBDAnalysis(obdCodes, symptoms);
             return { text: analysis, extra: { obdCodes } };
           } catch (error) {
             console.error("Error in OBD analysis, falling back to standard chat:", error);
@@ -115,6 +118,41 @@ ${repairContext ? 'Give a repair guide using this information.' : 'Respond with 
     }
     
     return null;
+  };
+  
+  /**
+   * Extract symptoms from user message
+   */
+  const extractSymptoms = (message: string): string[] => {
+    const commonSymptoms = [
+      "check engine light", "cel", "mil", "warning light",
+      "won't start", "no start", "hard start", "difficult to start",
+      "stalling", "dies", "cuts off",
+      "rough idle", "hunting idle", "surging",
+      "hesitation", "stumble", "bucking", "jerking",
+      "misfire", "miss", "stumble", "backfire",
+      "overheating", "running hot", "temperature",
+      "noise", "knocking", "ticking", "rattle", "clunk",
+      "vibration", "shaking", "wobble",
+      "smoke", "burning smell", "oil smell", "gas smell",
+      "poor acceleration", "lack of power", "sluggish",
+      "poor fuel economy", "bad gas mileage",
+      "leaking", "leak", "dripping",
+      "grinding", "squealing", "squeaking"
+    ];
+    
+    const messageLower = message.toLowerCase();
+    const foundSymptoms: string[] = [];
+    
+    // Check for common symptoms
+    for (const symptom of commonSymptoms) {
+      if (messageLower.includes(symptom)) {
+        foundSymptoms.push(symptom);
+      }
+    }
+    
+    // Deduplicate and return
+    return [...new Set(foundSymptoms)];
   };
 
   return {
