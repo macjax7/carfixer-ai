@@ -60,6 +60,8 @@ const ChatThread: React.FC<ChatThreadProps> = ({
             image={msg.image}
             componentDiagram={msg.componentDiagram}
             vehicleListingAnalysis={msg.vehicleListingAnalysis}
+            videoRecommendations={msg.videoRecommendations}
+            repairGuidance={msg.repairGuidance}
           />
         ))}
         
