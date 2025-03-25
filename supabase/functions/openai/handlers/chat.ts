@@ -32,6 +32,9 @@ export async function handleChatRequest(data: any) {
     const dtcCodes = extractDTCCodes(userMessage);
     const hasDTCQuery = dtcCodes.length > 0;
     
+    // Check for part identification
+    const isPartIdentificationQuery = checkForPartIdentificationQuery(userMessage);
+    
     // Only prompt for vehicle if we have no vehicle context AND it's a repair/diagnostic query
     const hasVehicleContext = vehicleInfo && Object.keys(vehicleInfo).length > 0;
     
@@ -69,6 +72,11 @@ export async function handleChatRequest(data: any) {
         effectiveSystemPrompt += ` The user is asking about the following diagnostic trouble code(s): ${dtcCodes.join(', ')}. Provide detailed analysis for each.`;
       }
       
+      // Add part identification instructions
+      if (isPartIdentificationQuery) {
+        effectiveSystemPrompt += ` The user is asking for help identifying a car part. Be extremely precise in your identification, mentioning the exact name, function, and where it's located in the vehicle.`;
+      }
+      
       // Add video recommendation instructions for video queries
       if (userMessage.toLowerCase().includes('video') || 
           userMessage.toLowerCase().includes('youtube') || 
@@ -101,7 +109,7 @@ export async function handleChatRequest(data: any) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: hasDTCQuery ? 'gpt-4o' : 'gpt-4o-mini',
+        model: hasDTCQuery || isPartIdentificationQuery ? 'gpt-4o' : 'gpt-4o-mini',
         messages: requestMessages,
         temperature: 0.7,
       }),
@@ -174,6 +182,17 @@ function checkForRepairOrDiagnosticQuery(message: string): boolean {
   const partPattern = new RegExp(`\\b(${partTerms.join('|')})\\b`, 'i');
   
   return repairPattern.test(message) && partPattern.test(message);
+}
+
+function checkForPartIdentificationQuery(message: string): boolean {
+  const idTerms = [
+    'identify', 'what is', 'what\'s this', 'what part', 'name this', 'recognize',
+    'tell me what', 'can you tell', 'what component', 'what do you call'
+  ];
+  
+  const partPattern = new RegExp(`\\b(${idTerms.join('|')})\\b`, 'i');
+  
+  return partPattern.test(message.toLowerCase());
 }
 
 function extractDTCCodes(message: string): string[] {

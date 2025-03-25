@@ -6,7 +6,7 @@ import { ChatMessage } from "@/utils/openai/types";
 import { fetchRepairData } from "@/utils/openai/repair-data";
 
 export const useAIResponseProcessor = () => {
-  const { chatWithAI, identifyPart } = useOpenAI();
+  const { chatWithAI, identifyPart, extractOBDCodes, getOBDAnalysis } = useOpenAI();
   const [currentVehicleContext, setCurrentVehicleContext] = useState<any>(null);
   const { vehicleContext } = useVehicleContext();
 
@@ -21,6 +21,9 @@ export const useAIResponseProcessor = () => {
         const effectiveVehicleInfo = vehicleInfo || vehicleContext;
         setCurrentVehicleContext(effectiveVehicleInfo);
 
+        // Extract OBD codes for specialized handling
+        const obdCodes = extractOBDCodes(userMessage);
+        
         // Extract potential repair task from the user message
         const repairTask = extractRepairTask(userMessage);
         
@@ -49,6 +52,18 @@ ${repairContext ? 'Give a repair guide using this information.' : 'Respond with 
         console.log("Enhanced user message with repair data:", 
           repairContext ? "Yes" : "No");
 
+        // Handle specialized OBD code analysis if we have codes and vehicle info
+        if (obdCodes.length > 0 && effectiveVehicleInfo) {
+          console.log("Processing OBD code analysis for codes:", obdCodes);
+          try {
+            const analysis = await getOBDAnalysis(obdCodes);
+            return { text: analysis, extra: { obdCodes } };
+          } catch (error) {
+            console.error("Error in OBD analysis, falling back to standard chat:", error);
+            // Continue with standard processing if OBD analysis fails
+          }
+        }
+
         if (image) {
           console.log("Processing image-based query");
           const response = await identifyPart(image, enhancedUserMessage);
@@ -63,14 +78,14 @@ ${repairContext ? 'Give a repair guide using this information.' : 'Respond with 
           ];
           
           const response = await chatWithAI(messages, true, effectiveVehicleInfo);
-          return { text: response };
+          return { text: response, extra: { obdCodes: obdCodes.length > 0 ? obdCodes : undefined } };
         }
       } catch (error) {
         console.error("Error processing AI response:", error);
         throw error;
       }
     },
-    [chatWithAI, identifyPart, vehicleContext]
+    [chatWithAI, identifyPart, vehicleContext, extractOBDCodes, getOBDAnalysis]
   );
 
   /**
