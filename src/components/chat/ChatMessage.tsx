@@ -99,7 +99,13 @@ const ChatMessage: React.FC<MessageProps> = ({
           repairGuidance={repairGuidance}
         />
         
-        {componentDiagram && <ComponentDiagram componentDiagram={componentDiagram} />}
+        {componentDiagram && (
+          <ComponentDiagram 
+            componentName={componentDiagram.componentName} 
+            location={componentDiagram.location} 
+            diagramUrl={componentDiagram.diagramUrl} 
+          />
+        )}
         
         {vehicleListingAnalysis && <VehicleListingAnalysis vehicleListingAnalysis={vehicleListingAnalysis} />}
         
