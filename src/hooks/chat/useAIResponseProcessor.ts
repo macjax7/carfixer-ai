@@ -1,15 +1,29 @@
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 import { useOpenAI } from "@/utils/openai/hook";
 import { useVehicleContext } from "./useVehicleContext";
 import { ChatMessage } from "@/utils/openai/types";
 import { fetchRepairData } from "@/utils/openai/repair-data";
+import { useToast } from "@/hooks/use-toast";
 
 export const useAIResponseProcessor = () => {
+  const { toast } = useToast();
   const { chatWithAI, identifyPart, extractOBDCodes, getOBDAnalysis } = useOpenAI();
   const [currentVehicleContext, setCurrentVehicleContext] = useState<any>(null);
   const { vehicleContext } = useVehicleContext();
   const [consecutiveErrorCount, setConsecutiveErrorCount] = useState(0);
+  const connectionErrorTimerRef = useRef<number | null>(null);
+
+  // Reset error count after a period of no errors
+  const resetErrorCountAfterDelay = () => {
+    if (connectionErrorTimerRef.current) {
+      window.clearTimeout(connectionErrorTimerRef.current);
+    }
+    
+    connectionErrorTimerRef.current = window.setTimeout(() => {
+      setConsecutiveErrorCount(0);
+    }, 60000); // Reset after 1 minute of no errors
+  };
 
   const processAIResponse = useCallback(
     async (
@@ -68,6 +82,7 @@ ${repairContext ? 'Give a repair guide using this information.' : 'Respond with 
             const analysis = await getOBDAnalysis(obdCodes, symptoms);
             // Reset error count on successful response
             setConsecutiveErrorCount(0);
+            resetErrorCountAfterDelay();
             return { text: analysis, extra: { obdCodes } };
           } catch (error) {
             console.error("Error in OBD analysis, falling back to standard chat:", error);
@@ -94,6 +109,8 @@ ${repairContext ? 'Give a repair guide using this information.' : 'Respond with 
           
           // Reset error count on successful response
           setConsecutiveErrorCount(0);
+          resetErrorCountAfterDelay();
+          
           return { 
             text: response, 
             extra: { 
@@ -107,10 +124,21 @@ ${repairContext ? 'Give a repair guide using this information.' : 'Respond with 
           // Increment error counter
           setConsecutiveErrorCount(prev => prev + 1);
           
+          // Show toast for persistent errors
+          if (consecutiveErrorCount >= 2) {
+            toast({
+              title: "Connection Issues",
+              description: "Having trouble reaching the AI service. Please check your connection.",
+              variant: "destructive"
+            });
+          }
+          
           // Create a fallback response depending on number of consecutive errors
           let fallbackMessage;
-          if (consecutiveErrorCount >= 2) {
-            fallbackMessage = "I'm experiencing persistent connectivity issues. Please check your internet connection and try again later. If the problem continues, it may be a temporary service outage.";
+          if (consecutiveErrorCount >= 3) {
+            fallbackMessage = "I'm experiencing persistent connectivity issues. I'll be available once the connection is restored. In the meantime, you might want to check your vehicle's service manual or try again later.";
+          } else if (consecutiveErrorCount >= 1) {
+            fallbackMessage = "I'm having trouble connecting to my knowledge database. Please try again in a moment. If this continues, it may be a temporary service outage.";
           } else {
             fallbackMessage = "I apologize, but I'm having trouble connecting to my knowledge database. Please try your question again in a moment.";
           }
@@ -119,7 +147,12 @@ ${repairContext ? 'Give a repair guide using this information.' : 'Respond with 
         }
       } catch (error) {
         console.error("Error processing AI response:", error);
-        throw error;
+        
+        // Final fallback for unexpected errors
+        return { 
+          text: "I apologize for the inconvenience. I encountered an unexpected error while processing your request. Please try again.",
+          extra: {}
+        };
       }
     },
     [
@@ -128,7 +161,8 @@ ${repairContext ? 'Give a repair guide using this information.' : 'Respond with 
       vehicleContext, 
       extractOBDCodes, 
       getOBDAnalysis, 
-      consecutiveErrorCount
+      consecutiveErrorCount,
+      toast
     ]
   );
 

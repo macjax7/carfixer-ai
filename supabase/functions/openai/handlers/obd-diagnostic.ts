@@ -87,14 +87,63 @@ Please provide a layered explanation of what these codes mean (in simple terms f
     } catch (error) {
       console.error('Error in OpenAI API request:', error);
       
-      // Return a fallback response that mentions the API error
-      return createSuccessResponse({
-        analysis: `I'm sorry, I encountered an error connecting to the diagnostic service. Please try again in a moment. If the problem persists, you can try these general steps for the codes ${codes.join(', ')}:\n\n1. Check your vehicle's service manual for these specific codes\n2. Consider using an OBD scanner to clear the codes and see if they return\n3. For more specific help, please try your request again later`,
+      // Generate a fallback response with useful information
+      const fallbackResponse = {
+        analysis: `I'm sorry, I encountered a technical issue while analyzing the codes ${codes.join(', ')}. Here's some general information that might help:\n\n` +
+          generateFallbackAnalysis(codes, vehicleInfo),
         error: error.message
-      });
+      };
+      
+      return createSuccessResponse(fallbackResponse);
     }
   } catch (error) {
     console.error('Error in OBD diagnostic handler:', error);
     return createErrorResponse(error);
   }
+}
+
+/**
+ * Generate a basic fallback analysis for common OBD codes when the API is unavailable
+ */
+function generateFallbackAnalysis(codes: string[], vehicleInfo: any): string {
+  // Basic analysis for common code patterns
+  const analysis = [];
+  
+  for (const code of codes) {
+    const codeType = code.charAt(0);
+    const codeNumber = code.substring(1);
+    
+    if (codeType === 'P') {
+      if (codeNumber.startsWith('0')) {
+        analysis.push(`${code} typically indicates a generic powertrain issue standardized across manufacturers.`);
+      } else if (codeNumber.startsWith('1')) {
+        analysis.push(`${code} is a manufacturer-specific powertrain code for ${vehicleInfo?.make || 'your vehicle'}.`);
+      }
+      
+      if (codeNumber.startsWith('00')) {
+        analysis.push('This seems to be related to fuel and air metering or emission control.');
+      } else if (codeNumber.startsWith('01')) {
+        analysis.push('This may indicate a fuel or air metering issue.');
+      } else if (codeNumber.startsWith('02')) {
+        analysis.push('This is likely related to the fuel injection system.');
+      } else if (codeNumber.startsWith('03')) {
+        analysis.push('This could be related to ignition system or misfires.');
+      } else if (codeNumber.startsWith('04')) {
+        analysis.push('This typically indicates auxiliary emission controls issues.');
+      } else if (codeNumber.startsWith('05')) {
+        analysis.push('This may be related to vehicle speed control or idle systems.');
+      }
+    } else if (codeType === 'C') {
+      analysis.push(`${code} is related to chassis systems, possibly ABS, traction control, or suspension.`);
+    } else if (codeType === 'B') {
+      analysis.push(`${code} refers to a body system issue, which may involve airbags, lighting, or other body controls.`);
+    } else if (codeType === 'U') {
+      analysis.push(`${code} indicates a network communication issue between vehicle modules.`);
+    }
+  }
+  
+  analysis.push('\nFor accurate diagnosis, please try again when the system connectivity is restored or consult your vehicle\'s service manual.');
+  analysis.push('\nIn the meantime, if you notice warning lights or unusual behavior, it\'s advisable to have your vehicle checked by a professional mechanic.');
+  
+  return analysis.join('\n\n');
 }
