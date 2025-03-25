@@ -14,7 +14,12 @@ export const useMessageSender = () => {
   const { addUserMessage, addAIMessage, chatId, setChatId, messages } = useChatMessages();
   const { generateMessageId } = useMessageId();
   const { isProcessing, setIsProcessing, processUserMessage, processAIResponse, createAIMessage } = useMessageProcessor();
-  const { vehicleContext, updateVehicleContext, getVehicleContextFromMessages } = useVehicleContext();
+  const { 
+    vehicleContext, 
+    updateVehicleContext, 
+    getVehicleContextFromMessages,
+    isVehicleLocked
+  } = useVehicleContext();
   const { handleChatError, handleAIProcessingError } = useMessageErrorHandler();
   const { ensureChatId, ensureUserChatSession } = useChatIdManager(chatId, setChatId);
   const { saveUserMessage, saveAIMessage } = useMessageDbOperations();
@@ -45,8 +50,11 @@ export const useMessageSender = () => {
       console.log("Adding user message to local UI state:", userMessageData);
       addUserMessage(userMessageData);
       
-      // Extract vehicle information and update context
+      // Extract vehicle information and update context if not locked already
       const newVehicleInfo = updateVehicleContext(text);
+      const isVehicleInfoLocked = isVehicleLocked();
+      
+      console.log("Vehicle context locked:", isVehicleInfoLocked);
       
       // Get effective vehicle context for API call
       const effectiveVehicleInfo = newVehicleInfo || getVehicleContextFromMessages(messages);
@@ -132,6 +140,7 @@ export const useMessageSender = () => {
     ensureChatId,
     ensureUserChatSession,
     updateVehicleContext,
+    isVehicleLocked,
     getVehicleContextFromMessages,
     saveUserMessage,
     saveAIMessage
