@@ -33,30 +33,41 @@ export async function handleImageAnalysis(data: any) {
     
     // For image analysis, we use GPT-4o with vision capabilities
     try {
-      console.log("Sending request to OpenAI vision API");
+      console.log("Sending request to OpenAI vision API with image URL length:", image.length);
+      
+      // Verify the request format is correct for the vision model
+      const requestBody = {
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              { type: 'image_url', image_url: { url: image } }
+            ]
+          }
+        ],
+        temperature: 0.2, // Lower temperature for more deterministic, factual responses
+      };
+      
+      console.log("OpenAI request structure:", JSON.stringify({
+        model: requestBody.model,
+        messageCount: requestBody.messages.length,
+        systemPromptLength: systemPrompt.length,
+        hasImageUrl: !!image
+      }));
+      
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${openAIApiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: systemPrompt
-            },
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: prompt },
-                { type: 'image_url', image_url: { url: image } }
-              ]
-            }
-          ],
-          temperature: 0.2, // Lower temperature for more deterministic, factual responses
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {

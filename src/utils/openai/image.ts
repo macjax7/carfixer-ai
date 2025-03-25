@@ -15,6 +15,7 @@ export async function analyzeImage(imageUrl: string, prompt?: string, vehicleInf
     // Set default prompt if not provided
     const effectivePrompt = prompt || 'Identify this car part and explain its purpose and function in detail.';
     
+    // Ensure we're sending the complete data to the edge function
     const { data, error } = await supabase.functions.invoke('openai', {
       body: {
         service: 'image',
@@ -29,7 +30,12 @@ export async function analyzeImage(imageUrl: string, prompt?: string, vehicleInf
 
     if (error) {
       console.error("Error from Supabase image analysis function:", error);
-      throw new Error(error.message);
+      throw new Error(error.message || 'Error analyzing image');
+    }
+    
+    if (!data || !data.analysis) {
+      console.error("Invalid response from image analysis function:", data);
+      throw new Error('Invalid response from image analysis');
     }
     
     console.log("Image analysis successful, response length:", data?.analysis?.length || 0);
