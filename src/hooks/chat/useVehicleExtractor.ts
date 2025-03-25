@@ -23,14 +23,11 @@ export const useVehicleExtractor = () => {
     const yearPattern = /\b(19|20)\d{2}\b/;
     const yearMatch = message.match(yearPattern);
     
-    // Common car makes for pattern matching - expanded list
+    // Common car makes for pattern matching
     const carMakes = [
       'toyota', 'honda', 'ford', 'chevrolet', 'chevy', 'nissan', 'hyundai', 'kia', 
-      'subaru', 'bmw', 'mercedes', 'mercedes-benz', 'benz', 'audi', 'lexus', 'acura', 'mazda', 'volkswagen', 
-      'vw', 'jeep', 'ram', 'dodge', 'chrysler', 'buick', 'cadillac', 'gmc', 'infiniti',
-      'land rover', 'range rover', 'jaguar', 'volvo', 'porsche', 'mini', 'tesla', 'fiat',
-      'alfa romeo', 'maserati', 'ferrari', 'lamborghini', 'bentley', 'rolls-royce',
-      'aston martin', 'lotus', 'genesis', 'lincoln', 'mitsubishi', 'suzuki', 'scion'
+      'subaru', 'bmw', 'mercedes', 'audi', 'lexus', 'acura', 'mazda', 'volkswagen', 
+      'vw', 'jeep', 'ram', 'dodge', 'chrysler', 'buick', 'cadillac', 'gmc', 'infiniti'
     ];
     
     // Create regex pattern for makes
@@ -40,77 +37,36 @@ export const useVehicleExtractor = () => {
     // If we found both year and make, try to extract model
     if (yearMatch && makeMatch) {
       const year = yearMatch[0];
-      let make = makeMatch[0].toLowerCase();
+      const make = makeMatch[0].toLowerCase();
       
-      // Normalize make names
-      if (make === 'chevy') make = 'chevrolet';
-      if (make === 'benz' || make === 'mercedes') make = 'mercedes-benz';
-      if (make === 'vw') make = 'volkswagen';
+      // Attempt to extract model - this is a simplified approach
+      let modelMatch = null;
       
-      // Extract model - more sophisticated approach
-      // Get everything after the make until the end of the sentence or next punctuation
-      const text = message.toLowerCase();
-      const makeIndex = text.indexOf(make);
-      if (makeIndex >= 0) {
-        // Look for model after the make
-        const afterMakeText = text.substring(makeIndex + make.length).trim();
-        
-        // Extract first word or words until punctuation or end
-        let modelMatch = '';
-        const maxWords = 3; // Extract up to 3 words for model
-        const words = afterMakeText.split(/\s+/);
-        
-        // Skip initial words like "is", "a", "the", etc.
-        let startIndex = 0;
-        const skipWords = ['is', 'a', 'the', 'my', 'an', 'this', 'that', 'our', 'their'];
-        while (startIndex < words.length && skipWords.includes(words[startIndex])) {
-          startIndex++;
-        }
-        
-        // Take up to maxWords for the model
-        for (let i = startIndex; i < startIndex + maxWords && i < words.length; i++) {
-          const word = words[i];
-          // Stop at punctuation or connecting words
-          if (/[,.!?]/.test(word) || ['and', 'but', 'or', 'with', 'has', 'had'].includes(word)) {
+      // Common models by make
+      const commonModels: Record<string, string[]> = {
+        'toyota': ['camry', 'corolla', 'rav4', 'tacoma', 'tundra', 'highlander'],
+        'honda': ['civic', 'accord', 'cr-v', 'pilot', 'odyssey'],
+        'ford': ['f-150', 'mustang', 'escape', 'explorer', 'focus'],
+        'chevrolet': ['silverado', 'equinox', 'malibu', 'tahoe'],
+        'chevy': ['silverado', 'equinox', 'malibu', 'tahoe'],
+        'nissan': ['altima', 'sentra', 'rogue', 'pathfinder'],
+        'infiniti': ['g35', 'g37', 'q50', 'qx60', 'qx80', 'fx35']
+        // Add more as needed
+      };
+      
+      if (commonModels[make]) {
+        for (const model of commonModels[make]) {
+          if (message.toLowerCase().includes(model)) {
+            modelMatch = model;
             break;
           }
-          modelMatch += (modelMatch ? ' ' : '') + word;
         }
-        
-        // Check for common model patterns like "e350", "f-150", etc.
-        if (!modelMatch) {
-          const modelPatterns = [
-            /\b[a-z]\d{2,3}\b/i,             // e.g., e350, m3
-            /\b[a-z]-\d{2,3}\b/i,            // e.g., f-150
-            /\b\d{3,4}\b/i,                  // e.g., 911, 328
-            /\b[a-z]{1,2}[x]\d{1,2}\b/i      // e.g., rx350, qx60
-          ];
-          
-          for (const pattern of modelPatterns) {
-            const patternMatch = afterMakeText.match(pattern);
-            if (patternMatch) {
-              modelMatch = patternMatch[0];
-              break;
-            }
-          }
-        }
-        
-        return {
-          year,
-          make: make.charAt(0).toUpperCase() + make.slice(1), // Capitalize make
-          model: modelMatch || 'Unknown'
-        };
       }
-    }
-    
-    // Check for VIN patterns (17 characters, alphanumeric except I, O, Q)
-    const vinPattern = /\b[A-HJ-NPR-Z0-9]{17}\b/i;
-    const vinMatch = message.match(vinPattern);
-    if (vinMatch) {
+      
       return {
-        year: 'Unknown', // VIN can be decoded with an API call
-        make: 'Unknown', // VIN can be decoded with an API call
-        model: 'VIN: ' + vinMatch[0]
+        year,
+        make: make.charAt(0).toUpperCase() + make.slice(1), // Capitalize make
+        model: modelMatch || 'Unknown'
       };
     }
     

@@ -2,8 +2,6 @@
 import React from 'react';
 import { MessageContentProps } from './types';
 import VideoCard from './VideoCard';
-import DiagnosticResponse from './DiagnosticResponse';
-import { useCodeDetection } from '@/hooks/chat/useCodeDetection';
 
 const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: any[] }> = ({
   text,
@@ -11,19 +9,6 @@ const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: an
   sender,
   videoRecommendations
 }) => {
-  const { extractDTCCodes, containsDTCCode, containsNoStartSymptoms, containsPerformanceSymptoms } = useCodeDetection();
-  
-  // Determine if this is a diagnostic response for special formatting
-  const isDiagnosticResponse = 
-    sender === 'ai' && 
-    (containsDTCCode(text) || 
-     containsNoStartSymptoms(text) || 
-     containsPerformanceSymptoms(text));
-  
-  // Extract DTC code if present
-  const dtcCodes = containsDTCCode(text) ? extractDTCCodes(text) : [];
-  const primaryDtcCode = dtcCodes.length > 0 ? dtcCodes[0] : undefined;
-
   // Enhanced URL regex that matches more URL formats, specifically targeting vehicle listing platforms and YouTube
   const renderTextWithLinks = (content: string) => {
     // Enhanced URL regex that matches more URL formats
@@ -161,18 +146,9 @@ const MessageContent: React.FC<MessageContentProps & { videoRecommendations?: an
         </div>
       )}
       
-      {/* Use DiagnosticResponse component for diagnostic content */}
-      {isDiagnosticResponse ? (
-        <DiagnosticResponse 
-          text={text}
-          sender={sender}
-          dtcCode={primaryDtcCode}
-        />
-      ) : (
-        <p className="text-sm md:text-base whitespace-pre-wrap">
-          {renderTextWithLinks(text)}
-        </p>
-      )}
+      <p className="text-sm md:text-base whitespace-pre-wrap">
+        {renderTextWithLinks(text)}
+      </p>
       
       {allVideoRecommendations.length > 0 && (
         <div className="mt-3 space-y-2">

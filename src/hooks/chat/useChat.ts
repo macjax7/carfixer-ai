@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 import { isValidUUID } from '@/utils/uuid';
 import { useMessageInput } from './useMessageInput';
 import { useSuggestedPrompts } from './useSuggestedPrompts';
-import { useVehicleContext } from './useVehicleContext';
 
 export const useChat = () => {
   const navigate = useNavigate();
@@ -35,16 +34,8 @@ export const useChat = () => {
   const {
     processAndSendMessage,
     isProcessing,
-    vehicleContext: senderVehicleContext
+    vehicleContext
   } = useMessageSender();
-
-  // Get vehicle context management
-  const {
-    vehicleContext,
-    setAndLockVehicleContext,
-    resetVehicleContextLock,
-    isVehicleLocked
-  } = useVehicleContext();
 
   // Get input state functionality
   const {
@@ -75,9 +66,6 @@ export const useChat = () => {
       const newChatId = resetChat();
       console.log("New chat created with ID:", newChatId);
       
-      // Reset vehicle context lock for new chat
-      resetVehicleContextLock();
-      
       // For authenticated users, create a session in the database
       if (user && user.id) {
         console.log("Creating database session for authenticated user");
@@ -106,7 +94,7 @@ export const useChat = () => {
     } finally {
       setIsCreatingChat(false);
     }
-  }, [isCreatingChat, resetChat, resetVehicleContextLock, user, createChatSession, setChatId, navigate, toast]);
+  }, [isCreatingChat, resetChat, user, createChatSession, setChatId, navigate, toast]);
   
   // Check if user can create a new chat (not processing a message)
   const canCreateNewChat = !isProcessing && !isCreatingChat;
@@ -142,34 +130,13 @@ export const useChat = () => {
     setInput(prompt);
   }, [setInput]);
   
-  // Manually set vehicle context (for direct vehicle selection)
-  const setVehicle = useCallback((vehicle: any) => {
-    if (vehicle) {
-      console.log("Manually setting vehicle context:", vehicle);
-      setAndLockVehicleContext(vehicle);
-      toast({
-        title: "Vehicle Selected",
-        description: `Using ${vehicle.year} ${vehicle.make} ${vehicle.model} for this chat.`,
-      });
-    }
-  }, [setAndLockVehicleContext, toast]);
-  
-  // Clear locked vehicle context
-  const clearVehicleContext = useCallback(() => {
-    resetVehicleContextLock();
-    toast({
-      title: "Vehicle Context Cleared",
-      description: "You can now specify a different vehicle.",
-    });
-  }, [resetVehicleContextLock, toast]);
-  
   return {
     messages,
     messageHistory,
     chatId,
     isLoading: messagesLoading || isProcessing,
     isProcessing,
-    vehicleContext: senderVehicleContext || vehicleContext,
+    vehicleContext,
     input,
     setInput,
     processAndSendMessage,
@@ -182,9 +149,6 @@ export const useChat = () => {
     handleListingAnalysis,
     handleSuggestedPrompt,
     suggestedPrompts,
-    hasAskedForVehicle,
-    setVehicle,
-    clearVehicleContext,
-    isVehicleLocked
+    hasAskedForVehicle
   };
 };

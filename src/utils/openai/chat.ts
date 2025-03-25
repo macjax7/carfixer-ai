@@ -9,8 +9,7 @@ export async function sendChatMessage(
   messages: ChatMessage[], 
   includeVehicleContext = true, 
   vehicleInfo = null, 
-  messageHistory: string[] = [],
-  systemPrompt?: string
+  messageHistory: string[] = []
 ) {
   try {
     // Filter messages to only include the required fields for the API
@@ -22,8 +21,7 @@ export async function sendChatMessage(
       messages: apiMessages.length,
       includeVehicleContext,
       hasVehicleInfo: !!vehicleInfo,
-      messageHistoryLength: messageHistory.length,
-      hasSystemPrompt: !!systemPrompt
+      messageHistoryLength: messageHistory.length
     });
     
     // Check if we're connected to Supabase
@@ -34,11 +32,6 @@ export async function sendChatMessage(
       setTimeout(() => reject(new Error("API request timed out")), 30000)
     );
     
-    // Log if we're using a system prompt
-    if (systemPrompt) {
-      console.log("Using custom system prompt:", systemPrompt.substring(0, 100) + "...");
-    }
-
     const apiPromise = supabase.functions.invoke('openai', {
       body: {
         service: 'diagnostic',
@@ -47,8 +40,7 @@ export async function sendChatMessage(
           messages: apiMessages,
           includeVehicleContext,
           vehicleInfo,
-          messageHistory,
-          systemPrompt
+          messageHistory
         }
       }
     });

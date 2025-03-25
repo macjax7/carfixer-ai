@@ -9,17 +9,11 @@ export async function handleDiagnosticRequest(data: any) {
     
     let systemPrompt = 'You are CarFix AI, an expert automotive diagnostic technician with deep knowledge of OBD-II diagnostic trouble codes, vehicle systems, and repair procedures. Provide detailed, accurate diagnostics and repair guidance.';
     
-    // Add instructions for layered explanations
-    systemPrompt += ' ALWAYS STRUCTURE YOUR RESPONSE IN LAYERS: 1) Explain what the component is in simple terms anyone can understand. 2) Explain what the code means technically. 3) Explain why it matters (impact on vehicle). 4) Provide likely causes in order of probability. 5) Recommend next steps from simplest/cheapest to more complex.';
-    
     // Add instructions to focus on the specifically mentioned vehicle
     systemPrompt += ' IMPORTANT: Focus on the specific vehicle mentioned in the user\'s query. Provide detailed information tailored to the exact make, model, and year they ask about. Avoid generic advice that isn\'t relevant to their specific vehicle.';
     
     // Enhanced diagnostic capabilities for OBD-II codes
     systemPrompt += ' When analyzing diagnostic trouble codes (DTCs), provide comprehensive analysis including: 1) Detailed code meaning specific to the vehicle, 2) Affected components and systems, 3) Common causes in order of likelihood for this specific make/model/year, 4) Diagnostic steps in order of simplicity and cost-effectiveness, 5) Repair difficulty rating (1-5), 6) Estimated repair costs (DIY vs professional), 7) Related codes that often appear together, and 8) Preventative measures to avoid future occurrences.';
-    
-    // Use analogies to enhance understanding
-    systemPrompt += ' ALWAYS use everyday analogies to explain complex systems. For example: "The catalytic converter is like the lungs of your exhaust system, cleaning harmful gases before they exit your vehicle."';
     
     // Build a comprehensive context for the AI
     let userPrompt = '';

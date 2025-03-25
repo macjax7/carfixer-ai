@@ -1,4 +1,3 @@
-
 import { corsHeaders, createSuccessResponse, createErrorResponse } from '../utils.ts';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY') || '';
@@ -7,13 +6,7 @@ export async function handleChatRequest(data: any) {
   try {
     console.log("Chat handler received data:", JSON.stringify(data));
     
-    const { 
-      messages, 
-      includeVehicleContext = false, 
-      vehicleInfo = null, 
-      messageHistory = [],
-      systemPrompt = null
-    } = data;
+    const { messages, includeVehicleContext = false, vehicleInfo = null, messageHistory = [] } = data;
     
     if (!messages || messages.length === 0) {
       throw new Error('No messages provided for chat request');
@@ -43,52 +36,38 @@ export async function handleChatRequest(data: any) {
       });
     }
     
-    // Use provided system prompt or generate a default one
-    let effectiveSystemPrompt = systemPrompt;
+    // Modified system prompt to maintain vehicle context and allow video recommendations
+    let systemPrompt = 'You are CarFix AI, an automotive diagnostic assistant. Provide helpful, accurate advice about vehicle problems, maintenance, and repairs. Always be clear when a repair requires professional help. You are allowed and encouraged to recommend specific YouTube videos by generating relevant search queries and linking directly to YouTube video pages when applicable. Use YouTube.com URLs and markdown formatting to share useful videos when asked.';
     
-    if (!effectiveSystemPrompt) {
-      // Advanced system prompt for automotive diagnostics
-      effectiveSystemPrompt = 'You are CarFix AI, an automotive diagnostic expert with deep knowledge of OBD-II codes, vehicle systems, and repair procedures.';
-      
-      // Format responses in a layered, accessible way
-      effectiveSystemPrompt += ' FORMAT YOUR RESPONSES IN LAYERS: First, give a simple explanation of what the component is in everyday terms. Second, explain the technical meaning of any codes. Third, explain why it matters in terms of vehicle performance and safety. Fourth, list likely causes in order of probability. Finally, recommend next steps.';
-      
-      // Always include vehicle context if available - don't ask again
-      if (hasVehicleContext) {
-        console.log("Using provided vehicle context:", vehicleInfo);
-        effectiveSystemPrompt += ` The user is asking about their ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}. Keep this vehicle in context throughout the entire conversation and do not ask for vehicle information again unless they explicitly mention a different vehicle.`;
-      } else if (hasVehicleMention) {
-        // If they mentioned a vehicle but we don't have structured info, still avoid asking again
-        console.log("User mentioned a vehicle but no structured info provided");
-        effectiveSystemPrompt += ` The user has mentioned a specific vehicle. Don't ask for vehicle information again unless they explicitly mention a different vehicle.`;
-      } else {
-        // Only in this case should we potentially ask for vehicle info
-        console.log("No vehicle context detected");
-        effectiveSystemPrompt += ' If the user has not specified a vehicle and you need vehicle-specific information to provide an accurate answer, politely ask which vehicle they are working on.';
-      }
-      
-      // Enhanced instructions for OBD codes
-      if (hasDTCQuery) {
-        effectiveSystemPrompt += ` The user is asking about the following diagnostic trouble code(s): ${dtcCodes.join(', ')}. For each code, provide: 1) a simple explanation of what the affected component does, 2) what the code means technically, 3) why it matters for the vehicle, 4) common causes specifically for their vehicle make/model if known, and 5) recommended next steps in order of simplicity/cost.`;
-        
-        // Add specific instructions for using analogies
-        effectiveSystemPrompt += ` Use everyday analogies to help explain complex systems. For example: "Your EGR valve is like a recirculation vent in your kitchen that redirects some exhaust gas back into the engine to reduce emissions and improve efficiency."`;
-      }
-      
-      // Add video recommendation instructions for video queries
-      if (userMessage.toLowerCase().includes('video') || 
-          userMessage.toLowerCase().includes('youtube') || 
-          userMessage.toLowerCase().includes('watch') ||
-          userMessage.toLowerCase().includes('tutorial')) {
-        effectiveSystemPrompt += ` The user is asking for video content. Please suggest relevant YouTube videos using markdown links [Video Title](URL). When recommending videos, try to suggest videos that are high quality, instructional, and relevant to their specific vehicle when possible.`;
-      }
+    // Always include vehicle context if available - don't ask again
+    if (hasVehicleContext) {
+      console.log("Using provided vehicle context:", vehicleInfo);
+      systemPrompt += ` The user is asking about their ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}. Keep this vehicle in context throughout the entire conversation and do not ask for vehicle information again unless they explicitly mention a different vehicle.`;
+    } else if (hasVehicleMention) {
+      // If they mentioned a vehicle but we don't have structured info, still avoid asking again
+      console.log("User mentioned a vehicle but no structured info provided");
+      systemPrompt += ` The user has mentioned a specific vehicle. Don't ask for vehicle information again unless they explicitly mention a different vehicle.`;
     } else {
-      console.log("Using provided system prompt");
+      // Only in this case should we potentially ask for vehicle info
+      console.log("No vehicle context detected");
+      systemPrompt += ' If the user has not specified a vehicle and you need vehicle-specific information to provide an accurate answer, politely ask which vehicle they are working on.';
+    }
+    
+    // Enhanced instructions for OBD codes
+    if (hasDTCQuery) {
+      systemPrompt += ` The user is asking about the following diagnostic trouble code(s): ${dtcCodes.join(', ')}. Provide detailed analysis for each.`;
+    }
+    
+    // Add video recommendation instructions for video queries
+    if (userMessage.toLowerCase().includes('video') || 
+        userMessage.toLowerCase().includes('youtube') || 
+        userMessage.toLowerCase().includes('watch') ||
+        userMessage.toLowerCase().includes('tutorial')) {
+      systemPrompt += ` The user is asking for video content. Please suggest relevant YouTube videos using markdown links [Video Title](URL). When recommending videos, try to suggest videos that are high quality, instructional, and relevant to their specific vehicle when possible.`;
     }
 
-    // Build the complete message array including system prompt and all context
     const requestMessages = [
-      { role: 'system', content: effectiveSystemPrompt },
+      { role: 'system', content: systemPrompt },
       ...messages
     ];
 
@@ -97,9 +76,7 @@ export async function handleChatRequest(data: any) {
       throw new Error('OpenAI API key is not configured');
     }
 
-    // Use GPT-4o for diagnostic queries and GPT-4o-mini for regular conversations
-    const selectedModel = hasDTCQuery ? 'gpt-4o' : 'gpt-4o-mini';
-    console.log(`Using model: ${selectedModel}`);
+    console.log(`Using model: ${hasDTCQuery ? 'gpt-4o' : 'gpt-4o-mini'}`);
     console.log("Sending request to OpenAI with messages:", JSON.stringify(requestMessages));
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -109,9 +86,9 @@ export async function handleChatRequest(data: any) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: selectedModel,
+        model: hasDTCQuery ? 'gpt-4o' : 'gpt-4o-mini',
         messages: requestMessages,
-        temperature: hasDTCQuery ? 0.3 : 0.7, // Lower temperature for more precise diagnostic responses
+        temperature: 0.7,
       }),
     });
 
@@ -139,8 +116,6 @@ export async function handleChatRequest(data: any) {
     return createErrorResponse(error);
   }
 }
-
-// Helper functions
 
 function checkForVehicleMention(currentMessage: string, messageHistory: string[] = []): boolean {
   const carMakes = [

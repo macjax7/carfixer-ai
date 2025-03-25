@@ -10,33 +10,29 @@ import { decodeVIN, getOBDSensorData } from './vehicle';
 import { speechToText } from './speech';
 import { ChatMessage } from './types';
 import { useCodeDetection } from '@/hooks/chat/useCodeDetection';
-import { useSystemPrompt } from '@/hooks/chat/useSystemPrompt';
 
 /**
  * Custom hook to use the CarFix API with vehicle context
  */
 export function useOpenAI() {
   const { selectedVehicle } = useVehicles();
-  const { processCodeType, extractDTCCodes } = useCodeDetection();
-  const { systemPrompt } = useSystemPrompt();
+  const { processCodeType } = useCodeDetection();
   
   const chatWithAI = async (
     messages: ChatMessage[], 
-    includeVehicleContext = true, 
+    includeVehicleContext = true,
     vehicleOverride = null,
     messageHistory: string[] = []
   ) => {
     try {
       console.log("Starting chatWithAI with messages:", messages);
       console.log("Vehicle context:", vehicleOverride || selectedVehicle);
-      console.log("Using system prompt:", systemPrompt);
       
       const response = await sendChatMessage(
         messages, 
         includeVehicleContext, 
         vehicleOverride || selectedVehicle,
-        messageHistory,
-        systemPrompt
+        messageHistory
       );
       console.log("Chat response:", response);
       return response;
@@ -114,7 +110,6 @@ export function useOpenAI() {
     decodeVehicleVIN,
     getOBDData,
     speechToText: convertSpeechToText,
-    processCodeType,
-    extractDTCCodes
+    processCodeType
   };
 }
