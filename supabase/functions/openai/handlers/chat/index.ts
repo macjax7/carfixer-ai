@@ -1,4 +1,3 @@
-
 import { corsHeaders, createSuccessResponse, createErrorResponse } from '../../utils.ts';
 import { checkForVehicleMention } from './vehicle-detection.ts';
 import { checkForRepairOrDiagnosticQuery, checkForComponentLocationQuery } from './query-detection.ts';
@@ -15,7 +14,13 @@ export async function handleChatRequest(data: any) {
   try {
     console.log("Chat handler received data:", JSON.stringify(data));
     
-    const { messages, includeVehicleContext = false, vehicleInfo = null, messageHistory = [] } = data;
+    const { 
+      messages, 
+      includeVehicleContext = false, 
+      vehicleInfo = null, 
+      messageHistory = [],
+      useHighQualityModel = false 
+    } = data;
     
     if (!messages || messages.length === 0) {
       throw new Error('No messages provided for chat request');
@@ -75,19 +80,22 @@ export async function handleChatRequest(data: any) {
       throw new Error('OpenAI API key is not configured');
     }
 
-    // Use GPT-4o for DTC code queries, component location queries, or repair guides
-    // GPT-4o provides much more detailed and accurate responses for these specialized queries
-    const modelToUse = hasDTCQuery || isComponentLocationQuery || isRepairOrDiagnosticQuery 
-      ? 'gpt-4o' 
-      : 'gpt-4o-mini';
+    // Always use GPT-4o for specialized queries or if high quality is requested
+    // Otherwise, use GPT-4o-mini for general questions as a fallback
+    const shouldUseGPT4o = hasDTCQuery || 
+                         isComponentLocationQuery || 
+                         isRepairOrDiagnosticQuery ||
+                         useHighQualityModel;
+                         
+    const modelToUse = shouldUseGPT4o ? 'gpt-4o' : 'gpt-4o-mini';
       
     console.log(`Using model: ${modelToUse} for query type: ${
       hasDTCQuery ? 'DTC code' : isComponentLocationQuery ? 'component location' : 
       isRepairOrDiagnosticQuery ? 'repair guide' : 'general'
-    }`);
+    }, high quality flag: ${useHighQualityModel}`);
     
-    console.log("Sending request to OpenAI with system prompt:", systemPrompt);
-    console.log("User messages:", JSON.stringify(messages));
+    console.log("Sending request to OpenAI with system prompt (first 500 chars):", systemPrompt.substring(0, 500) + "...");
+    console.log("User messages count:", messages.length);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -111,7 +119,7 @@ export async function handleChatRequest(data: any) {
 
     const result = await response.json();
     console.log("Received response from OpenAI, tokens used:", result.usage?.total_tokens || 'unknown');
-    console.log("OpenAI response content:", result.choices[0].message.content.substring(0, 200) + "...");
+    console.log("OpenAI response content (first 300 chars):", result.choices[0].message.content.substring(0, 300) + "...");
     
     // Add error checking for the response structure
     if (!result || !result.choices || !result.choices[0] || !result.choices[0].message) {
@@ -121,7 +129,8 @@ export async function handleChatRequest(data: any) {
     
     return createSuccessResponse({
       message: result.choices[0].message.content,
-      usage: result.usage
+      usage: result.usage,
+      model: modelToUse
     });
   } catch (error) {
     console.error('Error in chat handler:', error);

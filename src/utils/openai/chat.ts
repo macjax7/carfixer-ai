@@ -37,7 +37,7 @@ export async function sendChatMessage(
     
     // Add timeout to prevent hanging requests
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("API request timed out")), 30000)
+      setTimeout(() => reject(new Error("API request timed out after 30 seconds")), 30000)
     );
     
     console.log("Invoking Supabase function 'openai'...");
@@ -50,7 +50,8 @@ export async function sendChatMessage(
           messages: apiMessages,
           includeVehicleContext,
           vehicleInfo,
-          messageHistory
+          messageHistory,
+          useHighQualityModel: true // Always use the high-quality model for better responses
         }
       }
     });
@@ -76,12 +77,12 @@ export async function sendChatMessage(
     // Return specifically the message property from the response
     if (data && data.message) {
       console.log("Message received, length:", data.message.length);
-      console.log("Message preview:", data.message.substring(0, 100) + "...");
+      console.log("Message preview:", data.message.substring(0, 250) + "...");
       return data.message;
     } else if (data) {
       console.warn("Unexpected response format. Full response:", data);
       const responseText = typeof data === 'string' ? data : JSON.stringify(data);
-      console.log("Converted response:", responseText.substring(0, 100) + "...");
+      console.log("Converted response:", responseText.substring(0, 250) + "...");
       return responseText;
     } else {
       throw new Error("Empty response received from OpenAI API");

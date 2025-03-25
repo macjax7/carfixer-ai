@@ -54,6 +54,21 @@ const MessageContent: React.FC<MessageContentProps> = ({
     });
   }
   
+  // Break content into sections for better presentation
+  const identifySections = (content: string) => {
+    // Check for common section markers
+    const simplifiedSection = content.match(/In Simple Terms:(.+?)(?=\n\n|Technical Explanation:|$)/is);
+    const technicalSection = content.match(/Technical Explanation:(.+?)(?=\n\n|What to Check:|Steps to:|$)/is);
+    
+    if (simplifiedSection || technicalSection) {
+      console.log("Identified content sections for enhanced display");
+    }
+    
+    return { hasContentSections: !!(simplifiedSection || technicalSection) };
+  };
+  
+  const { hasContentSections } = identifySections(cleanedText);
+  
   return (
     <>
       {/* Display uploaded image if present */}
@@ -61,9 +76,9 @@ const MessageContent: React.FC<MessageContentProps> = ({
       
       {/* Standard text message (hidden if it's a structured repair guide) */}
       {(!hasStructuredGuide || sender === 'user') && (
-        <p className="text-sm md:text-base whitespace-pre-wrap">
+        <div className={`${sender === 'ai' ? 'text-sm md:text-base whitespace-pre-wrap' : ''}`}>
           <TextWithLinks content={cleanedText} sender={sender} />
-        </p>
+        </div>
       )}
       
       {/* Structured repair instructions */}

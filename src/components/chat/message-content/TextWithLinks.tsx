@@ -1,5 +1,7 @@
 
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import { ExternalLink } from 'lucide-react';
 
 interface TextWithLinksProps {
   content: string;
@@ -7,88 +9,47 @@ interface TextWithLinksProps {
 }
 
 const TextWithLinks: React.FC<TextWithLinksProps> = ({ content, sender }) => {
-  // Enhanced URL regex that matches more URL formats
-  const urlRegex = /(https?:\/\/[^\s<]+[^<,.:\s])/g;
-  
-  // Platform-specific regexes for highlighting URLs
-  const isVehicleListingUrl = (url: string) => {
-    const lowerUrl = url.toLowerCase();
-    return (
-      lowerUrl.includes('cars.com') ||
-      lowerUrl.includes('autotrader.com') ||
-      lowerUrl.includes('cargurus.com') ||
-      lowerUrl.includes('edmunds.com') ||
-      lowerUrl.includes('craigslist.org') && (
-        lowerUrl.includes('/cto/') || 
-        lowerUrl.includes('/ctd/') || 
-        lowerUrl.includes('cars+trucks')
-      ) ||
-      lowerUrl.includes('facebook.com/marketplace') ||
-      lowerUrl.includes('marketplace.facebook.com') ||
-      lowerUrl.includes('carmax.com') ||
-      lowerUrl.includes('truecar.com') ||
-      lowerUrl.includes('ebay.com/itm') && lowerUrl.includes('motors')
-    );
-  };
-  
-  const isYouTubeUrl = (url: string) => {
-    const lowerUrl = url.toLowerCase();
-    return (
-      lowerUrl.includes('youtube.com/watch') ||
-      lowerUrl.includes('youtu.be/')
-    );
-  };
-  
-  const parts = content.split(urlRegex);
-  
+  // Only apply markdown for AI messages
+  if (sender === 'user') {
+    return <span className="whitespace-pre-wrap">{content}</span>;
+  }
+
   return (
-    <>
-      {parts.map((part, index) => {
-        if (part.match(urlRegex)) {
-          // This is a URL, create a link
-          const truncatedUrl = part.length > 50 
-            ? part.substring(0, 40) + '...' + part.substring(part.length - 10)
-            : part;
-            
-          // Add special styling for different URL types
-          const isVehicleListing = isVehicleListingUrl(part);
-          const isYouTube = isYouTubeUrl(part);
-          
-          return (
+    <div className="prose prose-sm dark:prose-invert max-w-none">
+      <ReactMarkdown
+        components={{
+          a: ({ node, ref, href, children, ...props }) => (
             <a 
-              key={index} 
-              href={part} 
+              href={href}
               target="_blank" 
-              rel="noopener noreferrer" 
-              className={`${
-                sender === 'user' 
-                  ? 'text-white underline opacity-90 hover:opacity-100' 
-                  : isVehicleListing 
-                    ? 'text-carfix-600 font-medium hover:underline' 
-                    : isYouTube
-                      ? 'text-red-600 font-medium hover:underline'
-                      : 'text-blue-500 hover:underline'
-              }`}
-              title={
-                isVehicleListing 
-                  ? "Vehicle listing URL - Ask me to analyze it!" 
-                  : isYouTube
-                    ? "YouTube video - Click to watch"
-                    : part
-              }
+              rel="noopener noreferrer"
+              className="text-carfix-600 hover:text-carfix-700 transition-colors inline-flex items-center gap-1"
+              {...props}
             >
-              {isVehicleListing && sender === 'user' ? "📃 " : ""}
-              {isYouTube && sender === 'ai' ? "🎬 " : ""}
-              {truncatedUrl}
-              {isVehicleListing && sender === 'user' ? " 🚗" : ""}
-              {isYouTube && sender === 'ai' ? " 📹" : ""}
+              {children}
+              <ExternalLink size={14} className="inline" />
             </a>
-          );
-        }
-        // This is regular text, just render it
-        return <span key={index}>{part}</span>;
-      })}
-    </>
+          ),
+          h1: ({ children }) => <h1 className="text-lg font-bold mt-4 mb-2">{children}</h1>,
+          h2: ({ children }) => <h2 className="text-md font-bold mt-3 mb-2">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-base font-semibold mt-2 mb-1">{children}</h3>,
+          ul: ({ children }) => <ul className="list-disc pl-5 my-2">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal pl-5 my-2">{children}</ol>,
+          li: ({ children }) => <li className="my-1">{children}</li>,
+          p: ({ children }) => <p className="my-2">{children}</p>,
+          code: ({ children }) => <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">{children}</code>,
+          pre: ({ children }) => <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto my-3">{children}</pre>,
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-4 border-carfix-300 pl-4 italic my-3">{children}</blockquote>
+          ),
+          strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+          em: ({ children }) => <em className="italic">{children}</em>,
+          hr: () => <hr className="my-4 border-t border-gray-300 dark:border-gray-700" />,
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
   );
 };
 
