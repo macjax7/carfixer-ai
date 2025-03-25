@@ -99,15 +99,16 @@ export const useChatMessages = () => {
     return messageData;
   }, [addMessage, processedMessageIdsRef]);
   
-  // Reset chat state and generate new ID
+  // Reset chat state and generate new ID - Enhanced for better reliability
   const resetChat = useCallback(() => {
-    console.log("Resetting chat");
+    console.log("Resetting chat messages and history");
     
     // Clear messages and history
     resetMessages();
     
     // Generate new chat ID
     const newId = generateNewChatId();
+    console.log("Reset complete, new chat ID:", newId);
     
     return newId;
   }, [resetMessages, generateNewChatId]);

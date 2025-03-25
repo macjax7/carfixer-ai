@@ -24,23 +24,30 @@ export const useChat = () => {
   
   const navigate = useNavigate();
   const { suggestedPrompts } = useSuggestedPrompts();
-  const { loadChatById, chatIdLoaded } = useChatMessages();
+  const { loadChatById, chatIdLoaded, resetChat: resetChatMessages } = useChatMessages();
 
   const handleNewChat = useCallback(() => {
     console.log("handleNewChat called - beginning new chat creation process");
     
     try {
-      // Reset the chat first which clears messages and generates a new ID
+      // First, ensure we reset messages properly using useChatMessages resetChat
+      resetChatMessages();
+      
+      // Then reset other chat state with messageHandlers resetChat
       const newId = resetChat();
       console.log("Chat reset completed, new ID generated:", newId);
       
       // Clear the input field
       setInput('');
       
-      // Navigate to root to ensure we're in a clean state
-      // Use push instead of navigating to ensure a full reload of the chat route
-      console.log("Navigating to root path");
-      navigate('/', { replace: true });
+      // Navigate to the new chat URL to ensure all components are reset
+      if (newId) {
+        console.log("Navigating to new chat path:", `/chat/${newId}`);
+        navigate(`/chat/${newId}`, { replace: true });
+      } else {
+        console.log("Navigating to root path");
+        navigate('/', { replace: true });
+      }
       
       console.log("New chat creation process completed successfully");
       return newId;
@@ -48,9 +55,9 @@ export const useChat = () => {
       console.error("Error creating new chat:", error);
       return null;
     }
-  }, [resetChat, setInput, navigate]);
+  }, [resetChat, resetChatMessages, setInput, navigate]);
 
-  // Make sure this is always enabled - canCreateNewChat will always be true
+  // Always enable the new chat button
   const canCreateNewChat = true;
 
   return {

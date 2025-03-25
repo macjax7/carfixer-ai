@@ -14,12 +14,11 @@ import { useChat } from '@/hooks/chat/useChat';
 const ChatHeader = () => {
   const { state } = useSidebar();
   const { user } = useAuth();
-  const { handleNewChat, isLoading } = useChat();
+  const { handleNewChat } = useChat();
   const navigate = useNavigate();
   
   const onNewChatClick = () => {
-    console.log("New Chat button clicked - attempting to create new chat");
-    // Call handleNewChat without any conditions
+    console.log("New Chat button clicked - triggering handleNewChat");
     handleNewChat();
   };
   
@@ -36,7 +35,7 @@ const ChatHeader = () => {
               onClick={onNewChatClick}
             >
               <PlusCircle className="h-4 w-4" />
-              <span>{isLoading ? "Creating..." : "New Chat"}</span>
+              <span>New Chat</span>
             </button>
           )}
           
@@ -119,10 +118,11 @@ const Chat: React.FC = () => {
   
   // Load specific chat if chatId is in the URL
   useEffect(() => {
-    if (user && params.chatId) {
+    if (params.chatId) {
+      console.log("Loading chat from route params:", params.chatId);
       loadChatById(params.chatId);
     }
-  }, [user, params.chatId, loadChatById]);
+  }, [params.chatId, loadChatById]);
 
   // For guest users, render a simplified layout without the sidebar
   if (!user) {
