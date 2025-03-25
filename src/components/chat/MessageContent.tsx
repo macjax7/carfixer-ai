@@ -4,7 +4,7 @@ import { MessageContentProps } from './types';
 import RepairInstructions from './RepairInstructions';
 import ComponentDiagram from './ComponentDiagram';
 import TextWithLinks from './message-content/TextWithLinks';
-import ComponentDiagramExtractor from './message-content/ComponentDiagramExtractor';
+import { extractComponentDiagram } from './message-content/ComponentDiagramExtractor';
 import { cleanText, containsStructuredRepairGuide } from './message-content/MessageUtils';
 import VideoRecommendationsList from './message-content/VideoRecommendationsList';
 import UploadedImage from './message-content/UploadedImage';
@@ -23,8 +23,8 @@ const MessageContent: React.FC<MessageContentProps & {
   videoRecommendations,
   repairGuidance
 }) => {
-  // Extract component diagram data
-  const componentDiagram = ComponentDiagramExtractor({ content: text });
+  // Extract component diagram data using the utility function
+  const componentDiagram = extractComponentDiagram(text);
   
   // Clean the text to remove diagram markers
   const cleanedText = cleanText(text);
