@@ -8,7 +8,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Chat from './pages/Chat';
 import Login from './pages/Login';
-import Signup from './pages/Signup';
+import SignUp from './pages/SignUp'; // Fixed import with correct casing
 import LandingPage from './pages/LandingPage';
 import PricingPage from './pages/PricingPage';
 import { useSubscription } from './hooks/useSubscription';
@@ -93,7 +93,7 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/signup" element={<SignUp />} /> {/* Updated component name */}
         
         {/* Add the dashboard route */}
         <Route path="/dashboard" element={
