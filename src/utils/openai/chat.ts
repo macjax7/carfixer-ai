@@ -9,7 +9,8 @@ export async function sendChatMessage(
   messages: ChatMessage[], 
   includeVehicleContext = true, 
   vehicleInfo = null, 
-  messageHistory: string[] = []
+  messageHistory: string[] = [],
+  systemPrompt?: string
 ) {
   try {
     // Filter messages to only include the required fields for the API
@@ -21,7 +22,8 @@ export async function sendChatMessage(
       messages: apiMessages.length,
       includeVehicleContext,
       hasVehicleInfo: !!vehicleInfo,
-      messageHistoryLength: messageHistory.length
+      messageHistoryLength: messageHistory.length,
+      hasSystemPrompt: !!systemPrompt
     });
     
     // Check if we're connected to Supabase
@@ -40,7 +42,8 @@ export async function sendChatMessage(
           messages: apiMessages,
           includeVehicleContext,
           vehicleInfo,
-          messageHistory
+          messageHistory,
+          systemPrompt
         }
       }
     });

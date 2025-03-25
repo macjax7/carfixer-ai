@@ -1,3 +1,4 @@
+
 import { corsHeaders, createSuccessResponse, createErrorResponse } from '../utils.ts';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY') || '';
@@ -6,7 +7,13 @@ export async function handleChatRequest(data: any) {
   try {
     console.log("Chat handler received data:", JSON.stringify(data));
     
-    const { messages, includeVehicleContext = false, vehicleInfo = null, messageHistory = [] } = data;
+    const { 
+      messages, 
+      includeVehicleContext = false, 
+      vehicleInfo = null, 
+      messageHistory = [],
+      systemPrompt = null
+    } = data;
     
     if (!messages || messages.length === 0) {
       throw new Error('No messages provided for chat request');
@@ -36,38 +43,45 @@ export async function handleChatRequest(data: any) {
       });
     }
     
-    // Modified system prompt to maintain vehicle context and allow video recommendations
-    let systemPrompt = 'You are CarFix AI, an automotive diagnostic assistant. Provide helpful, accurate advice about vehicle problems, maintenance, and repairs. Always be clear when a repair requires professional help. You are allowed and encouraged to recommend specific YouTube videos by generating relevant search queries and linking directly to YouTube video pages when applicable. Use YouTube.com URLs and markdown formatting to share useful videos when asked.';
+    // Use provided system prompt or generate a default one
+    let effectiveSystemPrompt = systemPrompt;
     
-    // Always include vehicle context if available - don't ask again
-    if (hasVehicleContext) {
-      console.log("Using provided vehicle context:", vehicleInfo);
-      systemPrompt += ` The user is asking about their ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}. Keep this vehicle in context throughout the entire conversation and do not ask for vehicle information again unless they explicitly mention a different vehicle.`;
-    } else if (hasVehicleMention) {
-      // If they mentioned a vehicle but we don't have structured info, still avoid asking again
-      console.log("User mentioned a vehicle but no structured info provided");
-      systemPrompt += ` The user has mentioned a specific vehicle. Don't ask for vehicle information again unless they explicitly mention a different vehicle.`;
+    if (!effectiveSystemPrompt) {
+      // Modified system prompt to maintain vehicle context and allow video recommendations
+      effectiveSystemPrompt = 'You are CarFix AI, an automotive diagnostic assistant. Provide helpful, accurate advice about vehicle problems, maintenance, and repairs. Always be clear when a repair requires professional help. You are allowed and encouraged to recommend specific YouTube videos by generating relevant search queries and linking directly to YouTube video pages when applicable. Use YouTube.com URLs and markdown formatting to share useful videos when asked.';
+      
+      // Always include vehicle context if available - don't ask again
+      if (hasVehicleContext) {
+        console.log("Using provided vehicle context:", vehicleInfo);
+        effectiveSystemPrompt += ` The user is asking about their ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}. Keep this vehicle in context throughout the entire conversation and do not ask for vehicle information again unless they explicitly mention a different vehicle.`;
+      } else if (hasVehicleMention) {
+        // If they mentioned a vehicle but we don't have structured info, still avoid asking again
+        console.log("User mentioned a vehicle but no structured info provided");
+        effectiveSystemPrompt += ` The user has mentioned a specific vehicle. Don't ask for vehicle information again unless they explicitly mention a different vehicle.`;
+      } else {
+        // Only in this case should we potentially ask for vehicle info
+        console.log("No vehicle context detected");
+        effectiveSystemPrompt += ' If the user has not specified a vehicle and you need vehicle-specific information to provide an accurate answer, politely ask which vehicle they are working on.';
+      }
+      
+      // Enhanced instructions for OBD codes
+      if (hasDTCQuery) {
+        effectiveSystemPrompt += ` The user is asking about the following diagnostic trouble code(s): ${dtcCodes.join(', ')}. Provide detailed analysis for each.`;
+      }
+      
+      // Add video recommendation instructions for video queries
+      if (userMessage.toLowerCase().includes('video') || 
+          userMessage.toLowerCase().includes('youtube') || 
+          userMessage.toLowerCase().includes('watch') ||
+          userMessage.toLowerCase().includes('tutorial')) {
+        effectiveSystemPrompt += ` The user is asking for video content. Please suggest relevant YouTube videos using markdown links [Video Title](URL). When recommending videos, try to suggest videos that are high quality, instructional, and relevant to their specific vehicle when possible.`;
+      }
     } else {
-      // Only in this case should we potentially ask for vehicle info
-      console.log("No vehicle context detected");
-      systemPrompt += ' If the user has not specified a vehicle and you need vehicle-specific information to provide an accurate answer, politely ask which vehicle they are working on.';
-    }
-    
-    // Enhanced instructions for OBD codes
-    if (hasDTCQuery) {
-      systemPrompt += ` The user is asking about the following diagnostic trouble code(s): ${dtcCodes.join(', ')}. Provide detailed analysis for each.`;
-    }
-    
-    // Add video recommendation instructions for video queries
-    if (userMessage.toLowerCase().includes('video') || 
-        userMessage.toLowerCase().includes('youtube') || 
-        userMessage.toLowerCase().includes('watch') ||
-        userMessage.toLowerCase().includes('tutorial')) {
-      systemPrompt += ` The user is asking for video content. Please suggest relevant YouTube videos using markdown links [Video Title](URL). When recommending videos, try to suggest videos that are high quality, instructional, and relevant to their specific vehicle when possible.`;
+      console.log("Using provided system prompt");
     }
 
     const requestMessages = [
-      { role: 'system', content: systemPrompt },
+      { role: 'system', content: effectiveSystemPrompt },
       ...messages
     ];
 
