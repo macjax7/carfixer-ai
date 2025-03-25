@@ -68,10 +68,18 @@ export async function handleChatRequest(data: any) {
       throw new Error('OpenAI API key is not configured');
     }
 
-    // Use GPT-4o for DTC code queries, GPT-4o-mini for others
-    const modelToUse = hasDTCQuery ? 'gpt-4o' : 'gpt-4o-mini';
-    console.log(`Using model: ${modelToUse}`);
-    console.log("Sending request to OpenAI with messages:", JSON.stringify(requestMessages));
+    // Use GPT-4o for DTC code queries, component location queries, or repair guides
+    // GPT-4o provides much more detailed and accurate responses for these specialized queries
+    const modelToUse = hasDTCQuery || isComponentLocationQuery || isRepairOrDiagnosticQuery 
+      ? 'gpt-4o' 
+      : 'gpt-4o-mini';
+      
+    console.log(`Using model: ${modelToUse} for query type: ${
+      hasDTCQuery ? 'DTC code' : isComponentLocationQuery ? 'component location' : 
+      isRepairOrDiagnosticQuery ? 'repair guide' : 'general'
+    }`);
+    
+    console.log("Sending request to OpenAI with system prompt:", systemPrompt.substring(0, 200) + "...");
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -83,6 +91,7 @@ export async function handleChatRequest(data: any) {
         model: modelToUse,
         messages: requestMessages,
         temperature: 0.7,
+        max_tokens: 1500,  // Increased token limit for more detailed responses
       }),
     });
 
@@ -93,7 +102,7 @@ export async function handleChatRequest(data: any) {
     }
 
     const result = await response.json();
-    console.log("Received response from OpenAI:", JSON.stringify(result));
+    console.log("Received response from OpenAI, tokens used:", result.usage?.total_tokens || 'unknown');
     
     // Add error checking for the response structure
     if (!result || !result.choices || !result.choices[0] || !result.choices[0].message) {

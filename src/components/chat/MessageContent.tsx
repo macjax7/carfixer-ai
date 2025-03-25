@@ -63,6 +63,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
           componentName={componentDiagram.componentName}
           location={componentDiagram.location}
           diagramUrl={componentDiagram.diagramUrl}
+          highlightedDiagramUrl={componentDiagram.highlightedDiagramUrl}
         />
       )}
       
