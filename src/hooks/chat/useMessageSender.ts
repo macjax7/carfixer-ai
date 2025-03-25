@@ -7,6 +7,7 @@ import { useVehicleContext } from "./useVehicleContext";
 import { useMessageErrorHandler } from "./useMessageErrorHandler";
 import { useChatIdManager } from "./useChatIdManager";
 import { useMessageDbOperations } from "./useMessageDbOperations";
+import { ChatMessage } from "@/utils/openai/types";
 
 export const useMessageSender = () => {
   const { user } = useAuth();
@@ -88,8 +89,6 @@ export const useMessageSender = () => {
         if (user && user.id && currentChatId) {
           await saveAIMessage(currentChatId, aiMessageData, user.id);
         }
-        
-        return aiMessageData;
       } catch (error) {
         console.error("AI processing error:", error);
         const errorMessage = handleAIProcessingError(error);
@@ -101,7 +100,6 @@ export const useMessageSender = () => {
         };
         
         addAIMessage(errorMessageData);
-        return errorMessageData;
       }
     } catch (error) {
       console.error("Error in processAndSendMessage:", error);
@@ -116,7 +114,6 @@ export const useMessageSender = () => {
       };
       
       addAIMessage(errorMessageData);
-      return errorMessageData;
     } finally {
       setIsProcessing(false);
     }
