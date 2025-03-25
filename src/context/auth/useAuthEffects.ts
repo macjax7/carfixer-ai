@@ -9,7 +9,7 @@ export function useAuthEffects(
   setUser: React.Dispatch<React.SetStateAction<UserWithCustomAttributes | null>>,
   setSession: React.Dispatch<React.SetStateAction<import('@supabase/supabase-js').Session | null>>,
   setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  setError: React.Dispatch<React.SetStateAction<string | null>>,
+  setError: React.Dispatch<React.SetStateAction<Error | null>>,
   setShowSessionDialog: React.Dispatch<React.SetStateAction<boolean>>
 ) {
   const location = useLocation();
